@@ -12,13 +12,13 @@ const currentYear = new Date().getFullYear();
   <footer ref="sectionRef" class="relative border-t border-border bg-card/50">
     <div class="mx-auto max-w-6xl px-6 py-12">
       <div :class="['scroll-reveal flex flex-col md:flex-row items-center justify-between gap-6', { revealed: isVisible }]">
-        <span class="font-mono text-sm font-semibold tracking-tight">
+        <span class="flex-1 font-mono text-sm font-semibold tracking-tight">
           <span class="text-primary">SR</span><span class="text-muted-foreground">.</span>
         </span>
 
-        <SocialLinks show-mail />
+        <SocialLinks />
 
-        <p class="text-sm text-muted-foreground font-mono">
+        <p class="flex-1 text-right text-sm text-muted-foreground font-mono">
           &copy; {{ currentYear }} | {{ t.footer.builtWith }}
         </p>
       </div>

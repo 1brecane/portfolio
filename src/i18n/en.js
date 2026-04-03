@@ -159,4 +159,20 @@ export default {
   footer: {
     builtWith: "Built with passion",
   },
+  contact: {
+    title: "Contact",
+    subtitle: "Get in touch",
+    nameLabel: "Name",
+    namePlaceholder: "John Doe",
+    emailLabel: "Email",
+    emailPlaceholder: "john@example.com",
+    messageLabel: "Message",
+    messagePlaceholder: "How can I help you?",
+    sendButton: "Send Message",
+    sending: "Sending...",
+    successTitle: "Message Sent!",
+    successMessage: "Thank you for reaching out. I'll get back to you as soon as possible.",
+    sendAnother: "Send another message",
+    errorMessage: "Failed to send message. Please try again later."
+  }
 };

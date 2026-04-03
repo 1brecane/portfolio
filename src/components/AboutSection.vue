@@ -1,13 +1,11 @@
 <script setup>
 import { computed } from "vue";
 import { GraduationCap, Briefcase, Calendar } from "lucide-vue-next";
-import SectionHeader from "@/components/ui/SectionHeader.vue";
 import AppBadge from "@/components/ui/AppBadge.vue";
+import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
-import { useScrollReveal } from "@/composables/useScrollReveal";
 
 const { t } = useI18n();
-const { target: sectionRef, isVisible } = useScrollReveal();
 
 const timelineDefs = [
   {
@@ -51,16 +49,13 @@ const timeline = computed(() =>
 </script>
 
 <template>
-  <section id="about" ref="sectionRef" class="relative py-24 md:py-32 grid-bg">
-    <div class="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none" />
-
-    <div class="relative mx-auto max-w-6xl px-6">
-      <SectionHeader
-        :title="t.about.title"
-        :subtitle="t.about.subtitle"
-        :is-visible="isVisible"
-      />
-
+  <SectionLayout
+    id="about"
+    :title="t.about.title"
+    :subtitle="t.about.subtitle"
+    grid-bg
+  >
+    <template #default="{ isVisible }">
       <!-- Timeline -->
       <div :class="['relative max-w-3xl mx-auto stagger-children', { revealed: isVisible }]">
         <div
@@ -104,6 +99,6 @@ const timeline = computed(() =>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </template>
+  </SectionLayout>
 </template>

@@ -11,6 +11,7 @@ export function useTypewriter(lines) {
   const currentCharIndex = ref(0);
   let timerId = null;
 
+  // Clears the active timeout to prevent overlapping ticks
   function stop() {
     if (timerId) {
       clearTimeout(timerId);
@@ -18,6 +19,7 @@ export function useTypewriter(lines) {
     }
   }
 
+  // Processes the next character or line in the sequence
   function tick() {
     const src = lines.value;
     if (currentLineIndex.value >= src.length) return;
@@ -25,22 +27,31 @@ export function useTypewriter(lines) {
     const line = src[currentLineIndex.value];
 
     if (currentCharIndex.value < line.length) {
+      // Add a new line string if we just moved to a new index
       if (displayedLines.value.length <= currentLineIndex.value) {
         displayedLines.value.push("");
       }
+      
+      // Append the next character to the current line
       displayedLines.value[currentLineIndex.value] = line.slice(
         0,
         currentCharIndex.value + 1,
       );
       currentCharIndex.value++;
+      
+      // Schedule next character
       timerId = setTimeout(tick, 30);
     } else {
+      // Move to the next line after completing the current one
       currentLineIndex.value++;
       currentCharIndex.value = 0;
+      
+      // Pause longer between lines
       timerId = setTimeout(tick, 500);
     }
   }
 
+  // Resets state and restarts the typewriter effect
   function restart() {
     stop();
     displayedLines.value = [];
@@ -49,7 +60,9 @@ export function useTypewriter(lines) {
     tick();
   }
 
+  // Restart effect when source lines change
   watch(lines, restart);
+  
   onMounted(tick);
   onUnmounted(stop);
 

@@ -3,12 +3,10 @@ import { computed } from "vue";
 import { ExternalLink, Github, Gamepad2, Layers, FlaskConical, Code } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppBadge from "@/components/ui/AppBadge.vue";
-import SectionHeader from "@/components/ui/SectionHeader.vue";
+import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
-import { useScrollReveal } from "@/composables/useScrollReveal";
 
 const { t } = useI18n();
-const { target: sectionRef, isVisible } = useScrollReveal();
 
 const projectDefs = [
   {
@@ -69,16 +67,13 @@ const projects = computed(() =>
 </script>
 
 <template>
-  <section id="projects" ref="sectionRef" class="relative py-24 md:py-32 grid-bg">
-    <div class="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none" />
-
-    <div class="relative mx-auto max-w-6xl px-6">
-      <SectionHeader
-        :title="t.projects.title"
-        :subtitle="t.projects.subtitle"
-        :is-visible="isVisible"
-      />
-
+  <SectionLayout
+    id="projects"
+    :title="t.projects.title"
+    :subtitle="t.projects.subtitle"
+    grid-bg
+  >
+    <template #default="{ isVisible }">
       <div :class="['grid grid-cols-1 md:grid-cols-2 gap-6 stagger-children', { revealed: isVisible }]">
         <article
           v-for="project in projects"
@@ -163,6 +158,6 @@ const projects = computed(() =>
           {{ t.projects.viewAll }}
         </AppButton>
       </div>
-    </div>
-  </section>
+    </template>
+  </SectionLayout>
 </template>

@@ -159,4 +159,20 @@ export default {
   footer: {
     builtWith: "Costruito con passione",
   },
+  contact: {
+    title: "Contatti",
+    subtitle: "Mettiamoci in contatto",
+    nameLabel: "Nome",
+    namePlaceholder: "Mario Rossi",
+    emailLabel: "Email",
+    emailPlaceholder: "mario@esempio.it",
+    messageLabel: "Messaggio",
+    messagePlaceholder: "Come posso aiutarti?",
+    sendButton: "Invia Messaggio",
+    sending: "Invio in corso...",
+    successTitle: "Messaggio Inviato!",
+    successMessage: "Grazie per avermi contattato. Ti risponderò il prima possibile.",
+    sendAnother: "Invia un altro messaggio",
+    errorMessage: "Errore durante l'invio. Riprova più tardi."
+  }
 };

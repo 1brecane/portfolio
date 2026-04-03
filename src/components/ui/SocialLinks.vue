@@ -1,10 +1,9 @@
 <script setup>
-import { Github, Linkedin, Mail } from "lucide-vue-next";
+import { Github, Linkedin } from "lucide-vue-next";
 import { SOCIAL_LINKS } from "@/constants/socialLinks";
 
 defineProps({
   iconClass: { type: String, default: "h-5 w-5" },
-  showMail: { type: Boolean, default: false },
 });
 </script>
 
@@ -27,14 +26,6 @@ defineProps({
       aria-label="LinkedIn"
     >
       <Linkedin :class="iconClass" />
-    </a>
-    <a
-      v-if="showMail"
-      :href="`mailto:${SOCIAL_LINKS.email}`"
-      class="text-muted-foreground hover:text-primary transition-colors"
-      aria-label="Email"
-    >
-      <Mail :class="iconClass" />
     </a>
   </div>
 </template>

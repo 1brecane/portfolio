@@ -1,12 +1,10 @@
 <script setup>
 import { computed } from "vue";
 import { Server, Database, Container, Code2 } from "lucide-vue-next";
-import SectionHeader from "@/components/ui/SectionHeader.vue";
+import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
-import { useScrollReveal } from "@/composables/useScrollReveal";
 
 const { t } = useI18n();
-const { target: sectionRef, isVisible } = useScrollReveal();
 
 const stackCategories = [
   {
@@ -67,14 +65,12 @@ const resolvedCategories = computed(() =>
 </script>
 
 <template>
-  <section id="stack" ref="sectionRef" class="relative py-24 md:py-32">
-    <div class="mx-auto max-w-6xl px-6">
-      <SectionHeader
-        :title="t.stack.title"
-        :subtitle="t.stack.subtitle"
-        :is-visible="isVisible"
-      />
-
+  <SectionLayout
+    id="stack"
+    :title="t.stack.title"
+    :subtitle="t.stack.subtitle"
+  >
+    <template #default="{ isVisible }">
       <div :class="['grid grid-cols-1 md:grid-cols-2 gap-6 stagger-children', { revealed: isVisible }]">
         <div
           v-for="category in resolvedCategories"
@@ -104,6 +100,6 @@ const resolvedCategories = computed(() =>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </template>
+  </SectionLayout>
 </template>

@@ -1,14 +1,10 @@
 <script setup>
-import { computed, defineAsyncComponent } from "vue";
+import { computed } from "vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import SocialLinks from "@/components/ui/SocialLinks.vue";
+import ParticleNetwork from "@/components/ParticleNetwork.vue";
 import { useI18n } from "@/i18n";
 import { useTypewriter } from "@/composables/useTypewriter";
-
-/** Deferred so Three.js doesn't block first paint */
-const ParticleNetwork = defineAsyncComponent(() =>
-  import("@/components/ParticleNetwork.vue")
-);
 
 const { t } = useI18n();
 

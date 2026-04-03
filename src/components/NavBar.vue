@@ -7,18 +7,21 @@ import { SOCIAL_LINKS } from "@/constants/socialLinks";
 
 const { t, locale, toggleLocale } = useI18n();
 
+// Dynamically compute navigation links based on current locale
 const navLinks = computed(() => [
   { href: "#hero", label: t.value.nav.home },
   { href: "#about", label: t.value.nav.about },
   { href: "#stack", label: t.value.nav.stack },
   { href: "#projects", label: t.value.nav.projects },
   { href: "#homelab", label: t.value.nav.homelab },
+  { href: "#contact", label: t.value.nav.contact },
 ]);
 
 /** Applies glass background once the user scrolls past the hero fold */
 const isScrolled = ref(false);
 const isMobileMenuOpen = ref(false);
 
+// Updates navigation bar styling based on scroll position
 function handleScroll() {
   isScrolled.value = window.scrollY > 50;
 }
@@ -42,7 +45,7 @@ onUnmounted(() => {
     <div class="mx-auto max-w-6xl px-6 py-4">
       <div class="flex items-center justify-between">
         <!-- Logo -->
-        <a href="#hero" class="font-mono text-sm font-semibold tracking-tight group">
+        <a href="#hero" class="flex-1 font-mono text-sm font-semibold tracking-tight group">
           <span class="text-primary group-hover:neon-text transition-all">SR</span>
           <span class="text-muted-foreground">.</span>
         </a>
@@ -61,7 +64,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Right side: lang toggle + contact -->
-        <div class="hidden md:flex items-center gap-3">
+        <div class="hidden md:flex flex-1 items-center justify-end gap-3">
           <AppButton
             variant="ghost"
             size="icon"
@@ -74,7 +77,7 @@ onUnmounted(() => {
           <span class="font-mono text-xs text-muted-foreground uppercase">{{ locale }}</span>
           <AppButton
             as="a"
-            :href="`mailto:${SOCIAL_LINKS.email}`"
+            href="#contact"
             variant="outline"
             class="font-mono text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground"
           >
@@ -121,7 +124,7 @@ onUnmounted(() => {
           </div>
           <AppButton
             as="a"
-            :href="`mailto:${SOCIAL_LINKS.email}`"
+            href="#contact"
             variant="outline"
             class="font-mono text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground w-fit"
           >

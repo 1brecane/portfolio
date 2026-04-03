@@ -5,13 +5,11 @@ import {
   Activity, Container, Globe, Lock, Image,
   CalendarDays, Route,
 } from "lucide-vue-next";
-import SectionHeader from "@/components/ui/SectionHeader.vue";
+import SectionLayout from "@/components/ui/SectionLayout.vue";
 import StatusDot from "@/components/ui/StatusDot.vue";
 import { useI18n } from "@/i18n";
-import { useScrollReveal } from "@/composables/useScrollReveal";
 
 const { t } = useI18n();
-const { target: sectionRef, isVisible } = useScrollReveal();
 
 const serviceDefs = [
   { name: "Proxmox VE", descKey: "proxmox", icon: Server },
@@ -25,6 +23,7 @@ const serviceDefs = [
   { name: "Tailscale", descKey: "tailscale", icon: Route },
 ];
 
+/** Merges static service definitions with i18n-resolved descriptions */
 const labServices = computed(() =>
   serviceDefs.map((s) => ({
     ...s,
@@ -39,6 +38,7 @@ const specDefs = [
   { labelKey: "storage", value: "1TB", icon: HardDrive },
 ];
 
+/** Merges static spec definitions with i18n-resolved labels */
 const specs = computed(() =>
   specDefs.map((s) => ({
     ...s,
@@ -48,14 +48,12 @@ const specs = computed(() =>
 </script>
 
 <template>
-  <section id="homelab" ref="sectionRef" class="relative py-24 md:py-32">
-    <div class="mx-auto max-w-6xl px-6">
-      <SectionHeader
-        :title="t.homelab.title"
-        :subtitle="t.homelab.subtitle"
-        :is-visible="isVisible"
-      />
-
+  <SectionLayout
+    id="homelab"
+    :title="t.homelab.title"
+    :subtitle="t.homelab.subtitle"
+  >
+    <template #default="{ isVisible }">
       <div :class="['grid grid-cols-1 md:grid-cols-2 gap-6 stagger-children', { revealed: isVisible }]">
         <!-- Left: server card + network/security row -->
         <div class="flex flex-col gap-6">
@@ -200,6 +198,6 @@ const specs = computed(() =>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </template>
+  </SectionLayout>
 </template>

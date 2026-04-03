@@ -15,10 +15,12 @@ export function useScrollReveal(options = {}) {
   onMounted(() => {
     if (!target.value) return;
 
+    // Initialize IntersectionObserver to trigger when element enters viewport
     observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           isVisible.value = true;
+          // Stop observing once revealed to save resources
           observer.disconnect();
         }
       },
@@ -32,6 +34,7 @@ export function useScrollReveal(options = {}) {
   });
 
   onUnmounted(() => {
+    // Clean up observer on component unmount
     observer?.disconnect();
   });
 
