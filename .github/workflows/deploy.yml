@@ -42,23 +42,22 @@ jobs:
 
   deploy:
     needs: build-and-push
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    permissions:
+      packages: read
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script: |
-            docker pull ${{ env.IMAGE_NAME }}:latest
-            docker stop portfolio 2>/dev/null || true
-            docker rm portfolio 2>/dev/null || true
-            docker run -d \
-              --name portfolio \
-              --restart unless-stopped \
-              -p 8080:80 \
-              ${{ env.IMAGE_NAME }}:latest
-            docker image prune -f
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Pull and restart container
+        run: |
+          docker pull ${{ env.IMAGE_NAME }}:latest
+          docker stop portfolio 2>/dev/null || true
+          docker rm portfolio 2>/dev/null || true
+          docker run -d \
+            --name portfolio \
+            --restart unless-stopped \
+            -p 8080:80 \
+            ${{ env.IMAGE_NAME }}:latest
+          docker image prune -f
