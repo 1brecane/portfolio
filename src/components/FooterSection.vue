@@ -4,7 +4,7 @@ import { useI18n } from "@/i18n";
 import { useScrollReveal } from "@/composables/useScrollReveal";
 
 const { t } = useI18n();
-const { target: sectionRef, isVisible } = useScrollReveal({ threshold: 0.3 });
+const { isVisible } = useScrollReveal("sectionRef", { threshold: 0.3 });
 const currentYear = new Date().getFullYear();
 </script>
 

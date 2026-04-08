@@ -58,12 +58,12 @@ const sendEmail = async () => {
           </div>
           <h3 class="text-2xl font-bold mb-2">{{ t.contact.successTitle }}</h3>
           <p class="text-muted-foreground">{{ t.contact.successMessage }}</p>
-          <AppButton @click="status = 'idle'" variant="outline" class="mt-6">
+          <AppButton variant="outline" class="mt-6" @click="status = 'idle'">
             {{ t.contact.sendAnother }}
           </AppButton>
         </div>
 
-        <form v-else @submit.prevent="sendEmail" class="space-y-6">
+        <form v-else class="space-y-6" @submit.prevent="sendEmail">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
               <label for="name" class="text-sm font-medium text-foreground">{{ t.contact.nameLabel }}</label>

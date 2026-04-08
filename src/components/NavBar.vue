@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Menu, X, Languages } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import { useI18n } from "@/i18n";
-import { SOCIAL_LINKS } from "@/constants/socialLinks";
 
 const { t, locale, toggleLocale } = useI18n();
 
@@ -27,7 +26,7 @@ function handleScroll() {
 }
 
 onMounted(() => {
-  window.addEventListener("scroll", handleScroll);
+  window.addEventListener("scroll", handleScroll, { passive: true });
 });
 
 onUnmounted(() => {

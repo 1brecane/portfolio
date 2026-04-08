@@ -13,7 +13,7 @@ const timelineDefs = [
     type: "work",
     icon: Briefcase,
     period: "ago 2025 - presente",
-    skills: ["JavaScript", "Node.js", "MongoDB", "React", "C#", "DevOps"],
+    skills: ["JavaScript", "Node.js", "MongoDB", "RabbitMQ", "C#", "DevOps"],
   },
   {
     id: "edu-its",
@@ -26,7 +26,7 @@ const timelineDefs = [
     id: "edu-itet",
     type: "education",
     icon: GraduationCap,
-    period: "2019 - 2024",
+    period: "set 2019 - giu 2024",
     skills: ["Economia Aziendale", "C++", "HTML5", "CSS", "PHP", "Visual Basic"],
   },
 ];

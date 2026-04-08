@@ -26,12 +26,12 @@ const { displayedLines } = useTypewriter(terminalLines);
             <div class="w-3 h-3 rounded-full bg-destructive" />
             <div class="w-3 h-3 rounded-full bg-chart-4" />
             <div class="w-3 h-3 rounded-full bg-chart-2" />
-            <span class="ml-4 font-mono text-xs text-muted-foreground">terminal</span>
+            <span class="ml-4 font-mono text-xs text-muted-foreground">bash</span>
           </div>
           <div class="p-6 text-left font-mono text-sm">
             <div
               v-for="(line, index) in displayedLines"
-              :key="index"
+              :key="`line-${index}-${line}`"
               :class="line.startsWith('$') ? 'text-primary' : 'text-foreground'"
             >
               {{ line }}

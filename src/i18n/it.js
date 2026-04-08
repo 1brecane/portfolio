@@ -16,9 +16,9 @@ export default {
       "Costruisco sistemi scalabili, un commit alla volta.",
       "$ _",
     ],
-    headline: "Architetture",
-    headlineHighlight: "Robuste",
-    headlineEnd: "per il Backend",
+    headline: "Dal Codice alla",
+    headlineHighlight: "Produzione",
+    headlineEnd: "",
     subheadline:
       "Sono Samuele Ruaro -- uno sviluppatore backend che costruisce sistemi enterprise, infrastrutture self-hosted e API scalabili. Dai cluster Proxmox ai servizi Node.js in produzione, trasformo problemi complessi in soluzioni pulite e manutenibili.",
     viewProjects: "Vedi Progetti",
@@ -45,14 +45,20 @@ export default {
       mongodb: "Document store",
       redis: "Cache in-memory",
       postgresql: "SQL avanzato",
+      sqlite: "DB embedded",
+      elasticsearch: "Ricerca full-text",
       docker: "Containerizzazione",
       git: "Controllo versione",
       cicd: "Automazione",
       linux: "Sistema operativo",
+      nginx: "Web server & proxy",
+      portainer: "Gestione container",
       proxmox: "Virtualizzazione",
       lxc: "VM leggere",
       networking: "VLAN & DNS",
       monitoring: "Salute del sistema",
+      tailscale: "VPN mesh",
+      pihole: "DNS & ad-block",
     },
   },
   projects: {
@@ -70,9 +76,9 @@ export default {
     },
     items: [
       {
-        title: "Gioco in Python",
+        title: "Cattenheimer",
         description:
-          "Un gioco RPG a terminale interamente in Python. Include generazione procedurale di dungeon, sistemi di combattimento e salvataggio/caricamento.",
+          "Un gioco \"esercizio di stile\" in Python con un singolo livello custom creato con TSX e TMX, nemici con AI basilare e senza sistema di salvataggio/caricamento.",
       },
       {
         title: "App Gestionale Full-Stack",

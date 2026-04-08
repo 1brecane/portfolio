@@ -21,7 +21,6 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("@emailjs")) return "emailjs";
-          if (id.includes("lucide")) return "icons";
         },
       },
     },

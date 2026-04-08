@@ -16,7 +16,7 @@
   --secondary: oklch(0.18 0.005 250);
   --secondary-foreground: oklch(0.85 0 0);
   --muted: oklch(0.22 0.005 250);
-  --muted-foreground: oklch(0.65 0 0);
+  --muted-foreground: oklch(0.71 0 0);
   --accent: oklch(0.65 0.25 25);
   --accent-foreground: oklch(0.98 0 0);
   --destructive: oklch(0.55 0.22 25);
@@ -96,6 +96,15 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

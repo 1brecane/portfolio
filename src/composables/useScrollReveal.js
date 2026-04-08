@@ -1,14 +1,14 @@
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, useTemplateRef, onMounted, onUnmounted } from "vue";
 
 /**
  * Observes an element's intersection with the viewport and flips
  * `isVisible` to true once it enters. Disconnects immediately after
  * triggering to avoid unnecessary observation.
  *
- * Bind `target` as a template ref on the element to watch.
+ * @param {string} refName - The template ref name to observe.
  */
-export function useScrollReveal(options = {}) {
-  const target = ref(null);
+export function useScrollReveal(refName, options = {}) {
+  const target = useTemplateRef(refName);
   const isVisible = ref(false);
   let observer = null;
 
@@ -38,5 +38,5 @@ export function useScrollReveal(options = {}) {
     observer?.disconnect();
   });
 
-  return { target, isVisible };
+  return { isVisible };
 }

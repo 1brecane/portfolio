@@ -9,7 +9,7 @@ defineProps({
   gridBg: { type: Boolean, default: false },
 });
 
-const { target: sectionRef, isVisible } = useScrollReveal();
+const { isVisible } = useScrollReveal("sectionRef");
 </script>
 
 <template>

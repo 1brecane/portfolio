@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { useTemplateRef, onMounted, onUnmounted } from "vue";
 
-const canvas = ref(null);
+const canvas = useTemplateRef("canvas");
 
 let ctx;
 let animationId = null;
@@ -11,10 +11,10 @@ let width = 0;
 let height = 0;
 let dpr = 1;
 
-const PARTICLE_COUNT = 120;
+const PARTICLE_COUNT = 200;
 const CONNECTION_DISTANCE = 150;
 const PRIMARY_R = 212, PRIMARY_G = 72, PRIMARY_B = 59;
-const DIM_R = 51, DIM_G = 37, DIM_B = 37;
+const DIM_R = 150, DIM_G = 137, DIM_B = 137;
 
 const particles = [];
 
@@ -111,8 +111,8 @@ function init() {
   ctx = el.getContext("2d");
   resize();
   initParticles();
-  window.addEventListener("mousemove", onMouseMove);
-  window.addEventListener("resize", resize);
+  window.addEventListener("mousemove", onMouseMove, { passive: true });
+  window.addEventListener("resize", resize, { passive: true });
   animate();
 }
 
@@ -127,5 +127,5 @@ onUnmounted(cleanup);
 </script>
 
 <template>
-  <canvas ref="canvas" class="absolute inset-0 w-full h-full" />
+  <canvas ref="canvas" aria-hidden="true" class="absolute inset-0 w-full h-full" />
 </template>

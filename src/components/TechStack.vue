@@ -27,6 +27,8 @@ const stackCategories = [
       { name: "MongoDB", descriptionKey: "mongodb" },
       { name: "Redis", descriptionKey: "redis" },
       { name: "PostgreSQL", descriptionKey: "postgresql" },
+      { name: "SQLite", descriptionKey: "sqlite" },
+      { name: "Elasticsearch", descriptionKey: "elasticsearch" },
     ],
   },
   {
@@ -37,6 +39,8 @@ const stackCategories = [
       { name: "Git", descriptionKey: "git" },
       { name: "CI/CD", descriptionKey: "cicd" },
       { name: "Linux", descriptionKey: "linux" },
+      { name: "Nginx", descriptionKey: "nginx" },
+      { name: "Portainer", descriptionKey: "portainer" },
     ],
   },
   {
@@ -47,6 +51,8 @@ const stackCategories = [
       { name: "LXC Containers", descriptionKey: "lxc" },
       { name: "Networking", descriptionKey: "networking" },
       { name: "Monitoring", descriptionKey: "monitoring" },
+      { name: "Tailscale", descriptionKey: "tailscale" },
+      { name: "Pi-hole", descriptionKey: "pihole" },
     ],
   },
 ];

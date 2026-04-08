@@ -12,7 +12,7 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-onMounted(() => window.addEventListener("scroll", handleScroll));
+onMounted(() => window.addEventListener("scroll", handleScroll, { passive: true }));
 onUnmounted(() => window.removeEventListener("scroll", handleScroll));
 </script>
 

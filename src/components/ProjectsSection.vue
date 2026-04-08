@@ -30,7 +30,7 @@ const projectDefs = [
   {
     id: 3,
     icon: FlaskConical,
-    tags: ["Node.js", "Redis", "RabbitMQ", "gRPC"],
+    tags: ["Node.js", "Redis", "gRPC"],
     github: "https://github.com/1brecane/paidia_be",
     demo: null,
     type: "lab",
