@@ -7,7 +7,6 @@ export default defineConfig({
   plugins: [
     vue(),
     compression({ algorithm: "gzip", threshold: 1024 }),
-    compression({ algorithm: "brotliCompress", threshold: 1024 }),
   ],
   resolve: {
     alias: {
