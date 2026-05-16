@@ -101,41 +101,12 @@ export default {
     title: "Infrastruttura Self-Hosted",
     subtitle:
       "Il mio server casalingo basato su Proxmox per sviluppo, testing e servizi in produzione.",
-    serverTitle: "Home Server",
-    serverSubtitle: "Host Proxmox VE",
-    online: "ONLINE",
-    cpuUsage: "Uso CPU: 65% | Memoria: 11GB / 16GB",
-    specs: { cpus: "CPU", threads: "Thread", ram: "RAM", storage: "Storage" },
-    runningServices: "Servizi Attivi",
-    services: {
-      proxmox: "Hypervisor",
-      pihole: "DNS & ad-blocking",
-      cloudflare: "Esposizione sicura",
-      vaultwarden: "Gestore password",
-      nginx: "Reverse proxy",
-      docker: "Orchestrazione container",
-      immich: "Gestione foto",
-      baikal: "CalDAV/CardDAV",
-      tailscale: "VPN mesh",
+    comingSoon: {
+      badge: "In lavorazione",
+      title: "Dashboard in arrivo",
+      message:
+        "Ci sto lavorando per renderla dinamica: metriche, servizi e uptime verranno da API o monitoring reale.",
     },
-    network: "Rete",
-    networkItems: { dns: "DNS", tunnel: "Tunnel", vpn: "VPN", proxy: "Proxy" },
-    security: "Sicurezza",
-    securityItems: {
-      firewall: "Firewall",
-      enabled: "Attivo",
-      ssl: "SSL/TLS",
-      sslValue: "Let's Encrypt",
-      backups: "Backup",
-      backupsValue: "Giornalieri",
-      twofa: "2FA",
-      twofaValue: "Tutti gli utenti",
-    },
-    uptime: "Uptime",
-    uptimePeriod: "Ultimi 90 giorni",
-    uptimeBar: "Ultimi 30 giorni",
-    maintenance: "Manutenzione",
-    operational: "Operativo",
   },
   about: {
     title: "Chi Sono",
@@ -145,18 +116,21 @@ export default {
       "work-infogest": {
         title: "Sviluppatore Junior Backend",
         place: "Infogestweb s.r.l.",
+        period: "ago 2025 - presente",
         description:
           "Sviluppo e manutenzione di servizi backend, API REST e pipeline DevOps. Lavoro con microservizi Node.js, layer dati MongoDB e integrazioni enterprise in C#.",
       },
       "edu-its": {
         title: "Diploma Tecnico Superiore -- Web Developer Full Stack",
         place: "ITS Digital Academy Mario Volpato",
+        period: "ott 2024 - lug 2026",
         description:
           "Percorso biennale intensivo focalizzato sullo sviluppo full-stack: framework frontend, architetture backend, database relazionali e documentali, metodologie agili.",
       },
       "edu-itet": {
         title: "Diploma di Scuola Superiore -- Sistemi Informativi Aziendali",
         place: "ITET L.E V. Pasini",
+        period: "set 2019 - giu 2024",
         description:
           "Percorso quinquennale che combina economia aziendale e fondamenti di programmazione, dai linguaggi procedurali alle tecnologie web.",
       },

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, defineAsyncComponent, onMounted } from "vue";
+import AsciiStarfield from "@/components/AsciiStarfield.vue";
 import NavBar from "@/components/NavBar.vue";
 import HeroSection from "@/components/HeroSection.vue";
 import NotFound from "@/components/NotFound.vue";
@@ -23,11 +24,14 @@ onMounted(() => {
 </script>
 
 <template>
+  <AsciiStarfield />
   <template v-if="isNotFound">
-    <NotFound />
+    <div class="relative z-[2] min-h-screen">
+      <NotFound />
+    </div>
   </template>
   <template v-else>
-    <main class="min-h-screen">
+    <main class="relative z-[2] min-h-screen">
       <NavBar />
       <HeroSection />
       <AboutSection />

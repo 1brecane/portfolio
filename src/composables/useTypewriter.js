@@ -1,4 +1,4 @@
-import { ref, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 
 /**
  * Simulates a terminal typewriter effect over an array of strings.
@@ -66,5 +66,7 @@ export function useTypewriter(lines) {
   onMounted(tick);
   onUnmounted(stop);
 
-  return { displayedLines };
+  const isFinished = computed(() => currentLineIndex.value >= lines.value.length);
+
+  return { displayedLines, isFinished };
 }

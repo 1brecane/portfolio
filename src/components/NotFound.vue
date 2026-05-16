@@ -5,7 +5,6 @@ import { Home } from 'lucide-vue-next';
 
 const typedText = ref('');
 const fullText = '404: Page Not Found';
-const showCursor = ref(true);
 
 onMounted(() => {
   let i = 0;
@@ -28,7 +27,7 @@ onMounted(() => {
     <div class="relative z-10 max-w-2xl mx-auto px-6 text-center">
       
       <h1 class="text-5xl md:text-7xl font-mono font-bold text-foreground mb-6">
-        <span class="text-primary">></span> {{ typedText }}<span v-show="showCursor" class="cursor-blink text-primary">_</span>
+        <span class="text-primary">></span> {{ typedText }}<span class="cursor-blink text-primary">_</span>
       </h1>
       
       <p class="text-xl text-muted-foreground mb-10 max-w-lg mx-auto">

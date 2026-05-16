@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from "vue";
-import { ExternalLink, Github, Gamepad2, Layers, FlaskConical, Code } from "lucide-vue-next";
+import { ExternalLink, Github } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppBadge from "@/components/ui/AppBadge.vue";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
@@ -8,60 +8,64 @@ import { useI18n } from "@/i18n";
 
 const { t } = useI18n();
 
+// ── tech logos ────────────────────────────────────────────────────────────────
+const logos = {
+  python:     `<img src="/python.png"     width="22" height="22" alt="Python"     style="object-fit:contain" />`,
+  nestjs:     `<img src="/nestjs.png"     width="22" height="22" alt="NestJS"     style="object-fit:contain" />`,
+  vue:        `<img src="/vue.png"        width="22" height="22" alt="Vue.js"     style="object-fit:contain" />`,
+  javascript: `<img src="/javascript.png" width="22" height="22" alt="JavaScript" style="object-fit:contain" />`,
+  react:      `<img src="/react.png"      width="22" height="22" alt="React"      style="object-fit:contain" />`,
+};
+
 const projectDefs = [
   {
     id: 1,
-    icon: Gamepad2,
+    logoHtml: logos.python,
     tags: ["Python", "CLI", "Game Dev"],
     github: "https://github.com/1brecane/cattenheimer",
     demo: null,
     type: "gaming",
-    accentColor: "from-chart-4 to-chart-5",
+    accentColor: "from-[#3776AB] to-[#FFD43B]",
+    badgeClass: "bg-[#3776AB]/20 text-[#3776AB] border-[#3776AB]/30",
   },
   {
     id: 2,
-    icon: Layers,
+    logoHtml: `<span class="flex items-center gap-1">${logos.javascript}${logos.react}</span>`,
     tags: ["Fastify", "React", "MySQL", "Docker"],
     github: "https://github.com/1brecane/centro-sportivo-be",
     demo: null,
     type: "fullstack",
-    accentColor: "from-chart-2 to-primary",
+    accentColor: "from-[#F7DF1E] to-[#61DAFB]",
+    badgeClass: "bg-[#61DAFB]/20 text-[#61DAFB] border-[#61DAFB]/30",
   },
   {
     id: 3,
-    icon: FlaskConical,
-    tags: ["Node.js", "Redis", "gRPC"],
+    logoHtml: logos.nestjs,
+    tags: ["NestJS", "Redis", "gRPC"],
     github: "https://github.com/1brecane/paidia_be",
     demo: null,
     type: "lab",
-    accentColor: "from-chart-3 to-chart-5",
+    accentColor: "from-[#E0234E] to-[#ea2845]",
+    badgeClass: "bg-[#E0234E]/20 text-[#E0234E] border-[#E0234E]/30",
   },
   {
     id: 4,
-    icon: Code,
+    logoHtml: logos.vue,
     tags: ["Vue.js", "Tailwind", "JavaScript"],
     github: "https://github.com/1brecane/portfolio",
     demo: null,
     type: "frontend",
-    accentColor: "from-primary to-chart-2",
+    accentColor: "from-[#41b883] to-[#35495e]",
+    badgeClass: "bg-[#41b883]/20 text-[#41b883] border-[#41b883]/30",
   },
 ];
 
-const typeStyles = {
-  gaming: "bg-chart-4/20 text-chart-4 border-chart-4/30",
-  fullstack: "bg-chart-2/20 text-chart-2 border-chart-2/30",
-  lab: "bg-chart-3/20 text-chart-3 border-chart-3/30",
-  frontend: "bg-primary/20 text-primary border-primary/30",
-};
-
-/** Merges static project definitions with i18n-resolved titles/descriptions */
 const projects = computed(() =>
   projectDefs.map((def, i) => ({
     ...def,
     title: t.value.projects.items[i].title,
     description: t.value.projects.items[i].description,
     typeLabel: t.value.projects.types[def.type],
-    typeClass: typeStyles[def.type],
   }))
 );
 </script>
@@ -80,19 +84,20 @@ const projects = computed(() =>
           :key="project.id"
           class="group relative bg-card border border-border rounded-lg overflow-hidden card-glow"
         >
+          <!-- coloured accent bar -->
           <div :class="`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${project.accentColor}`" />
 
           <div class="p-6">
             <div class="flex items-start justify-between mb-4">
               <div class="flex items-center gap-3">
-                <div class="p-2 rounded-lg bg-muted border border-border">
-                  <component :is="project.icon" class="h-5 w-5 text-primary" />
-                </div>
+                <!-- tech logo -->
+                <div class="p-2 rounded-lg bg-muted border border-border flex items-center justify-center min-w-[40px] min-h-[40px]"
+                     v-html="project.logoHtml" />
                 <div>
                   <h3 class="font-semibold text-lg">{{ project.title }}</h3>
                   <AppBadge
                     variant="outline"
-                    :class="`mt-1 text-xs ${project.typeClass}`"
+                    :class="`mt-1 text-xs ${project.badgeClass}`"
                   >
                     {{ project.typeLabel }}
                   </AppBadge>

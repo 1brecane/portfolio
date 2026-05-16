@@ -72,7 +72,7 @@ const sendEmail = async () => {
                 v-model="form.name"
                 type="text"
                 required
-                class="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                class="form-input"
                 :placeholder="t.contact.namePlaceholder"
                 :disabled="status === 'loading'"
               />
@@ -84,7 +84,7 @@ const sendEmail = async () => {
                 v-model="form.email"
                 type="email"
                 required
-                class="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                class="form-input"
                 :placeholder="t.contact.emailPlaceholder"
                 :disabled="status === 'loading'"
               />
@@ -98,7 +98,7 @@ const sendEmail = async () => {
               v-model="form.message"
               required
               rows="5"
-              class="w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
+              class="form-input resize-none"
               :placeholder="t.contact.messagePlaceholder"
               :disabled="status === 'loading'"
             ></textarea>

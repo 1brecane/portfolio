@@ -25,9 +25,5 @@ export function useI18n() {
     localStorage.setItem("locale", l);
   }
 
-  function toggleLocale() {
-    setLocale(locale.value === "en" ? "it" : "en");
-  }
-
-  return { locale, t, setLocale, toggleLocale };
+  return { locale, t, setLocale };
 }

@@ -12,21 +12,18 @@ const timelineDefs = [
     id: "work-infogest",
     type: "work",
     icon: Briefcase,
-    period: "ago 2025 - presente",
     skills: ["JavaScript", "Node.js", "MongoDB", "RabbitMQ", "C#", "DevOps"],
   },
   {
     id: "edu-its",
     type: "education",
     icon: GraduationCap,
-    period: "ott 2024 - lug 2026",
     skills: ["HTML5", "JavaScript", "CSS", "MongoDB", "MySQL", "React", "Node.js", "Python", "C#"],
   },
   {
     id: "edu-itet",
     type: "education",
     icon: GraduationCap,
-    period: "set 2019 - giu 2024",
     skills: ["Economia Aziendale", "C++", "HTML5", "CSS", "PHP", "Visual Basic"],
   },
 ];
@@ -42,6 +39,7 @@ const timeline = computed(() =>
     ...entry,
     title: t.value.about.timeline[entry.id].title,
     place: t.value.about.timeline[entry.id].place,
+    period: t.value.about.timeline[entry.id].period,
     description: t.value.about.timeline[entry.id].description,
     dot: dotColor[entry.type],
   }))

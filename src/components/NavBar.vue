@@ -1,26 +1,23 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { Menu, X, Languages } from "lucide-vue-next";
+import { Menu, X } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
+import LocaleToggle from "@/components/ui/LocaleToggle.vue";
 import { useI18n } from "@/i18n";
 
-const { t, locale, toggleLocale } = useI18n();
+const { t } = useI18n();
 
-// Dynamically compute navigation links based on current locale
 const navLinks = computed(() => [
   { href: "#hero", label: t.value.nav.home },
   { href: "#about", label: t.value.nav.about },
   { href: "#stack", label: t.value.nav.stack },
   { href: "#projects", label: t.value.nav.projects },
   { href: "#homelab", label: t.value.nav.homelab },
-  { href: "#contact", label: t.value.nav.contact },
 ]);
 
-/** Applies glass background once the user scrolls past the hero fold */
 const isScrolled = ref(false);
 const isMobileMenuOpen = ref(false);
 
-// Updates navigation bar styling based on scroll position
 function handleScroll() {
   isScrolled.value = window.scrollY > 50;
 }
@@ -43,13 +40,11 @@ onUnmounted(() => {
   >
     <div class="mx-auto max-w-6xl px-6 py-4">
       <div class="flex items-center justify-between">
-        <!-- Logo -->
         <a href="#hero" class="flex-1 font-mono text-sm font-semibold tracking-tight group">
           <span class="text-primary group-hover:neon-text transition-all">SR</span>
           <span class="text-muted-foreground">.</span>
         </a>
 
-        <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center gap-8">
           <a
             v-for="link in navLinks"
@@ -62,18 +57,8 @@ onUnmounted(() => {
           </a>
         </div>
 
-        <!-- Right side: lang toggle + contact -->
         <div class="hidden md:flex flex-1 items-center justify-end gap-3">
-          <AppButton
-            variant="ghost"
-            size="icon"
-            class="text-muted-foreground hover:text-primary"
-            aria-label="Toggle language"
-            @click="toggleLocale"
-          >
-            <Languages class="h-4 w-4" />
-          </AppButton>
-          <span class="font-mono text-xs text-muted-foreground uppercase">{{ locale }}</span>
+          <LocaleToggle />
           <AppButton
             as="a"
             href="#contact"
@@ -84,7 +69,6 @@ onUnmounted(() => {
           </AppButton>
         </div>
 
-        <!-- Mobile Menu Button -->
         <AppButton
           variant="ghost"
           size="icon"
@@ -97,7 +81,6 @@ onUnmounted(() => {
         </AppButton>
       </div>
 
-      <!-- Mobile Menu -->
       <div v-if="isMobileMenuOpen" class="md:hidden mt-4 pb-4 border-t border-border pt-4">
         <div class="flex flex-col gap-4">
           <a
@@ -109,26 +92,18 @@ onUnmounted(() => {
           >
             {{ link.label }}
           </a>
-          <div class="flex items-center gap-3">
+          <div class="flex flex-wrap items-center gap-3">
+            <LocaleToggle />
             <AppButton
-              variant="ghost"
-              size="icon"
-              class="text-muted-foreground hover:text-primary"
-              aria-label="Toggle language"
-              @click="toggleLocale"
+              as="a"
+              href="#contact"
+              variant="outline"
+              class="font-mono text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              @click="isMobileMenuOpen = false"
             >
-              <Languages class="h-4 w-4" />
+              {{ t.nav.contact }}
             </AppButton>
-            <span class="font-mono text-xs text-muted-foreground uppercase">{{ locale }}</span>
           </div>
-          <AppButton
-            as="a"
-            href="#contact"
-            variant="outline"
-            class="font-mono text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground w-fit"
-          >
-            {{ t.nav.contact }}
-          </AppButton>
         </div>
       </div>
     </div>

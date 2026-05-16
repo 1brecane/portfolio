@@ -101,41 +101,12 @@ export default {
     title: "Self-Hosted Infrastructure",
     subtitle:
       "My personal Proxmox-based home server setup for development, testing, and running production services.",
-    serverTitle: "Home Server",
-    serverSubtitle: "Proxmox VE Host",
-    online: "ONLINE",
-    cpuUsage: "CPU Usage: 65% | Memory: 11GB / 16GB",
-    specs: { cpus: "CPUs", threads: "Threads", ram: "RAM", storage: "Storage" },
-    runningServices: "Running Services",
-    services: {
-      proxmox: "Hypervisor",
-      pihole: "DNS & ad-blocking",
-      cloudflare: "Secure exposure",
-      vaultwarden: "Password manager",
-      nginx: "Reverse proxy",
-      docker: "Container orchestration",
-      immich: "Photo management",
-      baikal: "CalDAV/CardDAV",
-      tailscale: "Mesh VPN",
+    comingSoon: {
+      badge: "Work in progress",
+      title: "Dashboard coming soon",
+      message:
+        "I'm working on making this dynamic — metrics, services, and uptime will come from real APIs or monitoring.",
     },
-    network: "Network",
-    networkItems: { dns: "DNS", tunnel: "Tunnel", vpn: "VPN", proxy: "Proxy" },
-    security: "Security",
-    securityItems: {
-      firewall: "Firewall",
-      enabled: "Enabled",
-      ssl: "SSL/TLS",
-      sslValue: "Let's Encrypt",
-      backups: "Backups",
-      backupsValue: "Daily",
-      twofa: "2FA",
-      twofaValue: "All users",
-    },
-    uptime: "Uptime",
-    uptimePeriod: "Last 90 days",
-    uptimeBar: "Last 30 days",
-    maintenance: "Maintenance",
-    operational: "Operational",
   },
   about: {
     title: "About Me",
@@ -145,18 +116,21 @@ export default {
       "work-infogest": {
         title: "Junior Backend Developer",
         place: "Infogestweb s.r.l.",
+        period: "Aug 2025 - Present",
         description:
           "Building and maintaining backend services, REST APIs, and DevOps pipelines. Working with Node.js microservices, MongoDB data layers, and C# enterprise integrations.",
       },
       "edu-its": {
         title: "Higher Technical Diploma -- Full Stack Web Developer",
         place: "ITS Digital Academy Mario Volpato",
+        period: "Oct 2024 - Jul 2026",
         description:
           "Two-year intensive program focused on full-stack development, covering frontend frameworks, backend architectures, relational and document databases, and agile methodologies.",
       },
       "edu-itet": {
         title: "High School Diploma -- Business Information Systems",
         place: "ITET L.E V. Pasini",
+        period: "Sep 2019 - Jun 2024",
         description:
           "Five-year technical program combining business economics with programming fundamentals, from procedural languages to web technologies.",
       },
