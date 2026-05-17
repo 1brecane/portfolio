@@ -5,6 +5,7 @@ import AppButton from "@/components/ui/AppButton.vue";
 import AppBadge from "@/components/ui/AppBadge.vue";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
+import { SOCIAL_LINKS } from "@/constants/socialLinks";
 
 const { t } = useI18n();
 
@@ -169,7 +170,7 @@ const projects = computed(() =>
           variant="outline"
           size="lg"
           class="font-mono border-border hover:border-primary hover:text-primary gap-2"
-          href="https://github.com/1brecane"
+          :href="SOCIAL_LINKS.github"
           target="_blank"
           rel="noopener noreferrer"
         >

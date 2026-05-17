@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from "vue";
 import { Server, Database, Container, Code2 } from "lucide-vue-next";
+import IconBox from "@/components/ui/IconBox.vue";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
 
@@ -84,9 +85,9 @@ const resolvedCategories = computed(() =>
           class="group bg-card border border-border rounded-lg p-6 card-glow"
         >
           <div class="flex items-center gap-3 mb-6">
-            <div class="p-2 rounded-lg bg-primary/10 border border-primary/20">
+            <IconBox>
               <component :is="category.icon" class="h-5 w-5 text-primary" />
-            </div>
+            </IconBox>
             <h3 class="font-semibold text-lg">{{ category.title }}</h3>
           </div>
 

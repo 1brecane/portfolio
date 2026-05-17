@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed } from "vue";
 import { Menu, X } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import LocaleToggle from "@/components/ui/LocaleToggle.vue";
 import { useI18n } from "@/i18n";
+import { useWindowScroll } from "@/composables/useWindowScroll";
 
 const { t } = useI18n();
 
@@ -15,20 +16,11 @@ const navLinks = computed(() => [
   { href: "#homelab", label: t.value.nav.homelab },
 ]);
 
-const isScrolled = ref(false);
+const { scrollY } = useWindowScroll();
+const isScrolled = computed(() => scrollY.value > 50);
 const isMobileMenuOpen = ref(false);
 
-function handleScroll() {
-  isScrolled.value = window.scrollY > 50;
-}
-
-onMounted(() => {
-  window.addEventListener("scroll", handleScroll, { passive: true });
-});
-
-onUnmounted(() => {
-  window.removeEventListener("scroll", handleScroll);
-});
+const contactBtnClass = "font-mono text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground";
 </script>
 
 <template>
@@ -63,7 +55,7 @@ onUnmounted(() => {
             as="a"
             href="#contact"
             variant="outline"
-            class="font-mono text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            :class="contactBtnClass"
           >
             {{ t.nav.contact }}
           </AppButton>
@@ -98,7 +90,7 @@ onUnmounted(() => {
               as="a"
               href="#contact"
               variant="outline"
-              class="font-mono text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              :class="contactBtnClass"
               @click="isMobileMenuOpen = false"
             >
               {{ t.nav.contact }}

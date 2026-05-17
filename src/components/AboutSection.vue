@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { GraduationCap, Briefcase, Calendar } from "lucide-vue-next";
 import AppBadge from "@/components/ui/AppBadge.vue";
+import IconBox from "@/components/ui/IconBox.vue";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
 
@@ -33,14 +34,10 @@ const dotColor = {
   education: "border-primary",
 };
 
-/** Merges static timeline definitions with i18n-resolved labels */
 const timeline = computed(() =>
   timelineDefs.map((entry) => ({
     ...entry,
-    title: t.value.about.timeline[entry.id].title,
-    place: t.value.about.timeline[entry.id].place,
-    period: t.value.about.timeline[entry.id].period,
-    description: t.value.about.timeline[entry.id].description,
+    ...t.value.about.timeline[entry.id],
     dot: dotColor[entry.type],
   }))
 );
@@ -66,9 +63,9 @@ const timeline = computed(() =>
           <div class="bg-card border border-border rounded-lg p-6 card-glow">
             <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
               <div class="flex items-center gap-3">
-                <div class="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                <IconBox>
                   <component :is="entry.icon" class="h-5 w-5 text-primary" />
-                </div>
+                </IconBox>
                 <div>
                   <h3 class="font-semibold text-lg">{{ entry.title }}</h3>
                   <p class="text-sm text-muted-foreground">{{ entry.place }}</p>

@@ -1,19 +1,14 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { computed } from "vue";
 import { ArrowUp } from "lucide-vue-next";
+import { useWindowScroll } from "@/composables/useWindowScroll";
 
-const isVisible = ref(false);
-
-function handleScroll() {
-  isVisible.value = window.scrollY > 600;
-}
+const { scrollY } = useWindowScroll();
+const isVisible = computed(() => scrollY.value > 600);
 
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
-
-onMounted(() => window.addEventListener("scroll", handleScroll, { passive: true }));
-onUnmounted(() => window.removeEventListener("scroll", handleScroll));
 </script>
 
 <template>

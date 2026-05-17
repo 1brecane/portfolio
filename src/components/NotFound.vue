@@ -1,22 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { computed } from 'vue';
 import AppButton from '@/components/ui/AppButton.vue';
 import { Home } from 'lucide-vue-next';
+import { useTypewriter } from '@/composables/useTypewriter';
 
-const typedText = ref('');
-const fullText = '404: Page Not Found';
-
-onMounted(() => {
-  let i = 0;
-  const typeWriter = setInterval(() => {
-    if (i < fullText.length) {
-      typedText.value += fullText.charAt(i);
-      i++;
-    } else {
-      clearInterval(typeWriter);
-    }
-  }, 100);
-});
+const lines = computed(() => ["404: Page Not Found"]);
+const { displayedLines } = useTypewriter(lines);
 </script>
 
 <template>
@@ -27,7 +16,7 @@ onMounted(() => {
     <div class="relative z-10 max-w-2xl mx-auto px-6 text-center">
       
       <h1 class="text-5xl md:text-7xl font-mono font-bold text-foreground mb-6">
-        <span class="text-primary">></span> {{ typedText }}<span class="cursor-blink text-primary">_</span>
+        <span class="text-primary">></span> {{ displayedLines[0] ?? '' }}<span class="cursor-blink text-primary">_</span>
       </h1>
       
       <p class="text-xl text-muted-foreground mb-10 max-w-lg mx-auto">

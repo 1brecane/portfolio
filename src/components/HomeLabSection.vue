@@ -2,6 +2,7 @@
 import { Construction } from "lucide-vue-next";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
 import AppBadge from "@/components/ui/AppBadge.vue";
+import IconBox from "@/components/ui/IconBox.vue";
 import { useI18n } from "@/i18n";
 
 const { t } = useI18n();
@@ -23,9 +24,9 @@ const { t } = useI18n();
       >
         <div class="bg-card border border-border rounded-lg p-10 card-glow">
           <div class="flex flex-col items-center gap-5 text-center">
-            <div class="p-4 rounded-lg bg-primary/10 border border-primary/20">
+            <IconBox size="lg">
               <Construction class="h-8 w-8 text-primary" />
-            </div>
+            </IconBox>
             <AppBadge variant="outline" class="font-mono border-primary/30 text-primary">
               {{ t.homelab.comingSoon.badge }}
             </AppBadge>
