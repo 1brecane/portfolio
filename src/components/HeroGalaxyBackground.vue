@@ -61,13 +61,13 @@ function density(r, theta, rot) {
   return Math.max(core, arm);
 }
 
-// ── colour: white-hot core → orange-red → vivid red → deep crimson ───────────
+// ── colour: white-hot core → bright amber → vivid red → visible crimson ──────
 function charColor(r) {
-  if (r < 0.13) return "#fff0e8";
-  if (r < 0.22) return "#ff6644";
-  if (r < 0.40) return "#ee2200";
-  if (r < 0.70) return "#cc1100";
-  return               "#991100";
+  if (r < 0.13) return "#ffffff";
+  if (r < 0.22) return "#ffaa77";
+  if (r < 0.40) return "#ff5533";
+  if (r < 0.70) return "#ee3311";
+  return               "#7a1208";
 }
 
 // ── draw one frame ────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ function draw(canvas, elapsed) {
 
       // ── scatter: treat density as probability of a star existing ─────────
       const isCore = r < CORE_R;
-      const fillRate = isCore ? 1.0 : r < CORE_R * 2.5 ? 0.92 : 0.50;
+      const fillRate = isCore ? 1.0 : r < CORE_R * 2.5 ? 0.95 : 0.68;
       if (h1 > d * fillRate) continue;
 
       // ── character: heavy glyphs in core, light particles in arms ─────────
@@ -137,8 +137,19 @@ function draw(canvas, elapsed) {
 
       // ── subtle per-star twinkle ──────────────────────────────────────────
       const twinkle = Math.sin(elapsed * 1.8 + col * 2.3 + row * 1.7) * 0.10;
-      ctx.globalAlpha = Math.min(1, Math.max(0.25, d * 1.3 + twinkle));
-      ctx.fillStyle   = charColor(r);
+
+      // ── bright white detail stars scattered in arms ──────────────────────
+      const h3 = hash(col + 1000, row + 777);
+      const isBrightStar = !isCore && d > 0.12 && h3 < 0.07;
+
+      if (isBrightStar) {
+        ch = h3 < 0.035 ? "+" : "*";
+        ctx.globalAlpha = Math.min(1, 0.65 + Math.sin(elapsed * 2.8 + col * 3.7 + row * 2.3) * 0.35);
+        ctx.fillStyle   = h3 < 0.02 ? "#ffffff" : "#ffeecc";
+      } else {
+        ctx.globalAlpha = Math.min(1, Math.max(0.50, d * 1.8 + twinkle));
+        ctx.fillStyle   = charColor(r);
+      }
       ctx.fillText(ch, px, py);
     }
   }

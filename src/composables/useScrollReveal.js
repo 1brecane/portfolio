@@ -1,12 +1,5 @@
 import { ref, useTemplateRef, onMounted, onUnmounted } from "vue";
 
-/**
- * Observes an element's intersection with the viewport and flips
- * `isVisible` to true once it enters. Disconnects immediately after
- * triggering to avoid unnecessary observation.
- *
- * @param {string} refName - The template ref name to observe.
- */
 export function useScrollReveal(refName, options = {}) {
   const target = useTemplateRef(refName);
   const isVisible = ref(false);
@@ -15,18 +8,24 @@ export function useScrollReveal(refName, options = {}) {
   onMounted(() => {
     if (!target.value) return;
 
-    // Initialize IntersectionObserver to trigger when element enters viewport
+    // Immediately reveal elements already in or above the viewport —
+    // prevents hidden sections after fast upward scroll (IO may not fire in time)
+    const rect = target.value.getBoundingClientRect();
+    if (rect.top < window.innerHeight * 0.95) {
+      isVisible.value = true;
+      return;
+    }
+
     observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           isVisible.value = true;
-          // Stop observing once revealed to save resources
           observer.disconnect();
         }
       },
       {
-        threshold: options.threshold ?? 0.12,
-        rootMargin: options.rootMargin ?? "0px 0px -60px 0px",
+        threshold: options.threshold ?? 0.05,
+        rootMargin: options.rootMargin ?? "100px 0px -30px 0px",
       }
     );
 
@@ -34,7 +33,6 @@ export function useScrollReveal(refName, options = {}) {
   });
 
   onUnmounted(() => {
-    // Clean up observer on component unmount
     observer?.disconnect();
   });
 

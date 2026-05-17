@@ -21,7 +21,7 @@ const projectDefs = [
   {
     id: 1,
     logoHtml: logos.python,
-    tags: ["Python", "CLI", "Game Dev"],
+    tags: ["Python", "pygame", "Game Dev"],
     github: "https://github.com/1brecane/cattenheimer",
     demo: null,
     type: "gaming",
@@ -33,6 +33,7 @@ const projectDefs = [
     logoHtml: `<span class="flex items-center gap-1">${logos.javascript}${logos.react}</span>`,
     tags: ["Fastify", "React", "MySQL", "Docker"],
     github: "https://github.com/1brecane/centro-sportivo-be",
+    githubFe: "https://github.com/1brecane/centro-sportivo-fe",
     demo: null,
     type: "fullstack",
     accentColor: "from-[#F7DF1E] to-[#61DAFB]",
@@ -41,7 +42,7 @@ const projectDefs = [
   {
     id: 3,
     logoHtml: logos.nestjs,
-    tags: ["NestJS", "Redis", "gRPC"],
+    tags: ["NestJS", "Redis", "MySQL"],
     github: "https://github.com/1brecane/paidia_be",
     demo: null,
     type: "lab",
@@ -51,7 +52,7 @@ const projectDefs = [
   {
     id: 4,
     logoHtml: logos.vue,
-    tags: ["Vue.js", "Tailwind", "JavaScript"],
+    tags: ["Vue.js", "Tailwind", "JavaScript", "Claude Code", "Cursor"],
     github: "https://github.com/1brecane/portfolio",
     demo: null,
     type: "frontend",
@@ -130,7 +131,20 @@ const projects = computed(() =>
                 rel="noopener noreferrer"
               >
                 <Github class="h-4 w-4" />
-                {{ t.projects.source }}
+                {{ project.githubFe ? t.projects.sourceBe : t.projects.source }}
+              </AppButton>
+              <AppButton
+                v-if="project.githubFe"
+                as="a"
+                variant="outline"
+                size="sm"
+                class="font-mono text-xs gap-2 border-border hover:border-primary hover:text-primary"
+                :href="project.githubFe"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Github class="h-4 w-4" />
+                {{ t.projects.sourceFe }}
               </AppButton>
               <AppButton
                 v-if="project.demo"

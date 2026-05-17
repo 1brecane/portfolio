@@ -94,7 +94,7 @@ const terminalStyle = computed(() => {
   <section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
     <HeroGalaxyBackground />
 
-    <div class="absolute inset-0 z-[1] bg-gradient-to-b from-background/25 via-background/55 to-background pointer-events-none" />
+    <div class="absolute inset-0 z-[1] bg-gradient-to-b from-background/10 via-background/35 to-background pointer-events-none" />
 
     <div class="relative z-10 mx-auto max-w-6xl px-6 py-24 text-center">
       <!-- Terminal window -->
