@@ -83,9 +83,9 @@ export default {
           "A single-level arcade game developed in Python using the Pygame library, featuring a grenade-wielding kitten. The project covers level optimization, enemy AI patterns, accurate collision detection, and animated sprite sheets.",
       },
       {
-        title: "Sports Management App",
+        title: "This Portfolio",
         description:
-          "A comprehensive and scalable management platform built on a multi-repository architecture. Features a robust Node.js backend using Fastify and a responsive ReactJS frontend. Includes secure authentication, role-based access control, and persistent data storage via MySQL.",
+          "The website you are currently browsing! A hands-on experiment in modern frontend development and clean aesthetics, crafted by optimizing workflows using cutting-edge AI tools (Cursor and Claude Code).",
       },
       {
         title: "Experimental Backend",
@@ -93,9 +93,9 @@ export default {
           "A project focused on exploring microservices architectures. Built with NestJS to ensure a modular and maintainable enterprise structure, it simulates a high-performance backend for an online gaming platform with real-time data handling.",
       },
       {
-        title: "This Portfolio",
+        title: "Sports Management App",
         description:
-          "The website you are currently browsing! A hands-on experiment in modern frontend development and clean aesthetics, crafted by optimizing workflows using cutting-edge AI tools (Cursor and Claude Code).",
+          "A comprehensive and scalable management platform built on a multi-repository architecture. Features a robust Node.js backend using Fastify and a responsive ReactJS frontend. Includes secure authentication, role-based access control, and persistent data storage via MySQL.",
       },
     ],
   },

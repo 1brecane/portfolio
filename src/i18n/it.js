@@ -83,9 +83,9 @@ export default {
           "Videogioco single-level in stile arcade sviluppato in Python con la libreria Pygame. Protagonista un gattino granatiere. Il progetto include la gestione e l'ottimizzazione dei livelli, intelligenza artificiale per i pattern dei nemici, calcolo accurato delle collisioni e fogli di sprite animati.",
       },
       {
-        title: "Gestionale Sportivo",
+        title: "Questo Portfolio",
         description:
-          "Soluzione gestionale completa e scalabile basata su un'architettura multi-repository. Backend solido sviluppato in Node.js con Fastify e frontend reattivo in ReactJS. Implementa sistemi di autenticazione sicura, controllo degli accessi basato su ruoli e persistenza dei dati su database MySQL.",
+          "Il sito web che stai navigando! Un esperimento pratico di sviluppo frontend moderno ed estetica curata, realizzato ottimizzando i flussi di lavoro grazie al supporto di strumenti AI di ultima generazione (Cursor e Claude Code).",
       },
       {
         title: "Backend Sperimentale",
@@ -93,9 +93,9 @@ export default {
           "Progetto focalizzato sull'esplorazione di architetture a microservizi. Sviluppato con NestJS per garantire una struttura aziendale modulare e manutenibile, simula il backend ad alte prestazioni per una piattaforma di gaming online con gestione dei dati in tempo reale.",
       },
       {
-        title: "Questo Portfolio",
+        title: "Gestionale Sportivo",
         description:
-          "Il sito web che stai navigando! Un esperimento pratico di sviluppo frontend moderno ed estetica curata, realizzato ottimizzando i flussi di lavoro grazie al supporto di strumenti AI di ultima generazione (Cursor e Claude Code).",
+          "Soluzione gestionale completa e scalabile basata su un'architettura multi-repository. Backend solido sviluppato in Node.js con Fastify e frontend reattivo in ReactJS. Implementa sistemi di autenticazione sicura, controllo degli accessi basato su ruoli e persistenza dei dati su database MySQL.",
       },
     ],
   },
