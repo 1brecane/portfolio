@@ -17,13 +17,6 @@ const CORE_R    = 0.1;
 const OUTER_R   = 1.10;   // large so the disc overflows all four edges
 
 // ── perspective projection ────────────────────────────────────────────────────
-// We view the galaxy disc (XZ plane) at ~45° elevation, like looking at a
-// horizontal granite slab from the side.  In screen space:
-//   screen_x = galaxy_x            (no change)
-//   screen_y = galaxy_z * TILT_SIN (depth axis compressed)
-// To invert (pixel → galaxy coords):
-//   galaxy_x = (px - cx) / scale
-//   galaxy_z = (py - cy) / (scale * TILT_SIN)
 const TILT_DEG  = 40;
 const TILT_SIN  = Math.sin(TILT_DEG * Math.PI / 180); // ≈ 0.669
 
@@ -85,15 +78,12 @@ function draw(canvas, elapsed) {
   ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
 
-  // Extra cols/rows so perspective-clipped chars are never half-cut
   const cols  = Math.ceil(W / CHAR_W) + 2;
   const rows  = Math.ceil(H / CHAR_H) + 2;
 
   const cx    = W / 2;
-  // Shift centre slightly upward: the "near" (bottom) side of the disc is more
-  // visible, like looking at a slab from below eye-level
   const cy    = H * 0.52;
-  const scale = W / 2; // r=1 → screen half-width
+  const scale = W / 2;
 
   const rot = elapsed * 0.035;
 
@@ -102,9 +92,8 @@ function draw(canvas, elapsed) {
       const px = (col - 1) * CHAR_W + CHAR_W / 2;
       const py = (row - 1) * CHAR_H + CHAR_H / 2;
 
-      // ── invert the perspective to get galaxy-disc coordinates ────────────
       const x_gal = (px - cx) / scale;
-      const z_gal = (py - cy) / (scale * TILT_SIN); // un-compress depth axis
+      const z_gal = (py - cy) / (scale * TILT_SIN);
 
       const r     = Math.sqrt(x_gal * x_gal + z_gal * z_gal);
       if (r > OUTER_R) continue;
@@ -116,12 +105,10 @@ function draw(canvas, elapsed) {
 
       let d = density(r, theta, rot);
 
-      // ── scatter: treat density as probability of a star existing ─────────
       const isCore = r < CORE_R;
       const fillRate = isCore ? 1.0 : r < CORE_R * 2.5 ? 0.95 : 0.68;
       if (h1 > d * fillRate) continue;
 
-      // ── character: heavy glyphs in core, light particles in arms ─────────
       let ch;
       if (isCore) {
         const coreSet = "#@#@#@";
@@ -135,10 +122,8 @@ function draw(canvas, elapsed) {
       }
       if (ch === " ") continue;
 
-      // ── subtle per-star twinkle ──────────────────────────────────────────
       const twinkle = Math.sin(elapsed * 1.8 + col * 2.3 + row * 1.7) * 0.10;
 
-      // ── bright white detail stars scattered in arms ──────────────────────
       const h3 = hash(col + 1000, row + 777);
       const isBrightStar = !isCore && d > 0.12 && h3 < 0.07;
 

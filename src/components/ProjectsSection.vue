@@ -121,7 +121,7 @@ const projects = computed(() =>
               </span>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
               <AppButton
                 as="a"
                 variant="outline"
