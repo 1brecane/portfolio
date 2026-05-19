@@ -11,10 +11,11 @@ let startTime     = null;
 
 // ── galaxy constants ──────────────────────────────────────────────────────────
 const SPIRAL_K  = 1 / Math.tan((10 * Math.PI) / 180);
-const N_ARMS    = 3;
-const ARM_WIDTH = 0.3;   // wide → diffuse, particle-like
-const CORE_R    = 0.1;
-const OUTER_R   = 1.10;   // large so the disc overflows all four edges
+const N_ARMS = 3;
+const ARM_WIDTH = 0.4;   // wide → diffuse, particle-like
+const CORE_R = 0.1;
+const BLACK_HOLE_R = 0.08;
+const OUTER_R = 1.10;   // large so the disc overflows all four edges
 
 // ── perspective projection ────────────────────────────────────────────────────
 const TILT_DEG  = 40;
@@ -87,6 +88,14 @@ function draw(canvas, elapsed) {
 
   const rot = elapsed * 0.035;
 
+  // Black hole: solid void ellipse (accounts for galaxy tilt)
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, BLACK_HOLE_R * scale, BLACK_HOLE_R * scale * TILT_SIN, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#03030a";
+  ctx.fill();
+  ctx.restore();
+
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const px = (col - 1) * CHAR_W + CHAR_W / 2;
@@ -103,29 +112,48 @@ function draw(canvas, elapsed) {
       const h1 = hash(col, row);
       const h2 = hash(col + 500, row + 500);
 
-      let d = density(r, theta, rot);
+      const isBlackHole = r < BLACK_HOLE_R;
+      const isRing      = !isBlackHole && r < CORE_R;
 
-      const isCore = r < CORE_R;
-      const fillRate = isCore ? 1.0 : r < CORE_R * 2.5 ? 0.95 : 0.68;
+      // ── black hole interior: dark characters on the void ─────────────────────
+      if (isBlackHole) {
+        if (h1 < 0.72) {
+          const bhSet = "@#";
+          const ch = bhSet[Math.floor(h2 * bhSet.length)];
+          ctx.globalAlpha = 0.20 + h1 * 0.18;
+          ctx.fillStyle   = "#0d0d18";
+          ctx.fillText(ch, px, py);
+        }
+        continue;
+      }
+
+      // ── white ring: event horizon ─────────────────────────────────────────────
+      if (isRing) {
+        const ringSet = "@#O";
+        const ch = ringSet[Math.floor(h1 * ringSet.length)];
+        const pulse = Math.sin(elapsed * 2.5 + col * 1.5 + row * 1.1) * 0.12;
+        ctx.globalAlpha = Math.min(1, 0.88 + pulse);
+        ctx.fillStyle   = "#ffffff";
+        ctx.fillText(ch, px, py);
+        continue;
+      }
+
+      // ── normal galaxy ─────────────────────────────────────────────────────────
+      let d = density(r, theta, rot);
+      const fillRate = r < CORE_R * 2.5 ? 0.95 : 0.68;
       if (h1 > d * fillRate) continue;
 
-      let ch;
-      if (isCore) {
-        const coreSet = "#@#@#@";
-        ch = coreSet[Math.min(coreSet.length - 1, Math.floor(d * coreSet.length))];
-      } else {
-        const charIdx = Math.min(
-          CHARSET.length - 1,
-          Math.floor((d * 0.65 + h2 * 0.35) * CHARSET.length),
-        );
-        ch = CHARSET[charIdx];
-      }
+      const charIdx = Math.min(
+        CHARSET.length - 1,
+        Math.floor((d * 0.65 + h2 * 0.35) * CHARSET.length),
+      );
+      let ch = CHARSET[charIdx];
       if (ch === " ") continue;
 
       const twinkle = Math.sin(elapsed * 1.8 + col * 2.3 + row * 1.7) * 0.10;
 
       const h3 = hash(col + 1000, row + 777);
-      const isBrightStar = !isCore && d > 0.12 && h3 < 0.07;
+      const isBrightStar = d > 0.12 && h3 < 0.07;
 
       if (isBrightStar) {
         ch = h3 < 0.035 ? "+" : "*";

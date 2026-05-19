@@ -33,7 +33,10 @@ const contactBtnClass = "font-mono text-sm border-primary text-primary hover:bg-
     <div class="mx-auto max-w-6xl px-6 py-4">
       <div class="flex items-center justify-between">
         <a href="#hero" class="flex-1 font-mono text-sm font-semibold tracking-tight group">
-          <span class="text-primary group-hover:neon-text transition-all">SR</span>
+          <span class="text-primary group-hover:neon-text transition-all">
+            <span class="md:hidden">SR</span>
+            <span class="hidden md:inline">Samuele Ruaro</span>
+          </span>
           <span class="text-muted-foreground">.</span>
         </a>
 
