@@ -1,11 +1,16 @@
 <script setup>
 import { ref } from 'vue';
+import VueHcaptcha from '@hcaptcha/vue3-hcaptcha';
 import AppButton from '@/components/ui/AppButton.vue';
 import SectionLayout from '@/components/ui/SectionLayout.vue';
 import { Send, CheckCircle, AlertCircle, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '@/i18n';
 
 const { t } = useI18n();
+
+const sitekey =
+  import.meta.env.VITE_HCAPTCHA_SITE_KEY ||
+  '10000000-ffff-ffff-ffff-000000000001';
 
 const form = ref({
   name: '',
@@ -14,9 +19,11 @@ const form = ref({
 });
 
 const status = ref('idle'); // 'idle' | 'loading' | 'success' | 'error'
+const captchaToken = ref('');
+const captchaRef = ref(null);
 
 const sendEmail = async () => {
-  if (!form.value.name || !form.value.email || !form.value.message) return;
+  if (!form.value.name || !form.value.email || !form.value.message || !captchaToken.value) return;
 
   status.value = 'loading';
 
@@ -35,14 +42,17 @@ const sendEmail = async () => {
 
     status.value = 'success';
     form.value = { name: '', email: '', message: '' };
-    
-    // Reset success message after 5 seconds
+    captchaToken.value = '';
+    captchaRef.value?.reset();
+
     setTimeout(() => {
       status.value = 'idle';
     }, 5000);
   } catch (error) {
     console.error('FAILED...', error);
     status.value = 'error';
+    captchaToken.value = '';
+    captchaRef.value?.reset();
   }
 };
 </script>
@@ -109,10 +119,19 @@ const sendEmail = async () => {
             <p>{{ t.contact.errorMessage }}</p>
           </div>
 
+          <VueHcaptcha
+            ref="captchaRef"
+            :sitekey="sitekey"
+            theme="dark"
+            @verify="(token) => captchaToken = token"
+            @expired="captchaToken = ''"
+            @error="captchaToken = ''"
+          />
+
           <AppButton
             type="submit"
             class="w-full sm:w-auto font-mono bg-primary text-primary-foreground hover:bg-primary/90"
-            :disabled="status === 'loading'"
+            :disabled="status === 'loading' || !captchaToken"
           >
             <template v-if="status === 'loading'">
               <Loader2 class="w-4 h-4 mr-2 animate-spin" />
