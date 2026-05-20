@@ -3,6 +3,7 @@ import { ref, computed, defineAsyncComponent } from "vue";
 import { X, Minus, Square } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import SocialLinks from "@/components/ui/SocialLinks.vue";
+import CvCaptchaModal from "@/components/ui/CvCaptchaModal.vue";
 import { useI18n } from "@/i18n";
 import { useTypewriter } from "@/composables/useTypewriter";
 
@@ -18,6 +19,7 @@ const { displayedLines, isFinished } = useTypewriter(terminalLines);
 const userInput = ref("");
 const isMinimized = ref(false);
 const isClosed = ref(false);
+const showCaptcha = ref(false);
 
 // ── easter egg state ──────────────────────────────────────────────────────────
 const lastCommand = ref("");
@@ -150,12 +152,10 @@ function reopenTerminal() {
             {{ t.hero.viewProjects }}
           </AppButton>
           <AppButton
-            as="a"
-            href="/cv.pdf"
-            download="Samuele_Ruaro_CV.pdf"
             size="lg"
             variant="outline"
             class="font-mono border-border hover:border-primary hover:text-primary bg-card/40 backdrop-blur-sm"
+            @click="showCaptcha = true"
           >
             {{ t.hero.downloadCv }}
           </AppButton>
@@ -257,5 +257,7 @@ function reopenTerminal() {
       </div>
 
     </div>
+
+    <CvCaptchaModal v-if="showCaptcha" @close="showCaptcha = false" />
   </section>
 </template>

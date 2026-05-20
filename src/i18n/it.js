@@ -137,6 +137,13 @@ export default {
       },
     },
   },
+  captcha: {
+    title: "Sei un essere umano?",
+    subtitle: "Completa la verifica per scaricare il CV.",
+    confirm: "Scarica CV",
+    close: "Chiudi",
+    error: "Verifica fallita. Riprova.",
+  },
   footer: {
     builtWith: "Costruito con passione",
   },

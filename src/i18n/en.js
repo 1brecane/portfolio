@@ -137,6 +137,13 @@ export default {
       },
     },
   },
+  captcha: {
+    title: "Are you human?",
+    subtitle: "Complete the verification to download the CV.",
+    confirm: "Download CV",
+    close: "Close",
+    error: "Verification failed. Please try again.",
+  },
   footer: {
     builtWith: "Built with passion",
   },
