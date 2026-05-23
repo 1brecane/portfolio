@@ -8,7 +8,9 @@ const messages = { it, en };
  * Persisted in localStorage so the preference survives page reloads.
  * Shared across all components via module-level ref (singleton pattern).
  */
-const currentLocale = ref(localStorage.getItem("locale") || "it");
+const VALID_LOCALES = ["en", "it"];
+const stored = localStorage.getItem("locale");
+const currentLocale = ref(VALID_LOCALES.includes(stored) ? stored : "it");
 
 /** Keeps <html lang> in sync with the active locale */
 watchEffect(() => {

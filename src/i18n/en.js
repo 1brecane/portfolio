@@ -141,6 +141,7 @@ export default {
     title: "Are you human?",
     subtitle: "Complete the verification to download the CV.",
     confirm: "Download CV",
+    downloading: "Downloading...",
     close: "Close",
     error: "Verification failed. Please try again.",
   },

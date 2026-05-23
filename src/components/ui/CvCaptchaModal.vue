@@ -4,39 +4,69 @@ import VueHcaptcha from "@hcaptcha/vue3-hcaptcha";
 import { X } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import { useI18n } from "@/i18n";
+import { HCAPTCHA_SITE_KEY } from "@/constants/captcha.js";
 
 const { t } = useI18n();
 
 const emit = defineEmits(["close"]);
 
-const sitekey =
-  import.meta.env.VITE_HCAPTCHA_SITE_KEY ||
-  "10000000-ffff-ffff-ffff-000000000001";
-
 const captchaRef = ref(null);
+const captchaToken = ref("");
 const verified = ref(false);
+const downloading = ref(false);
 const error = ref(false);
 
-function onVerify() {
+function onVerify(token) {
+  captchaToken.value = token;
   verified.value = true;
   error.value = false;
 }
 
 function onExpired() {
+  captchaToken.value = "";
   verified.value = false;
 }
 
 function onError() {
+  captchaToken.value = "";
   verified.value = false;
   error.value = true;
 }
 
-function download() {
-  const link = document.createElement("a");
-  link.href = "/cv.pdf";
-  link.download = "Samuele_Ruaro_CV.pdf";
-  link.click();
-  emit("close");
+async function download() {
+  if (!captchaToken.value) return;
+  downloading.value = true;
+  error.value = false;
+
+  try {
+    const response = await fetch("/cv.pdf", {
+      headers: { "X-Captcha-Token": captchaToken.value },
+    });
+
+    if (!response.ok) {
+      error.value = true;
+      captchaToken.value = "";
+      verified.value = false;
+      captchaRef.value?.reset();
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Samuele_Ruaro_CV.pdf";
+    link.click();
+    URL.revokeObjectURL(url);
+    emit("close");
+  } catch {
+    error.value = true;
+    captchaToken.value = "";
+    verified.value = false;
+    captchaRef.value?.reset();
+  } finally {
+    downloading.value = false;
+  }
 }
 </script>
 
@@ -67,7 +97,7 @@ function download() {
         <div class="flex justify-center">
           <VueHcaptcha
             ref="captchaRef"
-            :sitekey="sitekey"
+            :sitekey="HCAPTCHA_SITE_KEY"
             theme="dark"
             @verify="onVerify"
             @expired="onExpired"
@@ -81,12 +111,12 @@ function download() {
 
         <!-- Actions -->
         <AppButton
-          :disabled="!verified"
+          :disabled="!verified || downloading"
           class="w-full font-mono"
-          :class="verified ? 'bg-primary text-primary-foreground hover:bg-primary/90 neon-glow' : 'opacity-50 cursor-not-allowed'"
-          @click="verified && download()"
+          :class="verified && !downloading ? 'bg-primary text-primary-foreground hover:bg-primary/90 neon-glow' : 'opacity-50 cursor-not-allowed'"
+          @click="verified && !downloading && download()"
         >
-          {{ t.captcha.confirm }}
+          {{ downloading ? t.captcha.downloading : t.captcha.confirm }}
         </AppButton>
       </div>
     </div>

@@ -141,6 +141,7 @@ export default {
     title: "Sei un essere umano?",
     subtitle: "Completa la verifica per scaricare il CV.",
     confirm: "Scarica CV",
+    downloading: "Download in corso...",
     close: "Chiudi",
     error: "Verifica fallita. Riprova.",
   },

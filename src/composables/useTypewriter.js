@@ -63,7 +63,7 @@ export function useTypewriter(lines) {
   // Restart effect when source lines change
   watch(lines, restart);
   
-  onMounted(tick);
+  onMounted(restart);
   onUnmounted(stop);
 
   const isFinished = computed(() => currentLineIndex.value >= lines.value.length);

@@ -56,10 +56,9 @@ function handleKey(e) {
     }
     userInput.value = "";
   } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-    // reset output as soon as the user starts typing a new command
     commandOutput.value = [];
     lastCommand.value = "";
-    userInput.value += e.key;
+    if (userInput.value.length < 200) userInput.value += e.key;
   }
 }
 

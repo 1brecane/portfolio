@@ -5,4 +5,5 @@ dist
 .env
 .claude
 CLAUDE.md
+ONBOARDING.md
 tsconfig.tsbuildinfo
