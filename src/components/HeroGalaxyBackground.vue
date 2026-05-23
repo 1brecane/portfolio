@@ -25,6 +25,47 @@ const TILT_SIN  = Math.sin(TILT_DEG * Math.PI / 180); // ≈ 0.669
 const FONT_SIZE = 15;
 const CHARSET   = " .·+*";   // light glyphs → particle aesthetic
 
+// ── mouse hover ───────────────────────────────────────────────────────────────
+let mouseX = -9999;
+let mouseY = -9999;
+const MOUSE_RADIUS    = 130;
+const MOUSE_RADIUS_SQ = MOUSE_RADIUS * MOUSE_RADIUS;
+
+// Trail: per-cell hover intensity that decays over time
+const trailMap  = new Map(); // integer cell key → intensity 0..1
+const TRAIL_K   = 0.5;
+let   prevElapsed = 0;
+
+// Color bands as RGB tuples — mirrors charColor thresholds
+const BANDS_BASE = [
+  [0.13, [255, 255, 255]],
+  [0.22, [255, 170, 119]],
+  [0.40, [255,  85,  51]],
+  [0.70, [238,  51,  17]],
+  [Infinity, [122, 18,  8]],
+];
+
+const BANDS_HOVER = [
+  [0.13, [255, 255, 255]],    // white core stays white
+  [0.22, [255, 224, 102]],    // amber  → light gold
+  [0.40, [255, 204,   0]],    // red    → vivid gold
+  [0.70, [255, 170,   0]],    // crimson → warm amber
+  [Infinity, [204, 102, 0]],  // dark red → dark orange
+];
+
+function getBandRgb(r, bands) {
+  for (const [thresh, rgb] of bands) {
+    if (r < thresh) return rgb;
+  }
+  return bands[bands.length - 1][1];
+}
+
+function blendColor(a, b, t) {
+  return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;
+}
+
+function smoothstep(t) { return t * t * (3 - 2 * t); }
+
 // ── stable per-cell pseudo-random hash ───────────────────────────────────────
 function hash(col, row) {
   const v = Math.sin(col * 127.1 + row * 311.7) * 43758.5453;
@@ -71,6 +112,19 @@ function draw(canvas, elapsed) {
   const H = canvas.height;
 
   ctx.clearRect(0, 0, W, H);
+
+  // Decay all trail intensities proportional to elapsed time
+  const dt = elapsed - prevElapsed;
+  prevElapsed = elapsed;
+  if (dt > 0 && dt < 0.5) {
+    const decay = Math.exp(-TRAIL_K * dt);
+    for (const [key, val] of trailMap) {
+      const next = val * decay;
+      if (next < 0.008) trailMap.delete(key);
+      else trailMap.set(key, next);
+    }
+  }
+
   ctx.font = `${FONT_SIZE}px ui-monospace, 'Courier New', monospace`;
 
   const CHAR_W = ctx.measureText("M").width;
@@ -87,14 +141,6 @@ function draw(canvas, elapsed) {
   const scale = W / 2;
 
   const rot = elapsed * 0.035;
-
-  // Black hole: solid void ellipse (accounts for galaxy tilt)
-  ctx.save();
-  ctx.beginPath();
-  ctx.ellipse(cx, cy, BLACK_HOLE_R * scale, BLACK_HOLE_R * scale * TILT_SIN, 0, 0, Math.PI * 2);
-  ctx.fillStyle = "#03030a";
-  ctx.fill();
-  ctx.restore();
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
@@ -115,15 +161,13 @@ function draw(canvas, elapsed) {
       const isBlackHole = r < BLACK_HOLE_R;
       const isRing      = !isBlackHole && r < CORE_R;
 
-      // ── black hole interior: dark characters on the void ─────────────────────
+      // ── black hole interior: barely visible dark chars ───────────────────────
       if (isBlackHole) {
-        if (h1 < 0.72) {
-          const bhSet = "@#";
-          const ch = bhSet[Math.floor(h2 * bhSet.length)];
-          ctx.globalAlpha = 0.20 + h1 * 0.18;
-          ctx.fillStyle   = "#0d0d18";
-          ctx.fillText(ch, px, py);
-        }
+        const bhSet = "@#$·.";
+        const ch = bhSet[Math.floor(h2 * bhSet.length)];
+        ctx.globalAlpha = 0.28 + h1 * 0.32; // 0.28 – 0.60
+        ctx.fillStyle   = "#262638";
+        ctx.fillText(ch, px, py);
         continue;
       }
 
@@ -155,13 +199,33 @@ function draw(canvas, elapsed) {
       const h3 = hash(col + 1000, row + 777);
       const isBrightStar = d > 0.12 && h3 < 0.07;
 
+      const dxm      = px - mouseX;
+      const dym      = py - mouseY;
+      const distSq   = dxm * dxm + dym * dym;
+      const currentT = distSq < MOUSE_RADIUS_SQ
+        ? smoothstep(1 - distSq / MOUSE_RADIUS_SQ)
+        : 0;
+
+      const cellKey  = row * 10000 + col;
+      const stored   = trailMap.get(cellKey) || 0;
+      if (currentT > stored) trailMap.set(cellKey, currentT);
+      const mouseT = Math.max(currentT, stored);
+
       if (isBrightStar) {
         ch = h3 < 0.035 ? "+" : "*";
         ctx.globalAlpha = Math.min(1, 0.65 + Math.sin(elapsed * 2.8 + col * 3.7 + row * 2.3) * 0.35);
-        ctx.fillStyle   = h3 < 0.02 ? "#ffffff" : "#ffeecc";
+        if (mouseT > 0 && h3 >= 0.02) {
+          ctx.fillStyle = blendColor([255, 238, 204], [255, 240, 100], mouseT);
+        } else {
+          ctx.fillStyle = h3 < 0.02 ? "#ffffff" : "#ffeecc";
+        }
       } else {
         ctx.globalAlpha = Math.min(1, Math.max(0.50, d * 1.8 + twinkle));
-        ctx.fillStyle   = charColor(r);
+        if (mouseT > 0) {
+          ctx.fillStyle = blendColor(getBandRgb(r, BANDS_BASE), getBandRgb(r, BANDS_HOVER), mouseT);
+        } else {
+          ctx.fillStyle = charColor(r);
+        }
       }
       ctx.fillText(ch, px, py);
     }
@@ -196,6 +260,19 @@ function onMotionChange(e) {
   }
 }
 
+function onMouseMove(e) {
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) * (canvas.width  / rect.width);
+  mouseY = (e.clientY - rect.top)  * (canvas.height / rect.height);
+}
+
+function onMouseLeave() {
+  mouseX = -9999;
+  mouseY = -9999;
+}
+
 onMounted(() => {
   const canvas = canvasRef.value;
   if (!canvas) return;
@@ -215,6 +292,9 @@ onMounted(() => {
   reducedMotion = motionQuery.matches;
   motionQuery.addEventListener("change", onMotionChange);
 
+  window.addEventListener("mousemove", onMouseMove, { passive: true });
+  document.addEventListener("mouseleave", onMouseLeave);
+
   if (reducedMotion) {
     requestAnimationFrame((ts) => { startTime = ts; draw(canvas, 0); });
   } else {
@@ -226,6 +306,8 @@ onUnmounted(() => {
   if (animationId !== null) cancelAnimationFrame(animationId);
   resizeObserver?.disconnect();
   motionQuery?.removeEventListener("change", onMotionChange);
+  window.removeEventListener("mousemove", onMouseMove);
+  document.removeEventListener("mouseleave", onMouseLeave);
 });
 </script>
 
