@@ -6,6 +6,7 @@ import SocialLinks from "@/components/ui/SocialLinks.vue";
 import CvCaptchaModal from "@/components/ui/CvCaptchaModal.vue";
 import { useI18n } from "@/i18n";
 import { useTypewriter } from "@/composables/useTypewriter";
+import easterEggs from "@/data/terminalEasterEggs.json";
 
 const HeroGalaxyBackground = defineAsyncComponent(
   () => import("@/components/HeroGalaxyBackground.vue"),
@@ -24,16 +25,9 @@ const showCaptcha = ref(false);
 // ── easter egg state ──────────────────────────────────────────────────────────
 const lastCommand = ref("");
 const commandOutput = ref([]);
+const galaxyColorScheme = ref(1);
 
-const UFO_LINES = [
-  "     ____",
-  "  __/    \\__",
-  " /  o o o   \\",
-  "(   ~~~~~    )",
-  " \\__________/",
-  "   |  |  |",
-  "  *  * * *  *",
-];
+const PALETTE_NAMES = { 1: "amber", 2: "cyan", 3: "green" };
 
 const shownLines = computed(() =>
   isFinished.value && displayedLines.value.length > 0
@@ -49,8 +43,17 @@ function handleKey(e) {
   } else if (e.key === "Enter") {
     const cmd = userInput.value.trim();
     lastCommand.value = cmd;
-    if (cmd === "cat ./ufo.txt") {
-      commandOutput.value = UFO_LINES;
+    if (easterEggs[cmd]) {
+      commandOutput.value = easterEggs[cmd];
+    } else if (/^color\s+[1-3]$/.test(cmd)) {
+      const n = parseInt(cmd.split(/\s+/)[1]);
+      galaxyColorScheme.value = n;
+      commandOutput.value = [`> hover palette: #${n} (${PALETTE_NAMES[n]})`];
+    } else if (cmd === "color") {
+      commandOutput.value = [
+        "> usage: color <1|2|3>",
+        "> 1: amber  2: cyan  3: green",
+      ];
     } else {
       commandOutput.value = [];
     }
@@ -127,7 +130,7 @@ function reopenTerminal() {
 
 <template>
   <section id="hero" class="relative min-h-screen overflow-hidden flex items-center">
-    <HeroGalaxyBackground />
+    <HeroGalaxyBackground :color-scheme="galaxyColorScheme" />
 
     <div class="absolute inset-0 z-[1] bg-gradient-to-b from-background/10 via-background/20 to-transparent pointer-events-none" />
 

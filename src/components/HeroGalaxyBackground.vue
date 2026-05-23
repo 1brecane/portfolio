@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 
+const props = defineProps({ colorScheme: { type: Number, default: 1 } });
+
 const canvasRef = ref(null);
 
 let animationId   = null;
@@ -45,13 +47,37 @@ const BANDS_BASE = [
   [Infinity, [122, 18,  8]],
 ];
 
-const BANDS_HOVER = [
-  [0.13, [255, 255, 255]],    // white core stays white
-  [0.22, [255, 224, 102]],    // amber  → light gold
-  [0.40, [255, 204,   0]],    // red    → vivid gold
-  [0.70, [255, 170,   0]],    // crimson → warm amber
-  [Infinity, [204, 102, 0]],  // dark red → dark orange
-];
+// Hover palettes indexed 1–3, selectable via terminal `color N`
+const BANDS_HOVER_MAP = {
+  1: [ // amber / gold
+    [0.13, [255, 255, 255]],
+    [0.22, [255, 224, 102]],
+    [0.40, [255, 204,   0]],
+    [0.70, [255, 170,   0]],
+    [Infinity, [204, 102,   0]],
+  ],
+  2: [ // cyan / electric blue
+    [0.13, [255, 255, 255]],
+    [0.22, [153, 230, 255]],
+    [0.40, [  0, 200, 255]],
+    [0.70, [  0, 150, 220]],
+    [Infinity, [  0,  80, 180]],
+  ],
+  3: [ // green / lime
+    [0.13, [255, 255, 255]],
+    [0.22, [180, 255, 130]],
+    [0.40, [100, 255,  50]],
+    [0.70, [ 50, 200,   0]],
+    [Infinity, [ 20, 130,   0]],
+  ],
+};
+
+// Bright-star hover tint per palette
+const STAR_HOVER_MAP = {
+  1: [255, 240, 100],
+  2: [100, 240, 255],
+  3: [150, 255, 100],
+};
 
 function getBandRgb(r, bands) {
   for (const [thresh, rgb] of bands) {
@@ -107,6 +133,9 @@ function charColor(r) {
 
 // ── draw one frame ────────────────────────────────────────────────────────────
 function draw(canvas, elapsed) {
+  const bandsHover = BANDS_HOVER_MAP[props.colorScheme] ?? BANDS_HOVER_MAP[1];
+  const starHover  = STAR_HOVER_MAP[props.colorScheme]  ?? STAR_HOVER_MAP[1];
+
   const ctx = canvas.getContext("2d");
   const W = canvas.width;
   const H = canvas.height;
@@ -215,14 +244,14 @@ function draw(canvas, elapsed) {
         ch = h3 < 0.035 ? "+" : "*";
         ctx.globalAlpha = Math.min(1, 0.65 + Math.sin(elapsed * 2.8 + col * 3.7 + row * 2.3) * 0.35);
         if (mouseT > 0 && h3 >= 0.02) {
-          ctx.fillStyle = blendColor([255, 238, 204], [255, 240, 100], mouseT);
+          ctx.fillStyle = blendColor([255, 238, 204], starHover, mouseT);
         } else {
           ctx.fillStyle = h3 < 0.02 ? "#ffffff" : "#ffeecc";
         }
       } else {
         ctx.globalAlpha = Math.min(1, Math.max(0.50, d * 1.8 + twinkle));
         if (mouseT > 0) {
-          ctx.fillStyle = blendColor(getBandRgb(r, BANDS_BASE), getBandRgb(r, BANDS_HOVER), mouseT);
+          ctx.fillStyle = blendColor(getBandRgb(r, BANDS_BASE), getBandRgb(r, bandsHover), mouseT);
         } else {
           ctx.fillStyle = charColor(r);
         }
