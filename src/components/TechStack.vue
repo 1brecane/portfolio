@@ -77,12 +77,13 @@ const resolvedCategories = computed(() =>
     :title="t.stack.title"
     :subtitle="t.stack.subtitle"
   >
-    <template #default="{ isVisible }">
-      <div :class="['grid grid-cols-1 md:grid-cols-2 gap-6 stagger-children', { revealed: isVisible }]">
+    <template #default>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div
-          v-for="category in resolvedCategories"
+          v-for="(category, i) in resolvedCategories"
           :key="category.title"
-          class="group bg-card border border-border rounded-lg p-6 card-glow"
+          class="present-step group bg-card border border-border rounded-lg p-6 card-glow"
+          :style="{ '--step': i }"
         >
           <div class="flex items-center gap-3 mb-6">
             <IconBox>

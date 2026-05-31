@@ -79,12 +79,13 @@ const projects = computed(() =>
     :subtitle="t.projects.subtitle"
     grid-bg
   >
-    <template #default="{ isVisible }">
-      <div :class="['grid grid-cols-1 md:grid-cols-2 gap-6 stagger-children', { revealed: isVisible }]">
+    <template #default>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <article
-          v-for="project in projects"
+          v-for="(project, i) in projects"
           :key="project.id"
-          class="group relative bg-card border border-border rounded-lg overflow-hidden card-glow"
+          class="present-step group relative bg-card border border-border rounded-lg overflow-hidden card-glow"
+          :style="{ '--step': i }"
         >
           <!-- coloured accent bar -->
           <div :class="`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${project.accentColor}`" />
@@ -164,7 +165,7 @@ const projects = computed(() =>
         </article>
       </div>
 
-      <div :class="['scroll-reveal text-center mt-12', { revealed: isVisible }]" style="transition-delay: 400ms">
+      <div class="present-step text-center mt-12" :style="{ '--step': 4 }">
         <AppButton
           as="a"
           variant="outline"

@@ -22,6 +22,7 @@ export default {
     headlineEnd: "",
     viewProjects: "View Projects",
     downloadCv: "Download CV",
+    scrollCue: "scroll to begin",
   },
   stack: {
     title: "Tech Stack",

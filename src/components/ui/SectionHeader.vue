@@ -7,11 +7,11 @@ defineProps({
 </script>
 
 <template>
-  <div :class="['scroll-reveal text-center mb-16', { revealed: isVisible }]">
+  <div :class="['section-header-legible scroll-reveal text-center mb-16', { revealed: isVisible }]">
     <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
       {{ title }}
     </h2>
-    <p class="text-muted-foreground max-w-xl mx-auto leading-relaxed">
+    <p class="text-foreground/75 max-w-xl mx-auto leading-relaxed">
       {{ subtitle }}
     </p>
   </div>

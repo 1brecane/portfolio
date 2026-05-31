@@ -50,13 +50,14 @@ const timeline = computed(() =>
     :subtitle="t.about.subtitle"
     grid-bg
   >
-    <template #default="{ isVisible }">
-      <!-- Timeline -->
-      <div :class="['relative max-w-3xl mx-auto stagger-children', { revealed: isVisible }]">
+    <template #default>
+      <!-- Timeline — each entry is a staged journey reveal step -->
+      <div class="relative max-w-3xl mx-auto">
         <div
-          v-for="entry in timeline"
+          v-for="(entry, i) in timeline"
           :key="entry.id"
-          class="relative pl-8 pb-12 last:pb-0 border-l-2 border-border"
+          class="present-step relative pl-8 pb-12 last:pb-0 border-l-2 border-border"
+          :style="{ '--step': i }"
         >
           <div :class="['absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-card border-2', entry.dot]" />
 

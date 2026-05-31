@@ -1,18 +1,24 @@
 <script setup>
-import { ref, computed, defineAsyncComponent } from "vue";
-import { X, Minus, Square } from "lucide-vue-next";
+import { ref, computed } from "vue";
+import { X, Minus, Square, ChevronDown } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import SocialLinks from "@/components/ui/SocialLinks.vue";
 import CvCaptchaModal from "@/components/ui/CvCaptchaModal.vue";
 import { useI18n } from "@/i18n";
 import { useTypewriter } from "@/composables/useTypewriter";
+import { useColorScheme } from "@/composables/useColorScheme";
+import { useWindowScroll } from "@/composables/useWindowScroll";
 import easterEggs from "@/data/terminalEasterEggs.json";
 
-const HeroGalaxyBackground = defineAsyncComponent(
-  () => import("@/components/HeroGalaxyBackground.vue"),
-);
-
 const { t } = useI18n();
+
+// The galaxy now renders app-level (see App.vue). The `color N` egg writes its
+// hover palette through a shared singleton instead of a local prop.
+const { setColorScheme } = useColorScheme();
+
+// "Scroll to begin" cue — invites the user into the journey, fades on first scroll.
+const { scrollY } = useWindowScroll();
+const showScrollCue = computed(() => scrollY.value < 60);
 
 const terminalLines = computed(() => t.value.hero.terminal);
 const { displayedLines, isFinished } = useTypewriter(terminalLines);
@@ -25,7 +31,6 @@ const showCaptcha = ref(false);
 // ── easter egg state ──────────────────────────────────────────────────────────
 const lastCommand = ref("");
 const commandOutput = ref([]);
-const galaxyColorScheme = ref(1);
 
 const PALETTE_NAMES = { 1: "amber", 2: "cyan", 3: "green" };
 
@@ -47,7 +52,7 @@ function handleKey(e) {
       commandOutput.value = easterEggs[cmd];
     } else if (/^color\s+[1-3]$/.test(cmd)) {
       const n = parseInt(cmd.split(/\s+/)[1]);
-      galaxyColorScheme.value = n;
+      setColorScheme(n);
       commandOutput.value = [`> hover palette: #${n} (${PALETTE_NAMES[n]})`];
     } else if (cmd === "color") {
       commandOutput.value = [
@@ -130,8 +135,6 @@ function reopenTerminal() {
 
 <template>
   <section id="hero" class="relative min-h-screen overflow-hidden flex items-center">
-    <HeroGalaxyBackground :color-scheme="galaxyColorScheme" />
-
     <div class="absolute inset-0 z-[1] bg-gradient-to-b from-background/10 via-background/20 to-transparent pointer-events-none" />
 
     <div class="relative z-10 w-full mx-auto max-w-6xl px-6 py-24 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-12 lg:gap-16 items-center">
@@ -260,6 +263,44 @@ function reopenTerminal() {
 
     </div>
 
+    <Transition name="cue">
+      <a
+        v-if="showScrollCue"
+        href="#about"
+        class="scroll-cue absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+      >
+        <span>{{ t.hero.scrollCue }}</span>
+        <ChevronDown class="h-4 w-4 scroll-cue__chevron" />
+      </a>
+    </Transition>
+
     <CvCaptchaModal v-if="showCaptcha" @close="showCaptcha = false" />
   </section>
 </template>
+
+<style scoped>
+.cue-enter-active,
+.cue-leave-active {
+  transition: opacity 0.5s ease;
+}
+.cue-enter-from,
+.cue-leave-to {
+  opacity: 0;
+}
+
+.scroll-cue__chevron {
+  animation: cue-bob 1.8s ease-in-out infinite;
+}
+
+@keyframes cue-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(4px);
+    opacity: 1;
+  }
+}
+</style>

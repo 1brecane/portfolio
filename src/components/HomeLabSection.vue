@@ -15,13 +15,8 @@ const { t } = useI18n();
     :subtitle="t.homelab.subtitle"
     grid-bg
   >
-    <template #default="{ isVisible }">
-      <div
-        :class="[
-          'max-w-2xl mx-auto transition-all duration-700',
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
-        ]"
-      >
+    <template #default>
+      <div class="present-step max-w-2xl mx-auto" :style="{ '--step': 0 }">
         <div class="bg-card border border-border rounded-lg p-10 card-glow">
           <div class="flex flex-col items-center gap-5 text-center">
             <IconBox size="lg">

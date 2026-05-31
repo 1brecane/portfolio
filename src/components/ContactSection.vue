@@ -56,7 +56,7 @@ const sendEmail = async () => {
 
 <template>
   <SectionLayout id="contact" :title="t.contact.title" :subtitle="t.contact.subtitle">
-    <div class="max-w-2xl mx-auto">
+    <div class="present-step max-w-2xl mx-auto" :style="{ '--step': 0 }">
       <div class="bg-card/50 border border-border rounded-xl p-6 md:p-8 backdrop-blur-sm card-glow">
         
         <div v-if="status === 'success'" class="flex flex-col items-center justify-center py-8 text-center animate-in fade-in zoom-in duration-300">
