@@ -130,6 +130,17 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
+/* Translucent content panel — lets the living galaxy glow *through* section cards
+   instead of boxing it out behind opaque rectangles (matches the hero's glass
+   surfaces). A faint rim-light border sells the "HUD glass" read. Tune the bg
+   alpha for readability-vs-galaxy. */
+.glass-panel {
+  background: oklch(0.16 0.006 250 / 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid oklch(0.5 0.01 250 / 0.32);
+}
+
 /* Terminal cursor blink */
 @keyframes blink {
   0%, 50% { opacity: 1; }
@@ -266,18 +277,54 @@
    (i+1)/steps. */
 .present-step {
   --t: clamp(0, calc(var(--reveal, 1) * var(--steps, 1) - var(--step, 0)), 1);
-  /* enter: --t fades+rises each step in; leave: --exit fades the whole slide out
-     and drifts it up, matching the scroll direction. */
+  /* enter: --t fades + rises each step in (translateY). leave: --exit shrinks the
+     whole slide + fades it — receding toward the vanishing point, like it's left
+     behind down the tunnel as you scroll on. Both are exactly identity in the hold
+     band (--t = --exit = 1 → translateY 0, scale 1), which keeps text crisp. */
   opacity: calc(var(--t) * var(--exit, 1));
-  transform: translateY(calc((1 - var(--t)) * 2.5rem + (1 - var(--exit, 1)) * -1.5rem));
-  will-change: opacity, transform;
+  transform:
+    translateY(calc((1 - var(--t)) * 2.5rem))
+    scale(calc(0.85 + var(--exit, 1) * 0.15));
+  /* NO `will-change` here on purpose: a permanent GPU layer rasterizes text (and
+     the glass cards' backdrop-filter) blurry whenever the translate sits at a
+     sub-pixel offset — i.e. anywhere outside the fully-revealed hold band. The
+     browser still composites these during active scroll; at rest it de-promotes
+     and they render crisp. (At present 0.62–0.82 the translate is exactly 0.) */
+}
+
+/* Reading "settle": one PROXIMITY scroll-snap point per pinned section, at its
+   fully-revealed hold position (~0.7 of the track — reveal finishes ~0.62, exit
+   starts ~0.82). Proximity (not mandatory) keeps scrolling free everywhere — the
+   gaps, mid-reveal — but when the user comes to rest near a section's reading
+   spot, the browser eases them onto it, so they don't nudge up/down to frame it.
+   Disabled wherever sections aren't pinned (small / reduced-motion / flat). */
+html {
+  scroll-snap-type: y proximity;
+}
+
+.present-snap {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  /* top = snap-point · (trackHeight − viewport); aligns the viewport top here. */
+  top: calc(0.7 * (var(--present-track) - 100vh));
+  scroll-snap-align: start;
+  /* `always` strengthens the settle: a scroll gesture can't fly past a section's
+     reading point — it stops there. The gaps stay free (they carry no snap
+     target and the type is `proximity`), so this only "locks" at the sections. */
+  scroll-snap-stop: always;
 }
 
 /* Responsive / a11y fallback: pinning tall content on small screens (or for
    reduced-motion users) is bad — disable pinning, reveal everything, collapse
    the gaps, and let sections flow normally. */
 @media (max-width: 767px) {
+  html { scroll-snap-type: none; }
+  .present-snap { display: none; }
   .journey-gap { height: 0; }
+  .journey-gap::before { display: none; }
   .present-track { height: auto; }
   .present-sticky { position: relative; min-height: 0; }
   .present-sticky > section { --present-pad: 6rem; }
@@ -285,9 +332,46 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-snap-type: none; }
+  .present-snap { display: none; }
   .journey-gap { height: 0; }
+  .journey-gap::before { display: none; }
   .present-track { height: auto; }
   .present-sticky { position: relative; min-height: 0; }
   .present-sticky > section { --present-pad: 8rem; }
   .present-step { opacity: 1; transform: none; }
+}
+
+/* Manual "simple view" (JourneyModeToggle / useJourneyMode) — the same flattening
+   as the responsive fallback, but user-chosen and persisted. Lets repeat visitors
+   skip the long cinematic scroll. */
+[data-journey-mode="flat"] { scroll-snap-type: none; }
+[data-journey-mode="flat"] .present-snap { display: none; }
+[data-journey-mode="flat"] .journey-gap { height: 0; }
+[data-journey-mode="flat"] .journey-gap::before { display: none; }
+[data-journey-mode="flat"] .present-track { height: auto; }
+[data-journey-mode="flat"] .present-sticky { position: relative; min-height: 0; }
+[data-journey-mode="flat"] .present-sticky > section { --present-pad: 6rem; }
+[data-journey-mode="flat"] .present-step { opacity: 1; transform: none; }
+
+/* "Keep scrolling" cue that rides along each empty camera-travel gap (sticky, so
+   it stays in view while the gap passes) — tells a fast scroller the flight
+   continues to the next slide. Hidden when the gaps collapse (see fallbacks). */
+.journey-gap::before {
+  content: "";
+  position: sticky;
+  top: 82vh;
+  display: block;
+  width: 12px;
+  height: 12px;
+  margin: 0 auto;
+  border-right: 2px solid color-mix(in oklch, var(--foreground) 40%, transparent);
+  border-bottom: 2px solid color-mix(in oklch, var(--foreground) 40%, transparent);
+  transform: translateY(0) rotate(45deg);
+  animation: gap-bob 1.8s ease-in-out infinite;
+}
+
+@keyframes gap-bob {
+  0%, 100% { transform: translateY(0) rotate(45deg); opacity: 0.3; }
+  50% { transform: translateY(6px) rotate(45deg); opacity: 0.75; }
 }

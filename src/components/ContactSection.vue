@@ -57,9 +57,9 @@ const sendEmail = async () => {
 <template>
   <SectionLayout id="contact" :title="t.contact.title" :subtitle="t.contact.subtitle">
     <div class="present-step max-w-2xl mx-auto" :style="{ '--step': 0 }">
-      <div class="bg-card/50 border border-border rounded-xl p-6 md:p-8 backdrop-blur-sm card-glow">
+      <div class="glass-panel rounded-xl p-6 md:p-8 card-glow">
         
-        <div v-if="status === 'success'" class="flex flex-col items-center justify-center py-8 text-center animate-in fade-in zoom-in duration-300">
+        <div v-if="status === 'success'" role="status" aria-live="polite" class="flex flex-col items-center justify-center py-8 text-center animate-in fade-in zoom-in duration-300">
           <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 text-primary">
             <CheckCircle class="w-8 h-8" />
           </div>
@@ -111,7 +111,7 @@ const sendEmail = async () => {
             ></textarea>
           </div>
 
-          <div v-if="status === 'error'" class="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-md">
+          <div v-if="status === 'error'" role="alert" aria-live="assertive" class="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-md">
             <AlertCircle class="w-4 h-4" />
             <p>{{ t.contact.errorMessage }}</p>
           </div>

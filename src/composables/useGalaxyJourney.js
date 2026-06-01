@@ -1,4 +1,5 @@
-import { ref, reactive, onMounted, onUnmounted } from "vue";
+import { ref, reactive, watch, onMounted, onUnmounted } from "vue";
+import { useJourneyMode } from "@/composables/useJourneyMode";
 
 /**
  * useGalaxyJourney()
@@ -36,6 +37,14 @@ const ZONES = [
 // lower = calmer reading sections; the gaps always bloom back to full (1.0).
 const DIM = 0.6;
 
+// Mid-gap camera pull-back. During each transition the zoom dips by this many
+// galaxy-zoom units at the midpoint (then returns), so the camera "pulls back to
+// see more, then flies into" the next area — an arc, not a straight zoom ramp.
+// 0 = straight ramp. TUNABLE.
+const PULLBACK = 0.5;
+// Floor so the pull-back never shrinks the galaxy much past the full-disc view.
+const MIN_ZOOM = 0.85;
+
 function smoothstep(t) {
   const c = t < 0 ? 0 : t > 1 ? 1 : t;
   return c * c * (3 - 2 * c);
@@ -46,6 +55,8 @@ function lerp(a, b, t) {
 }
 
 export function useGalaxyJourney() {
+  const { mode } = useJourneyMode();
+
   const zoom = ref(1);
   const center = reactive({ x: 0, y: 0 });
   const intensity = ref(1);
@@ -54,9 +65,33 @@ export function useGalaxyJourney() {
 
   let ranges = []; // per-zone { holdStart, holdEnd } in document coords
   let reduced = false;
+  let small = false; // mobile: galaxy is static, camera off
+  let reducedData = false; // metered connection: galaxy frozen, camera off
   let raf = null;
   let motionQuery = null;
+  let sizeQuery = null;
+  let dataQuery = null;
   const retries = [];
+
+  // "Soft off": the camera holds the hero view (galaxy still twinkles) — used for
+  // the manual flat/simple view, small screens, and reduced-data. Distinct from
+  // `reduced`, which detaches all listeners (handled separately below).
+  function softOff() {
+    return small || reducedData || mode.value === "flat";
+  }
+
+  function resetCamera() {
+    zoom.value = 1;
+    center.x = 0;
+    center.y = 0;
+    intensity.value = 1;
+    travel.value = 0;
+    activeIndex.value = 0;
+    if (raf !== null) {
+      cancelAnimationFrame(raf);
+      raf = null;
+    }
+  }
 
   function anchorEl(id) {
     return document.querySelector(`[data-journey="${id}"]`) || document.getElementById(id);
@@ -100,21 +135,27 @@ export function useGalaxyJourney() {
   }
 
   function applyGap(i, j, t) {
-    zoom.value = lerp(ZONES[i].zoom, ZONES[j].zoom, t);
+    // Everything that should peak mid-flight rides this arc: it's 0 at both ends
+    // (crisp arrival/departure) and 1 at the midpoint.
+    const arc = Math.sin(Math.PI * t);
+    // Zoom eases between the two holds, but is pulled BACK by the arc mid-gap —
+    // the camera dezooms to reveal more, then pushes back in to the next zone.
+    const baseZoom = lerp(ZONES[i].zoom, ZONES[j].zoom, t);
+    zoom.value = Math.max(MIN_ZOOM, baseZoom - PULLBACK * arc);
     center.x = lerp(ZONES[i].center.x, ZONES[j].center.x, t);
     center.y = lerp(ZONES[i].center.y, ZONES[j].center.y, t);
     // Base eases between the two holds; the bloom lifts opacity to full at the
     // gap midpoint, so the galaxy "exhales" as the camera flies through.
     const base = lerp(holdIntensity(i), holdIntensity(j), t);
-    intensity.value = base + (1 - base) * Math.sin(Math.PI * t);
+    intensity.value = base + (1 - base) * arc;
     // Warp peaks mid-flight and is zero at both ends (crisp on arrival/departure).
-    travel.value = Math.sin(Math.PI * t);
+    travel.value = arc;
     activeIndex.value = t < 0.5 ? i : j;
   }
 
   function update() {
     raf = null;
-    if (reduced) return;
+    if (reduced || softOff()) return;
     const y = window.scrollY;
     const first = ranges[0];
     if (!first) return;
@@ -170,45 +211,68 @@ export function useGalaxyJourney() {
   function onMotionChange(e) {
     reduced = e.matches;
     if (reduced) {
-      zoom.value = 1;
-      center.x = 0;
-      center.y = 0;
-      intensity.value = 1;
-      travel.value = 0;
-      if (raf !== null) {
-        cancelAnimationFrame(raf);
-        raf = null;
-      }
+      resetCamera();
     } else {
       measure();
       onScroll();
     }
   }
 
+  // Re-evaluate after a soft-off input (flat toggle, breakpoint, reduced-data)
+  // changes: either hold the hero view or resume flying.
+  function reevaluate() {
+    if (reduced) return;
+    if (softOff()) resetCamera();
+    else {
+      measure();
+      update();
+    }
+  }
+
+  function onSizeChange(e) {
+    small = e.matches;
+    reevaluate();
+  }
+
+  function onDataChange(e) {
+    reducedData = e.matches;
+    reevaluate();
+  }
+
   onMounted(() => {
     motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    sizeQuery = window.matchMedia("(max-width: 767px)");
+    dataQuery = window.matchMedia("(prefers-reduced-data: reduce)");
     reduced = motionQuery.matches;
+    small = sizeQuery.matches;
+    reducedData = dataQuery.matches;
     motionQuery.addEventListener("change", onMotionChange);
+    sizeQuery.addEventListener("change", onSizeChange);
+    dataQuery.addEventListener("change", onDataChange);
 
     if (reduced) {
-      zoom.value = 1;
-      center.x = 0;
-      center.y = 0;
-      intensity.value = 1;
-      travel.value = 0;
+      resetCamera();
       return;
     }
 
+    // Hold the hero view while soft-off, but still attach listeners + the mode
+    // watcher so toggling back to the cinematic view resumes the flight.
     measure();
-    update();
+    if (softOff()) resetCamera();
+    else update();
     scheduleRetries();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize, { passive: true });
   });
 
+  // The manual cinematic ⇄ flat toggle (useJourneyMode) flips soft-off at runtime.
+  watch(mode, reevaluate);
+
   onUnmounted(() => {
     if (raf !== null) cancelAnimationFrame(raf);
     motionQuery?.removeEventListener("change", onMotionChange);
+    sizeQuery?.removeEventListener("change", onSizeChange);
+    dataQuery?.removeEventListener("change", onDataChange);
     window.removeEventListener("scroll", onScroll);
     window.removeEventListener("resize", onResize);
     retries.forEach(clearTimeout);

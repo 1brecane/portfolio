@@ -1,15 +1,19 @@
 <script setup>
 import { computed } from "vue";
 import { useI18n } from "@/i18n";
+import { useJourneyMode } from "@/composables/useJourneyMode";
+import { scrollToZone } from "@/composables/useJourneyScroll";
 
-// Minimal fixed progress indicator for the scroll journey — one dot per zone,
-// the active one lit with its label. Purely an orientation cue (non-interactive,
-// aria-hidden); driven by `activeIndex` from useGalaxyJourney().
+// Fixed chapter indicator for the scroll journey — one dot per zone, the active
+// one lit with its label, driven by `activeIndex` from useGalaxyJourney(). Each
+// dot is a real button that flies the camera to that section. Hidden in "flat"
+// (simple) view and on small screens.
 const props = defineProps({
   activeIndex: { type: Number, default: 0 },
 });
 
 const { t } = useI18n();
+const { mode } = useJourneyMode();
 
 // Same order as ZONES in useGalaxyJourney.js; labels reuse the nav strings.
 const zones = computed(() => [
@@ -28,7 +32,7 @@ const progress = computed(() => {
 </script>
 
 <template>
-  <div class="journey-rail" aria-hidden="true">
+  <nav v-if="mode !== 'flat'" class="journey-rail" :aria-label="t.journey.navAria">
     <div class="journey-rail__track">
       <div class="journey-rail__fill" :style="{ height: `${progress * 100}%` }" />
     </div>
@@ -39,11 +43,19 @@ const progress = computed(() => {
         class="journey-rail__item"
         :class="{ 'is-active': i === activeIndex }"
       >
-        <span class="journey-rail__label">{{ zone.label }}</span>
-        <span class="journey-rail__dot" />
+        <button
+          type="button"
+          class="journey-rail__btn"
+          :aria-current="i === activeIndex ? 'true' : undefined"
+          :title="zone.label"
+          @click="scrollToZone(zone.id)"
+        >
+          <span class="journey-rail__label">{{ zone.label }}</span>
+          <span class="journey-rail__dot" />
+        </button>
       </li>
     </ul>
-  </div>
+  </nav>
 </template>
 
 <style scoped>
@@ -53,6 +65,7 @@ const progress = computed(() => {
   right: 1.5rem;
   transform: translateY(-50%);
   z-index: 40;
+  /* the rail surface is inert; only the dot buttons take pointer events */
   pointer-events: none;
   display: flex;
   align-items: center;
@@ -88,7 +101,24 @@ const progress = computed(() => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+}
+
+.journey-rail__btn {
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 0.6rem;
+  /* generous hit area without visual weight */
+  padding: 0.3rem 0.15rem 0.3rem 0.75rem;
+  margin: -0.3rem 0;
+  background: none;
+  border: 0;
+}
+
+.journey-rail__btn:focus-visible {
+  outline: none;
 }
 
 .journey-rail__label {
@@ -114,6 +144,19 @@ const progress = computed(() => {
     background 280ms ease,
     box-shadow 280ms ease,
     transform 280ms ease;
+}
+
+/* reveal the label on hover/focus so the rail is also a quick-jump menu */
+.journey-rail__btn:hover .journey-rail__label,
+.journey-rail__btn:focus-visible .journey-rail__label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.journey-rail__btn:hover .journey-rail__dot,
+.journey-rail__btn:focus-visible .journey-rail__dot {
+  background: var(--primary);
+  transform: scale(1.35);
 }
 
 .journey-rail__item.is-active .journey-rail__label {

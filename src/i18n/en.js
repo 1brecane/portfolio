@@ -23,6 +23,12 @@ export default {
     viewProjects: "View Projects",
     downloadCv: "Download CV",
     scrollCue: "scroll to begin",
+    terminalHint: "tip: this terminal is interactive — try `color 2`",
+  },
+  journey: {
+    switchToSimple: "Switch to simple view",
+    switchToCinematic: "Switch to cinematic journey",
+    navAria: "Jump to section",
   },
   stack: {
     title: "Tech Stack",

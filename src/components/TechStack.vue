@@ -7,10 +7,16 @@ import { useI18n } from "@/i18n";
 
 const { t } = useI18n();
 
+// Each category carries an accent (galaxy reds + cyan/purple/amber) so the four
+// cards read as distinct systems instead of one monochrome-red wall. `iconClass`
+// colors the glyph; `accent` tints the IconBox; `itemHover` lights the chip edge.
 const stackCategories = [
   {
     titleKey: "languages",
     icon: Code2,
+    accent: "primary",
+    iconClass: "text-primary",
+    itemHover: "hover:border-primary/40",
     items: [
       { name: "JavaScript",          descriptionKey: "javascript" },
       { name: "Rust",                descriptionKey: "rust" },
@@ -23,6 +29,9 @@ const stackCategories = [
   {
     titleKey: "databases",
     icon: Database,
+    accent: "cyan",
+    iconClass: "text-chart-2",
+    itemHover: "hover:border-chart-2/40",
     items: [
       { name: "MySQL",      descriptionKey: "mysql" },
       { name: "MongoDB",    descriptionKey: "mongodb" },
@@ -35,6 +44,9 @@ const stackCategories = [
   {
     titleKey: "devops",
     icon: Container,
+    accent: "purple",
+    iconClass: "text-chart-3",
+    itemHover: "hover:border-chart-3/40",
     items: [
       { name: "Docker",   descriptionKey: "docker" },
       { name: "CI/CD",    descriptionKey: "cicd" },
@@ -47,6 +59,9 @@ const stackCategories = [
   {
     titleKey: "selfhosting",
     icon: Server,
+    accent: "amber",
+    iconClass: "text-chart-4",
+    itemHover: "hover:border-chart-4/40",
     items: [
       { name: "Proxmox VE",        descriptionKey: "proxmox" },
       { name: "LXC Containers",    descriptionKey: "lxc" },
@@ -63,6 +78,9 @@ const resolvedCategories = computed(() =>
   stackCategories.map((cat) => ({
     title: t.value.stack.categories[cat.titleKey],
     icon: cat.icon,
+    accent: cat.accent,
+    iconClass: cat.iconClass,
+    itemHover: cat.itemHover,
     items: cat.items.map((item) => ({
       name: item.name,
       description: t.value.stack.items[item.descriptionKey],
@@ -82,12 +100,12 @@ const resolvedCategories = computed(() =>
         <div
           v-for="(category, i) in resolvedCategories"
           :key="category.title"
-          class="present-step group bg-card border border-border rounded-lg p-6 card-glow"
+          class="present-step group glass-panel rounded-lg p-6 card-glow"
           :style="{ '--step': i }"
         >
           <div class="flex items-center gap-3 mb-6">
-            <IconBox>
-              <component :is="category.icon" class="h-5 w-5 text-primary" />
+            <IconBox :accent="category.accent">
+              <component :is="category.icon" :class="['h-5 w-5', category.iconClass]" />
             </IconBox>
             <h3 class="font-semibold text-lg">{{ category.title }}</h3>
           </div>
@@ -96,7 +114,8 @@ const resolvedCategories = computed(() =>
             <div
               v-for="item in category.items"
               :key="item.name"
-              class="flex flex-col p-3 rounded-md bg-muted/50 border border-border/50 hover:border-primary/30 transition-colors"
+              class="flex flex-col p-3 rounded-md bg-muted/40 border border-border/50 transition-colors"
+              :class="category.itemHover"
             >
               <span class="font-mono text-sm font-medium text-foreground">
                 {{ item.name }}

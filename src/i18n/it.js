@@ -23,6 +23,12 @@ export default {
     viewProjects: "Vedi Progetti",
     downloadCv: "Scarica CV",
     scrollCue: "scorri per iniziare",
+    terminalHint: "suggerimento: questo terminale è interattivo — prova `color 2`",
+  },
+  journey: {
+    switchToSimple: "Passa alla vista semplice",
+    switchToCinematic: "Passa al viaggio cinematico",
+    navAria: "Vai alla sezione",
   },
   stack: {
     title: "Tech Stack",

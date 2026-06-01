@@ -3,10 +3,22 @@ import { ref, computed } from "vue";
 import { Menu, X } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import LocaleToggle from "@/components/ui/LocaleToggle.vue";
+import JourneyModeToggle from "@/components/ui/JourneyModeToggle.vue";
 import { useI18n } from "@/i18n";
 import { useWindowScroll } from "@/composables/useWindowScroll";
+import { scrollToZone } from "@/composables/useJourneyScroll";
 
 const { t } = useI18n();
+
+// Anchor jumps must land on a *revealed* slide, not the un-revealed top of the
+// pinned track — scrollToZone() computes the right offset (see useJourneyScroll).
+function go(href) {
+  scrollToZone(href.replace("#", ""));
+}
+function onMobileLink(href) {
+  isMobileMenuOpen.value = false;
+  go(href);
+}
 
 const navLinks = computed(() => [
   { href: "#hero", label: t.value.nav.home },
@@ -32,7 +44,7 @@ const contactBtnClass = "font-mono text-sm border-primary text-primary hover:bg-
   >
     <div class="mx-auto max-w-6xl px-6 py-4">
       <div class="flex items-center justify-between">
-        <a href="#hero" class="flex-1 font-mono text-sm font-semibold tracking-tight group">
+        <a href="#hero" class="flex-1 font-mono text-sm font-semibold tracking-tight group" @click.prevent="go('#hero')">
           <span class="text-primary group-hover:neon-text transition-all">
             <span class="md:hidden">SR</span>
             <span class="hidden md:inline">Samuele Ruaro</span>
@@ -46,6 +58,7 @@ const contactBtnClass = "font-mono text-sm border-primary text-primary hover:bg-
             :key="link.href"
             :href="link.href"
             class="font-mono text-sm text-muted-foreground hover:text-primary transition-colors relative group"
+            @click.prevent="go(link.href)"
           >
             {{ link.label }}
             <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
@@ -53,12 +66,14 @@ const contactBtnClass = "font-mono text-sm border-primary text-primary hover:bg-
         </div>
 
         <div class="hidden md:flex flex-1 items-center justify-end gap-3">
+          <JourneyModeToggle />
           <LocaleToggle />
           <AppButton
             as="a"
             href="#contact"
             variant="outline"
             :class="contactBtnClass"
+            @click.prevent="go('#contact')"
           >
             {{ t.nav.contact }}
           </AppButton>
@@ -83,18 +98,19 @@ const contactBtnClass = "font-mono text-sm border-primary text-primary hover:bg-
             :key="link.href"
             :href="link.href"
             class="font-mono text-sm text-muted-foreground hover:text-primary transition-colors"
-            @click="isMobileMenuOpen = false"
+            @click.prevent="onMobileLink(link.href)"
           >
             {{ link.label }}
           </a>
           <div class="flex flex-wrap items-center gap-3">
+            <JourneyModeToggle />
             <LocaleToggle />
             <AppButton
               as="a"
               href="#contact"
               variant="outline"
               :class="contactBtnClass"
-              @click="isMobileMenuOpen = false"
+              @click.prevent="onMobileLink('#contact')"
             >
               {{ t.nav.contact }}
             </AppButton>

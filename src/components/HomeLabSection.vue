@@ -17,7 +17,7 @@ const { t } = useI18n();
   >
     <template #default>
       <div class="present-step max-w-2xl mx-auto" :style="{ '--step': 0 }">
-        <div class="bg-card border border-border rounded-lg p-10 card-glow">
+        <div class="glass-panel rounded-lg p-10 card-glow">
           <div class="flex flex-col items-center gap-5 text-center">
             <IconBox size="lg">
               <Construction class="h-8 w-8 text-primary" />

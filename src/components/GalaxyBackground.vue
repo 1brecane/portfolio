@@ -34,8 +34,20 @@ const canvasRef = ref(null);
 let animationId = null;
 let resizeObserver = null;
 let motionQuery = null;
+let sizeQuery = null;
+let dataQuery = null;
 let reducedMotion = false;
+let smallScreen = false; // mobile: render one static frame, no rAF loop
+let reducedData = false; // metered connection: same, save battery/CPU
 let startTime = null;
+let charWidth = null; // cached monospace "M" width at FONT_SIZE (constant — measure once)
+
+// The galaxy is drawn once (no animation loop) when any of these hold — the
+// twinkle/warp aren't worth the per-frame canvas cost on phones, metered
+// connections, or for reduced-motion users.
+function staticMode() {
+  return reducedMotion || smallScreen || reducedData;
+}
 
 // ── TUNABLE KNOBS ─────────────────────────────────────────────────────────────
 const FONT_SIZE = 15; // base glyph size at zoom=1 (px). Scales with zoom.
@@ -49,6 +61,10 @@ const SHIMMER_SPEED = 2.0; // base fast-flicker rate (rad/s)
 const SHIMMER_AMP = 0.07; // amplitude — flicker, not blink
 const STREAK_MAX = 26; // px — max warp-streak length at full travel (tunable)
 const STREAK_COPIES = 3; // trailing ghost copies drawn per particle while warping
+// Perf: only bright particles get warp streaks. Faint ones are the bulk of the
+// field but their streaks are ~invisible, and the gaps (where travel > 0) are
+// exactly where you scroll fastest — so skipping them cuts the heaviest frames.
+const STREAK_MIN_ALPHA = 0.3;
 
 // ── galaxy shape constants ────────────────────────────────────────────────────
 const SPIRAL_K = 1 / Math.tan((10 * Math.PI) / 180);
@@ -199,8 +215,13 @@ function draw(canvas, elapsed) {
 
   // Measure the BASE monospace cell so that at zoom=1 the galaxy grid projects
   // exactly one character-cell apart (preserves the original full-disc look).
-  ctx.font = `${FONT_SIZE}px ui-monospace, 'Courier New', monospace`;
-  const CHAR_W = ctx.measureText("M").width;
+  // It's constant (FONT_SIZE/family never change), so measure once and cache —
+  // avoids a font swap + measureText every frame.
+  if (charWidth === null) {
+    ctx.font = `${FONT_SIZE}px ui-monospace, 'Courier New', monospace`;
+    charWidth = ctx.measureText("M").width;
+  }
+  const CHAR_W = charWidth;
   const CHAR_H = FONT_SIZE;
 
   // FIXED grid spacing in galaxy space (A3).
@@ -333,8 +354,9 @@ function draw(canvas, elapsed) {
 
       // Warp streaks: while the camera flies (travel > 0) draw faded ghost copies
       // trailing toward the vanishing point, so the field stretches past at speed.
+      // Only bright particles streak (STREAK_MIN_ALPHA) — see note above.
       const warp = props.travel;
-      if (warp > 0.02) {
+      if (warp > 0.02 && alpha > STREAK_MIN_ALPHA) {
         const dvx = px - cx;
         const dvy = py - cy;
         const dist = Math.hypot(dvx, dvy);
@@ -364,7 +386,7 @@ function draw(canvas, elapsed) {
 // freeze the loop.
 function tick(ts) {
   if (startTime === null) startTime = ts;
-  if (!reducedMotion) animationId = requestAnimationFrame(tick);
+  if (!staticMode()) animationId = requestAnimationFrame(tick);
   const canvas = canvasRef.value;
   if (canvas) draw(canvas, (ts - startTime) / 1000);
 }
@@ -387,15 +409,32 @@ function drawStatic() {
   });
 }
 
+// Start/stop the loop to match the current static-vs-animated state.
+function applyMode() {
+  if (staticMode()) {
+    if (animationId !== null) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+    drawStatic();
+  } else if (animationId === null && !document.hidden) {
+    animationId = requestAnimationFrame(tick);
+  }
+}
+
 function onMotionChange(e) {
   reducedMotion = e.matches;
-  if (!reducedMotion) {
-    animationId = requestAnimationFrame(tick);
-  } else if (animationId !== null) {
-    cancelAnimationFrame(animationId);
-    animationId = null;
-    drawStatic();
-  }
+  applyMode();
+}
+
+function onSizeChange(e) {
+  smallScreen = e.matches;
+  applyMode();
+}
+
+function onDataChange(e) {
+  reducedData = e.matches;
+  applyMode();
 }
 
 function onMouseMove(e) {
@@ -418,7 +457,7 @@ function onVisibility() {
       cancelAnimationFrame(animationId);
       animationId = null;
     }
-  } else if (!reducedMotion && animationId === null) {
+  } else if (!staticMode() && animationId === null) {
     animationId = requestAnimationFrame(tick);
   }
 }
@@ -431,19 +470,25 @@ onMounted(() => {
 
   resizeObserver = new ResizeObserver(() => {
     syncSize(canvas);
-    if (reducedMotion) drawStatic();
+    if (staticMode()) drawStatic();
   });
   resizeObserver.observe(canvas);
 
   motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  sizeQuery = window.matchMedia("(max-width: 767px)");
+  dataQuery = window.matchMedia("(prefers-reduced-data: reduce)");
   reducedMotion = motionQuery.matches;
+  smallScreen = sizeQuery.matches;
+  reducedData = dataQuery.matches;
   motionQuery.addEventListener("change", onMotionChange);
+  sizeQuery.addEventListener("change", onSizeChange);
+  dataQuery.addEventListener("change", onDataChange);
 
   window.addEventListener("mousemove", onMouseMove, { passive: true });
   document.addEventListener("mouseleave", onMouseLeave);
   document.addEventListener("visibilitychange", onVisibility);
 
-  if (reducedMotion) {
+  if (staticMode()) {
     drawStatic();
   } else {
     animationId = requestAnimationFrame(tick);
@@ -454,6 +499,8 @@ onUnmounted(() => {
   if (animationId !== null) cancelAnimationFrame(animationId);
   resizeObserver?.disconnect();
   motionQuery?.removeEventListener("change", onMotionChange);
+  sizeQuery?.removeEventListener("change", onSizeChange);
+  dataQuery?.removeEventListener("change", onDataChange);
   window.removeEventListener("mousemove", onMouseMove);
   document.removeEventListener("mouseleave", onMouseLeave);
   document.removeEventListener("visibilitychange", onVisibility);

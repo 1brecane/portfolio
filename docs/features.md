@@ -18,7 +18,9 @@ Two **fixed**, full-viewport layers sit at `z-0`, behind the page (page content 
 2. **`GalaxyBackground.vue`** — a Canvas 2D ASCII spiral galaxy (the thing the journey
    camera flies through).
 
-Both honor `prefers-reduced-motion` (static, no animation loop / no listeners).
+Both honor `prefers-reduced-motion` (static, no animation loop / no listeners). The
+galaxy additionally renders a **single static frame** (no rAF loop) on small screens
+(`max-width: 767px`) and under `prefers-reduced-data: reduce`, to save battery/CPU.
 
 ---
 
@@ -95,10 +97,12 @@ opacity, applied as a CSS-transitioned canvas opacity — see "breathing" below)
 `zoom 1, center {0,0}, intensity 1` it looks identical to a plain full-disc render.
 
 **Loop:** `requestAnimationFrame`; the next frame is scheduled **before** `draw()`, so a
-one-off draw error can never freeze the loop. Under reduced motion it draws one static
-frame and does not loop. **Perf guard:** the loop is paused on `visibilitychange` while
-the tab is hidden and resumed on return (the galaxy renders the full viewport every
-frame, so this matters — it's the heaviest always-on runtime cost).
+one-off draw error can never freeze the loop. The shared `staticMode()` guard (reduced
+motion **or** small screen **or** reduced-data) draws one static frame and does not loop;
+the three are watched live via `matchMedia` so toggling any of them starts/stops the loop
+(`applyMode()`). **Perf guard:** the loop is also paused on `visibilitychange` while the
+tab is hidden and resumed on return (the galaxy renders the full viewport every frame, so
+this matters — it's the heaviest always-on runtime cost).
 
 **Recolor egg:** the Hero terminal `color N` command sets the hover palette through the
 module-level [`useColorScheme()`](../src/composables/useColorScheme.js) singleton, which
@@ -134,6 +138,11 @@ space (`{0,0}` = core):
 - While a section is **on screen**, the camera **holds** that zone (stable backdrop).
 - While in the **empty gap** between two sections, it **interpolates** (smoothstep) from
   the current zone to the next.
+- **Pull-back arc:** the zoom doesn't ramp straight from A to B. A mid-gap `sin(π·t)` arc
+  (0 at both ends, 1 at the midpoint) is *subtracted* from the eased zoom, so the camera
+  **dezooms to reveal more, then pushes back in** to the next zone — a cinematic flight arc.
+  The same `arc` also drives the bloom and warp below, so all three peak together mid-flight.
+  Floored at `MIN_ZOOM` so it never shrinks past the full disc. Knobs: `PULLBACK`, `MIN_ZOOM`.
 - **Breathing:** the composable also emits `intensity` (galaxy opacity). Non-`bright`
   zones dim to `DIM` (0.6) while held so their content reads calmly; the gaps bloom the
   opacity back to full at their midpoint (`base + (1-base)*sin(π·t)`), so the galaxy
@@ -143,11 +152,16 @@ space (`{0,0}` = core):
   mid-gap). `GalaxyBackground` uses it to draw faded ghost copies of each glyph trailing
   toward the vanishing point (`cx, cy`) — particles farther out streak more — so the
   empty gaps feel like *flight*, not just zoom. Crisp on arrival (`travel → 0`). Knobs:
-  `STREAK_MAX`, `STREAK_COPIES` in `GalaxyBackground.vue`.
+  `STREAK_MAX`, `STREAK_COPIES` in `GalaxyBackground.vue`. **Perf:** only particles
+  brighter than `STREAK_MIN_ALPHA` streak — the gaps are the heaviest frames *and* where
+  you scroll fastest, and faint particles' streaks are ~invisible, so this caps the spike.
 - **Chapter rail:** the composable emits `activeIndex` (held zone, or the nearer one
   mid-gap). [`JourneyRail.vue`](../src/components/JourneyRail.vue) renders a fixed
-  right-edge dot-per-zone indicator with the active label lit and a progress fill — a
-  pure orientation cue (non-interactive, `aria-hidden`, hidden < 768px).
+  right-edge dot-per-zone indicator with the active label lit and a progress fill. Each
+  dot is a real **button** that flies the camera to that section via `scrollToZone()`
+  (labels reveal on hover/focus) — an orientation cue *and* a quick-jump menu. It's a
+  `<nav aria-label>`, hidden < 768px and in flat view. The camera is `prefers-reduced-motion`-
+  and small-screen-aware, so the journey holds the hero view rather than running there.
 - Pinned sections are sticky, so their inner `#id` box is **not** a stable anchor. The
   camera measures the non-sticky wrapper carrying `data-journey="<id>"` (the
   `.present-track`), falling back to `#id` for the non-pinned hero.
@@ -158,7 +172,9 @@ space (`{0,0}` = core):
 
 Between every section is `<div class="journey-gap" aria-hidden>` (`pointer-events:none`).
 Length is the `--journey-gap` CSS var (default `110vh`). Collapses to `0` under
-reduced-motion and on small screens.
+reduced-motion, on small screens, and in flat view. A **sticky "keep scrolling" chevron**
+(`.journey-gap::before`, `gap-bob` keyframes) rides along each gap so a fast scroller
+knows the flight continues to the next slide; it's hidden wherever the gap collapses.
 
 ### Pinned presentation — `JourneyPresentation.vue` + `useScrollPresentation()`
 
@@ -168,7 +184,12 @@ Each journey section (About, TechStack, Projects, HomeLab, Contact) is wrapped s
 - `useScrollPresentation(trackRef)` → `progress` 0→1 across a tall track whose inner
   content is `position:sticky; top:0`:
   `progress = clamp((scrollY - trackTop) / (trackHeight - viewportHeight), 0, 1)`.
-  Under reduced motion `progress = 1`.
+  Under reduced motion `progress = 1`. **Perf:** `trackTop`/height are measured once and
+  cached (re-measured on mount, window resize, and a `ResizeObserver` on `<body>` for lazy
+  mounts / locale / font shifts); the per-frame path reads only `scrollY`. Measuring every
+  frame (× the five sections) forced reflow-on-write **layout thrashing** that froze the
+  galaxy and made reveals pop on fast scroll — don't reintroduce a per-frame
+  `getBoundingClientRect`.
 - `JourneyPresentation.vue` (props `zone`, `steps`) renders:
 
   ```html
@@ -192,13 +213,31 @@ Each journey section (About, TechStack, Projects, HomeLab, Contact) is wrapped s
   .present-step {
     --t: clamp(0, calc(var(--reveal,1) * var(--steps,1) - var(--step,0)), 1);
     opacity: calc(var(--t) * var(--exit, 1));
-    transform: translateY(calc((1 - var(--t)) * 2.5rem + (1 - var(--exit,1)) * -1.5rem));
+    transform:
+      translateY(calc((1 - var(--t)) * 2.5rem))   /* enter: rise in */
+      scale(calc(0.85 + var(--exit,1) * 0.15));    /* leave: recede + shrink */
   }
   ```
 
   So step *i* fades+rises in over `reveal` `i/steps → (i+1)/steps`, the slide holds
-  fully visible, then fades+drifts up as you scroll away — each section reads as a
-  self-contained slide. Tune the pacing via the `0.62` / `0.18` split.
+  fully visible, then **shrinks + fades — receding toward the vanishing point** (scale
+  1 → 0.85) as you scroll on, like it's left behind down the tunnel. Each section reads
+  as a self-contained slide. Tune the pacing via the `0.62` / `0.18` split, and the
+  recede depth via the `0.85` floor (lower = recedes further).
+- **Reading settle (scroll-snap):** each track also carries a single
+  `<span class="present-snap">` at `0.7 · (trackHeight − vh)` — the fully-revealed hold
+  position — with `scroll-snap-align: start` + `scroll-snap-stop: always`, and
+  `html { scroll-snap-type: y proximity }`. *Proximity* leaves scrolling free through the
+  gaps and mid-reveal; `scroll-snap-stop: always` means a gesture can't fly *past* a
+  section's reading point — it stops there — so the slide ends up framed without the user
+  nudging up/down. Disabled wherever sections aren't pinned (small screens / reduced-motion
+  / flat view).
+- **Crispness:** `.present-step` deliberately has **no `will-change`**. A permanent GPU
+  layer rasterizes its text (and the glass cards' `backdrop-filter`) blurry whenever the
+  reveal translate sits at a sub-pixel offset — i.e. anywhere outside the hold band, worst
+  on Contact's big glass card over the bright galaxy. Without it, the browser composites
+  during active scroll and de-promotes at rest (where the translate is exactly 0 → crisp).
+  The scroll-snap above settles the user into that crisp band.
 
 **Per-section step counts** (set via `:steps` in `App.vue`, with matching `--step` on
 each block):
@@ -213,7 +252,33 @@ each block):
 
 These replace the old per-section reveals (`stagger-children` / `scroll-reveal` /
 `isVisible` opacity) on those blocks so they don't fight `present-step`. The shared
-`SectionHeader` keeps its own `useScrollReveal`.
+`SectionHeader` is itself a `present-step` (`--step: 0`), so the **title reveals and
+recedes with the slide** rather than doing its own vertical scroll-reveal drift —
+`SectionLayout` no longer uses `useScrollReveal`. (The `FooterSection`, which lives
+outside the journey, still uses `useScrollReveal` for a plain fade-in.)
+
+### Navigation & view modes
+
+- **Anchor scrolling — `scrollToZone(id)`**
+  ([`useJourneyScroll.js`](../src/composables/useJourneyScroll.js)). A nav/rail click can't
+  just jump to `#about`: the section is `sticky` inside a tall `.present-track`, so landing
+  at the track top shows the slide *un-revealed* (`--present ≈ 0`). `scrollToZone` instead
+  scrolls to `trackTop + 0.65 * (trackHeight - vh)` — the point where the slide is fully
+  shown and not yet exiting. In flat view / on small screens / under reduced motion it falls
+  back to a plain top-of-element scroll (minus an 80px nav offset). Wired into NavBar (links,
+  logo, contact), the hero CTA + scroll cue, and every rail dot. All keep their `href` for
+  right-click/share but `@click.prevent` to call `scrollToZone`.
+- **Deep links.** [`App.vue`](../src/App.vue) reads `location.hash` on mount and calls
+  `scrollToZone` once the target track exists (retries `[300, 700, 1300, 2000]ms`, since the
+  sections are lazy), so `/#projects` opens straight to a revealed Projects slide.
+- **Cinematic ⇄ flat ("simple view") — `useJourneyMode()`**
+  ([`useJourneyMode.js`](../src/composables/useJourneyMode.js)). A module-level singleton
+  (`"cinematic" | "flat"`) persisted to `localStorage` and mirrored onto
+  `<html data-journey-mode>`. **Flat** flattens the layout (same CSS as the responsive
+  fallback — collapses gaps, un-pins tracks, reveals all steps) so repeat visitors can skip
+  the long scroll. The galaxy camera holds the hero view in flat (still twinkles); the rail
+  hides. Toggled by [`JourneyModeToggle.vue`](../src/components/ui/JourneyModeToggle.vue) in
+  the NavBar (next to `LocaleToggle`).
 
 ### Responsive / a11y fallback
 
@@ -221,7 +286,8 @@ Under `@media (max-width:767px)` **and** `prefers-reduced-motion: reduce`: pinni
 disabled (`.present-track{height:auto}`, `.present-sticky{position:relative;min-height:0}`
 — relative, not static, so the scrim still anchors), everything is revealed
 (`.present-step{opacity:1;transform:none}`), and `.journey-gap` collapses to `0`.
-Sections then flow normally. The chapter rail is hidden < 768px.
+Sections then flow normally. The chapter rail is hidden < 768px. The manual
+**flat** view (`[data-journey-mode="flat"]`) applies the exact same flattening on demand.
 
 ---
 
@@ -230,13 +296,17 @@ Sections then flow normally. The chapter rail is hidden < 768px.
 | Knob | Where | Effect |
 |---|---|---|
 | `--journey-gap` | `globals.css` `:root` | length of the empty camera-travel gaps |
+| `REVEAL_POINT` (`0.65`) | `useJourneyScroll.js` | where in a track an anchor jump lands (fully-revealed slide) |
+| `gap-bob` / `.journey-gap::before` | `globals.css` | the sticky "keep scrolling" chevron in each gap |
 | `--present-track` | `globals.css` `:root` | scroll distance / pace of a pinned reveal |
 | `--reveal` / `--exit` split (`0.62` / `0.18`) | `globals.css` `.present-track` | reveal vs hold vs exit-fade pacing of a slide |
+| snap point (`0.7`) | `globals.css` `.present-snap` | where the proximity scroll-snap settles a section for reading |
 | `:steps` | per section in `App.vue` | number of staged reveal steps |
 | `ZONES` zoom/center/`bright` | `useGalaxyJourney.js` | per-section camera target + which stay full-opacity |
 | `DIM` | `useGalaxyJourney.js` | galaxy opacity while reading a dimmable section (breathing) |
+| `PULLBACK` / `MIN_ZOOM` | `useGalaxyJourney.js` | mid-gap camera dezoom amount (the flight arc) / its floor |
 | `FONT_SIZE` | `GalaxyBackground.vue` | base glyph size |
 | `TWINKLE_SPEED_BASE/VAR` | `GalaxyBackground.vue` | twinkle rate / spread |
-| `STREAK_MAX` / `STREAK_COPIES` | `GalaxyBackground.vue` | warp-streak length / ghost-copy count |
+| `STREAK_MAX` / `STREAK_COPIES` / `STREAK_MIN_ALPHA` | `GalaxyBackground.vue` | warp-streak length / ghost-copy count / min particle alpha that streaks (perf: faint particles skip streaks) |
 | `OUTER_R` | `GalaxyBackground.vue` | galaxy disc radius |
 | scrim alphas | `globals.css` `.present-sticky::before` | section readability vs galaxy visibility |

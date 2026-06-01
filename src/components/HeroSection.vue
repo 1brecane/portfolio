@@ -8,6 +8,7 @@ import { useI18n } from "@/i18n";
 import { useTypewriter } from "@/composables/useTypewriter";
 import { useColorScheme } from "@/composables/useColorScheme";
 import { useWindowScroll } from "@/composables/useWindowScroll";
+import { scrollToZone } from "@/composables/useJourneyScroll";
 import easterEggs from "@/data/terminalEasterEggs.json";
 
 const { t } = useI18n();
@@ -27,6 +28,7 @@ const userInput = ref("");
 const isMinimized = ref(false);
 const isClosed = ref(false);
 const showCaptcha = ref(false);
+const terminalFocused = ref(false);
 
 // ── easter egg state ──────────────────────────────────────────────────────────
 const lastCommand = ref("");
@@ -153,6 +155,7 @@ function reopenTerminal() {
             href="#projects"
             size="lg"
             class="font-mono bg-primary text-primary-foreground hover:bg-primary/90 neon-glow"
+            @click.prevent="scrollToZone('projects')"
           >
             {{ t.hero.viewProjects }}
           </AppButton>
@@ -218,9 +221,11 @@ function reopenTerminal() {
             <!-- Terminal body -->
             <div
               v-if="!isMinimized"
-              class="p-6 text-left font-mono text-sm outline-none"
+              class="terminal-body p-6 text-left font-mono text-sm outline-none"
               tabindex="0"
               @keydown="handleKey"
+              @focus="terminalFocused = true"
+              @blur="terminalFocused = false"
             >
               <div
                 v-for="(line, index) in shownLines"
@@ -246,6 +251,13 @@ function reopenTerminal() {
                 <span class="text-foreground">{{ userInput }}</span>
                 <span class="inline-block w-2 h-4 bg-white cursor-blink" />
               </div>
+              <div
+                v-if="isFinished && !userInput && !lastCommand"
+                class="mt-2 text-[0.7rem] italic select-none transition-colors"
+                :class="terminalFocused ? 'text-muted-foreground/90' : 'text-muted-foreground/55'"
+              >
+                {{ t.hero.terminalHint }}
+              </div>
             </div>
           </div>
         </div>
@@ -268,6 +280,7 @@ function reopenTerminal() {
         v-if="showScrollCue"
         href="#about"
         class="scroll-cue absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+        @click.prevent="scrollToZone('about')"
       >
         <span>{{ t.hero.scrollCue }}</span>
         <ChevronDown class="h-4 w-4 scroll-cue__chevron" />
@@ -279,6 +292,14 @@ function reopenTerminal() {
 </template>
 
 <style scoped>
+/* Make the terminal's keyboard focus visible — it's typeable (easter eggs,
+   `color N`), but without a ring there's no hint that it accepts input. */
+.terminal-body:focus-visible {
+  outline: 1px solid var(--primary);
+  outline-offset: -2px;
+  border-radius: 0.375rem;
+}
+
 .cue-enter-active,
 .cue-leave-active {
   transition: opacity 0.5s ease;

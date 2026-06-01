@@ -8,6 +8,7 @@ import JourneyPresentation from "@/components/JourneyPresentation.vue";
 import JourneyRail from "@/components/JourneyRail.vue";
 import NotFound from "@/components/NotFound.vue";
 import { useGalaxyJourney } from "@/composables/useGalaxyJourney";
+import { scrollToZone } from "@/composables/useJourneyScroll";
 
 const AboutSection = defineAsyncComponent(() => import("@/components/AboutSection.vue"));
 const TechStack = defineAsyncComponent(() => import("@/components/TechStack.vue"));
@@ -26,6 +27,25 @@ onMounted(() => {
   const path = window.location.pathname;
   if (path !== "/" && path !== "/index.html") {
     isNotFound.value = true;
+    return;
+  }
+
+  // Deep link: if loaded with #section, land on that revealed slide once it (and
+  // the lazy sections above it) have mounted — retry until its track exists.
+  const hash = window.location.hash.replace("#", "");
+  if (hash) {
+    let done = false;
+    const tryScroll = () => {
+      if (done) return;
+      const el =
+        document.querySelector(`.present-track[data-journey="${hash}"]`) ||
+        document.getElementById(hash);
+      if (el) {
+        done = true;
+        scrollToZone(hash);
+      }
+    };
+    [300, 700, 1300, 2000].forEach((ms) => setTimeout(tryScroll, ms));
   }
 });
 </script>

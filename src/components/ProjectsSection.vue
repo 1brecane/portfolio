@@ -84,7 +84,7 @@ const projects = computed(() =>
         <article
           v-for="(project, i) in projects"
           :key="project.id"
-          class="present-step group relative bg-card border border-border rounded-lg overflow-hidden card-glow"
+          class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow"
           :style="{ '--step': i }"
         >
           <!-- coloured accent bar -->

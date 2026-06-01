@@ -25,5 +25,7 @@ const { progress } = useScrollPresentation(trackRef);
     <div class="present-sticky">
       <slot />
     </div>
+    <!-- gentle proximity scroll-snap point at the fully-revealed reading position -->
+    <span class="present-snap" aria-hidden="true" />
   </div>
 </template>

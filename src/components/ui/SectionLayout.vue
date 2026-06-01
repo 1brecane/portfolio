@@ -1,5 +1,4 @@
 <script setup>
-import { useScrollReveal } from "@/composables/useScrollReveal";
 import SectionHeader from "@/components/ui/SectionHeader.vue";
 
 defineProps({
@@ -8,20 +7,13 @@ defineProps({
   subtitle: { type: String, required: true },
   gridBg: { type: Boolean, default: false },
 });
-
-const { isVisible } = useScrollReveal("sectionRef");
 </script>
 
 <template>
-  <section :id="id" ref="sectionRef" :class="['relative py-24 md:py-32', { 'grid-bg': gridBg }]">
+  <section :id="id" :class="['relative py-24 md:py-32', { 'grid-bg': gridBg }]">
     <div class="relative mx-auto max-w-6xl px-6">
-      <SectionHeader
-        :title="title"
-        :subtitle="subtitle"
-        :is-visible="isVisible"
-      />
-
-      <slot :is-visible="isVisible" />
+      <SectionHeader :title="title" :subtitle="subtitle" />
+      <slot />
     </div>
   </section>
 </template>
