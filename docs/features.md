@@ -22,6 +22,12 @@ Both honor `prefers-reduced-motion` (static, no animation loop / no listeners). 
 galaxy additionally renders a **single static frame** (no rAF loop) on small screens
 (`max-width: 767px`) and under `prefers-reduced-data: reduce`, to save battery/CPU.
 
+On small screens the galaxy is also **framed differently** (see A3 below): instead of the
+desktop's cover fit it **contains the disc to the screen width** and views it nearly
+**face-on**, so a narrow portrait shows the *whole* spiral (all arms) rather than zooming
+into just the core. The canvas also renders at `devicePixelRatio` so glyphs stay crisp on
+high-DPR phones. Desktop framing is untouched.
+
 ---
 
 ## The galaxy — `GalaxyBackground.vue`
@@ -66,13 +72,40 @@ grid (that re-samples denser as you zoom, making new characters appear). Instead
   zoom 1 (preserving the on-load look):
 
   ```
-  scale = canvasWidth / 2
-  CHAR_W = measured monospace "M" width at base FONT_SIZE
+  scale  = max(W/2, H/(2*OUTER_R*TILT_SIN))   // desktop: COVER — fills the viewport
+  CHAR_W = measured monospace "M" width at the active FONT_SIZE
   CHAR_H = FONT_SIZE
   TILT_SIN = sin(40°)
   stepX = CHAR_W / scale
   stepZ = CHAR_H / (scale * TILT_SIN)
   ```
+
+  **Mobile framing (`max-width: 767px`).** A round, face-on disc can't be *covered* by a
+  tall portrait without zooming so far that the side arms crop off-screen and only the core
+  band shows — an unreadable "blob". So mobile drops the cover fit and **contains the disc
+  to the screen width** instead: the whole spiral fits across the width and reads (all
+  arms), with a starfield letterbox above/below (the disc is roughly as tall as it is wide,
+  shorter than the portrait). A smaller glyph keeps the grid dense. The rest of A3 is
+  identical — same fixed grid, same hashing — only these framing constants change:
+
+  ```
+  scale     = (W / (2*OUTER_R)) * MOBILE_FILL    // CONTAIN-by-width — whole disc fits the width
+  MOBILE_FILL = 1.12                             // ≥1 crops only the faint outer tips → fills the width
+  FONT_SIZE = FONT_SIZE_MOBILE (10, vs 15)       // finer detail on the small screen
+  TILT_SIN  = sin(74°) ≈ 0.961 (vs 0.643)        // near face-on → round disc, spiral reads
+  ```
+
+  Containing to the width means the disc spans the full screen width (`MOBILE_FILL` crops
+  only the faint `r≈1.0–1.1` arm tips), so every arm is on-screen instead of the desktop's
+  height-driven cover cropping them. The `charWidth` cache is invalidated in `onSizeChange`
+  when the breakpoint flips, since the active `FONT_SIZE` changes. Desktop (`> 767px`) takes
+  the cover-fit `sin(40°)`/`FONT_SIZE 15` path unchanged.
+
+  **High-DPR rendering.** The canvas backing store is sized to `clientSize × devicePixelRatio`
+  (capped at 2) while `draw()` works in CSS pixels via `ctx.setTransform(dpr,…)`, so glyphs
+  rasterize crisply on phones instead of being upscaled and blurred. At DPR 1 it's the
+  identity transform — desktop output is byte-for-byte unchanged. Glyph *count* is unaffected
+  (the grid is CSS-pixel based), so there's no O(N) cost increase, only sharper rasterization.
 
 - Fixed galaxy position: `x_gal = ix*stepX`, `z_gal = iz*stepZ`; cull if
   `sqrt(x_gal² + z_gal²) > OUTER_R`.
@@ -93,8 +126,14 @@ grid (that re-samples denser as you zoom, making new characters appear). Instead
 Net effect: zooming in is exactly like zooming a bitmap — same characters, bigger.
 
 **Props:** `zoom: Number = 1`, `center: {x,y} = {0,0}`, `intensity: Number = 1` (galaxy
-opacity, applied as a CSS-transitioned canvas opacity — see "breathing" below). At
-`zoom 1, center {0,0}, intensity 1` it looks identical to a plain full-disc render.
+opacity — see "breathing" below). `intensity` is **multiplied into every glyph's
+`globalAlpha` inside `draw()`**, *not* applied as a CSS `opacity` on the `<canvas>`.
+Animating element opacity promoted this fixed full-viewport canvas to a compositing layer
+that some GPUs rasterized at DPR-1 while the opacity transitioned — blurring the galaxy
+during the scroll-driven breathing. Baking it into the per-frame draw keeps the canvas
+fully opaque (no layer) and crisp at native resolution; the per-frame redraw already makes
+the breathing a smooth glide (no CSS transition needed). At `zoom 1, center {0,0},
+intensity 1` it looks identical to a plain full-disc render.
 
 **Loop:** `requestAnimationFrame`; the next frame is scheduled **before** `draw()`, so a
 one-off draw error can never freeze the loop. The shared `staticMode()` guard (reduced
@@ -226,12 +265,14 @@ Each journey section (About, TechStack, Projects, HomeLab, Contact) is wrapped s
   recede depth via the `0.85` floor (lower = recedes further).
 - **Reading settle (scroll-snap):** each track also carries a single
   `<span class="present-snap">` at `0.7 · (trackHeight − vh)` — the fully-revealed hold
-  position — with `scroll-snap-align: start` + `scroll-snap-stop: always`, and
+  position — with `scroll-snap-align: start` + `scroll-snap-stop: normal`, and
   `html { scroll-snap-type: y proximity }`. *Proximity* leaves scrolling free through the
-  gaps and mid-reveal; `scroll-snap-stop: always` means a gesture can't fly *past* a
-  section's reading point — it stops there — so the slide ends up framed without the user
-  nudging up/down. Disabled wherever sections aren't pinned (small screens / reduced-motion
-  / flat view).
+  gaps and mid-reveal; when the user comes to **rest** near a section's reading point the
+  browser eases them onto it (the slide ends up framed without nudging up/down).
+  `scroll-snap-stop` is **`normal`, not `always`** — `always` force-halted every discrete
+  mouse-wheel tick at each section, which made scroll-down feel sticky/janky; `normal` keeps
+  the rest-settle but lets a scroll in motion flow past. Disabled wherever sections aren't
+  pinned (small screens / reduced-motion / flat view).
 - **Crispness:** `.present-step` deliberately has **no `will-change`**. A permanent GPU
   layer rasterizes its text (and the glass cards' `backdrop-filter`) blurry whenever the
   reveal translate sits at a sub-pixel offset — i.e. anywhere outside the hold band, worst
@@ -289,6 +330,17 @@ disabled (`.present-track{height:auto}`, `.present-sticky{position:relative;min-
 Sections then flow normally. The chapter rail is hidden < 768px. The manual
 **flat** view (`[data-journey-mode="flat"]`) applies the exact same flattening on demand.
 
+**Short-viewport compaction.** Tailwind breakpoints are *width*-based, so a small laptop
+(12–13", ~1280×720–800, or any OS-scaled display) gets full desktop type/spacing even
+though the viewport is **short** — and since a pinned slide is `min-height:100vh` and can't
+scroll internally, the oversized content overflows and can't be fully read. Fix: scale the
+**root `font-size`** down on short viewports (`@media (min-width:768px) and (max-height:820px)
+→ 15px`, `… and (max-height:720px) → 14px` + a trimmed `--present-pad`), which shrinks every
+rem-based size (type, padding, gaps, max-widths) proportionally so each slide fits one
+screen. Gated to the pinned range (≥768px wide; the narrower path already flattens) and to
+short heights only — normal/tall desktops are untouched, and px-based things (the galaxy
+canvas) are unaffected regardless. See `globals.css`.
+
 ---
 
 ## Tunables at a glance
@@ -305,7 +357,9 @@ Sections then flow normally. The chapter rail is hidden < 768px. The manual
 | `ZONES` zoom/center/`bright` | `useGalaxyJourney.js` | per-section camera target + which stay full-opacity |
 | `DIM` | `useGalaxyJourney.js` | galaxy opacity while reading a dimmable section (breathing) |
 | `PULLBACK` / `MIN_ZOOM` | `useGalaxyJourney.js` | mid-gap camera dezoom amount (the flight arc) / its floor |
-| `FONT_SIZE` | `GalaxyBackground.vue` | base glyph size |
+| `FONT_SIZE` / `FONT_SIZE_MOBILE` | `GalaxyBackground.vue` | base glyph size (desktop / phone) |
+| `MOBILE_FILL` | `GalaxyBackground.vue` | how hard the contain-by-width mobile fit fills the width (≥1 crops faint outer arm tips for presence; up = bigger, down = more letterbox margin) |
+| `TILT_DEG` / `TILT_DEG_MOBILE` | `GalaxyBackground.vue` | perspective tilt (desktop 40° / phone 74°, near face-on so the disc reads as a round spiral, not just the core) |
 | `TWINKLE_SPEED_BASE/VAR` | `GalaxyBackground.vue` | twinkle rate / spread |
 | `STREAK_MAX` / `STREAK_COPIES` / `STREAK_MIN_ALPHA` | `GalaxyBackground.vue` | warp-streak length / ghost-copy count / min particle alpha that streaks (perf: faint particles skip streaks) |
 | `OUTER_R` | `GalaxyBackground.vue` | galaxy disc radius |

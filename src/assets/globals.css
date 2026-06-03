@@ -108,6 +108,26 @@
   }
 }
 
+/* ── Compact scaling for short desktop/laptop viewports ──────────────────────────────
+   Tailwind's breakpoints are WIDTH-based, so a small laptop (e.g. a 12–13" display,
+   ~1280×720–800, or any OS-scaled screen) still gets full desktop type & spacing even
+   though the viewport is SHORT. The cinematic journey pins each section to 100vh, and a
+   pinned slide can't scroll internally — so oversized rem spacing makes the content
+   overflow the screen and you can't read it all. Because every Tailwind size is in rem,
+   scaling the ROOT font-size shrinks all of them (type, padding, gaps, max-widths)
+   proportionally, so each slide fits one screen again. Gated to the pinned range
+   (≥768px wide — the narrower path already flattens) and to short viewports only, so
+   normal/tall desktops are completely untouched (px-based things like the galaxy canvas
+   are unaffected either way). Two tiers for a gentle ramp. */
+@media (min-width: 768px) and (max-height: 820px) {
+  html { font-size: 15px; }
+}
+@media (min-width: 768px) and (max-height: 720px) {
+  html { font-size: 14px; }
+  /* Extra headroom on the shortest screens: trim the pinned section's vertical padding. */
+  .present-sticky > section { --present-pad: 1.5rem; }
+}
+
 /* Shared form field style */
 .form-input {
   @apply w-full bg-background border border-border rounded-md px-4 py-2.5 text-sm
@@ -311,10 +331,13 @@ html {
   /* top = snap-point · (trackHeight − viewport); aligns the viewport top here. */
   top: calc(0.7 * (var(--present-track) - 100vh));
   scroll-snap-align: start;
-  /* `always` strengthens the settle: a scroll gesture can't fly past a section's
-     reading point — it stops there. The gaps stay free (they carry no snap
-     target and the type is `proximity`), so this only "locks" at the sections. */
-  scroll-snap-stop: always;
+  /* `normal` (not `always`): with `proximity` snapping, the browser still eases the
+     user onto a section's reading point when they come to REST near it, but a scroll
+     in motion is never force-stopped at the point. `always` was halting every
+     mouse-wheel tick dead at each section (the wheel emits discrete deltas, so each
+     one "caught" on the snap), which made scrolling down feel sticky/janky. `normal`
+     keeps the settle but lets the wheel flow through. */
+  scroll-snap-stop: normal;
 }
 
 /* Responsive / a11y fallback: pinning tall content on small screens (or for

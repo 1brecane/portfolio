@@ -40,7 +40,15 @@ let reducedMotion = false;
 let smallScreen = false; // mobile: render one static frame, no rAF loop
 let reducedData = false; // metered connection: same, save battery/CPU
 let startTime = null;
-let charWidth = null; // cached monospace "M" width at FONT_SIZE (constant — measure once)
+let ctx2d = null; // cached 2D context — getContext() does a lookup; fetch it once, not per frame
+let charWidth = null; // cached monospace "M" width at the active FONT_SIZE; re-measured when the mobile breakpoint flips
+// The canvas DRAWS in CSS pixels but its backing store is devicePixelRatio× larger,
+// so glyphs rasterize crisply on high-DPR phones instead of being upscaled to mush.
+// (This was the real "doesn't look rendered well" on mobile.) Cached from syncSize so
+// draw() never does a per-frame layout read.
+let cssW = 0;
+let cssH = 0;
+let dpr = 1;
 
 // The galaxy is drawn once (no animation loop) when any of these hold — the
 // twinkle/warp aren't worth the per-frame canvas cost on phones, metered
@@ -51,6 +59,10 @@ function staticMode() {
 
 // ── TUNABLE KNOBS ─────────────────────────────────────────────────────────────
 const FONT_SIZE = 15; // base glyph size at zoom=1 (px). Scales with zoom.
+// On phones the disc is CONTAIN-fit into a narrow viewport (see scale below), so
+// it ends up much smaller than on desktop. A smaller glyph keeps the grid dense
+// enough that the full spiral still reads as a galaxy, not a handful of chunky chars.
+const FONT_SIZE_MOBILE = 10;
 const OUTER_R = 1.1; // galaxy disc radius in galaxy-space units (overflows edges).
 const TWINKLE_SPEED_BASE = 0.85; // min per-particle twinkle rate (rad/s)
 const TWINKLE_SPEED_VAR = 1.4; // extra rate spread (rad/s) → period ≈ 3–7s
@@ -76,6 +88,19 @@ const BLACK_HOLE_R = 0.08;
 // ── perspective tilt ──────────────────────────────────────────────────────────
 const TILT_DEG = 40;
 const TILT_SIN = Math.sin((TILT_DEG * Math.PI) / 180); // ≈ 0.643
+// Phones view the disc nearly FACE-ON (74° vs 40°). The desktop's steep tilt, cover-fit
+// to a narrow portrait, zooms so far into the squished disc that only the core shows — a
+// "blob". Face-on needs far less zoom to fill the screen, so the spiral arms read and you
+// look down at a round galaxy. (Desktop is untouched.)
+const TILT_DEG_MOBILE = 74;
+const TILT_SIN_MOBILE = Math.sin((TILT_DEG_MOBILE * Math.PI) / 180); // ≈ 0.961
+// How hard the disc fills the phone's WIDTH (the mobile fit is width-contain, not the
+// desktop's cover — see scale below). 1.0 fits the whole disc edge-to-edge in the width;
+// slightly above 1 crops only the faint outermost arm tips (r≈1.0–1.1, where the
+// `outer = 1-(r/OUTER_R)³` falloff has nearly faded) so the spiral fills the screen
+// instead of floating as a small centred circle. The full spiral always reads — this only
+// trades a sliver of dead edge for presence. Tune up for bigger, down for more margin.
+const MOBILE_FILL = 1.12;
 
 const CHARSET = " .·+*"; // light glyphs → particle aesthetic
 
@@ -185,9 +210,13 @@ function draw(canvas, elapsed) {
   const bandsHover = BANDS_HOVER_MAP[colorScheme.value] ?? BANDS_HOVER_MAP[1];
   const starHover = STAR_HOVER_MAP[colorScheme.value] ?? STAR_HOVER_MAP[1];
 
-  const ctx = canvas.getContext("2d");
-  const W = canvas.width;
-  const H = canvas.height;
+  const ctx = ctx2d || (ctx2d = canvas.getContext("2d"));
+  // Work in CSS pixels (W/H), scaling the context by dpr so the larger backing store
+  // is filled at full resolution. On a DPR-1 screen this is the identity transform and
+  // the output is byte-for-byte what it was before.
+  const W = cssW || canvas.clientWidth;
+  const H = cssH || canvas.clientHeight;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   ctx.clearRect(0, 0, W, H);
 
@@ -208,34 +237,61 @@ function draw(canvas, elapsed) {
   const centerX = props.center?.x ?? 0;
   const centerY = props.center?.y ?? 0;
 
+  // Breathing opacity is baked into every glyph's alpha HERE rather than as a CSS
+  // `opacity` on the <canvas> element. Animating element opacity promotes the fixed
+  // full-viewport canvas to a compositing layer whose intermediate surface some GPUs
+  // allocate at CSS (DPR-1) resolution — downsampling the galaxy to a blur, but only
+  // while opacity ≠ 1, i.e. exactly during the scroll-driven breathing. Multiplying it
+  // into globalAlpha keeps the canvas fully opaque (no layer) and crisp at every frame.
+  const intensity = props.intensity ?? 1;
+
+  // Per-device geometry. Phones keep the cover fit (fills the screen, no dead space) but
+  // view the disc nearly face-on with a smaller glyph (see knobs) so the spiral reads.
+  const isSmall = smallScreen;
+  const fontSize = isSmall ? FONT_SIZE_MOBILE : FONT_SIZE;
+  const tiltSin = isSmall ? TILT_SIN_MOBILE : TILT_SIN;
+
   // Base geometry — independent of zoom, so the grid identity never changes.
-  const scale = W / 2;
+  // Desktop uses a "COVER" fit (size from whichever axis needs it most → fills the
+  // viewport; on wide screens the width term wins, desktop look unchanged).
+  //
+  // Phones use a "CONTAIN-by-WIDTH" fit instead. A tall portrait can't cover a round
+  // face-on disc without zooming so far that the side arms crop off-screen and only the
+  // core band shows (the "blob"). Fitting the disc to the WIDTH shows the WHOLE spiral —
+  // all arms read — with starfield letterbox above/below (the disc is ~as tall as wide,
+  // shorter than the portrait). MOBILE_FILL (≥1) crops just the faint outer tips so it
+  // fills the width with presence. Because on-screen grid spacing is CHAR_W·zoom
+  // (independent of `scale`), this only reframes the view — same glyphs, no perf cost.
+  const scale = isSmall
+    ? (W / (2 * OUTER_R)) * MOBILE_FILL
+    : Math.max(W / 2, H / (2 * OUTER_R * tiltSin));
   const cx = W / 2;
   const cy = H * 0.52;
 
   // Measure the BASE monospace cell so that at zoom=1 the galaxy grid projects
   // exactly one character-cell apart (preserves the original full-disc look).
-  // It's constant (FONT_SIZE/family never change), so measure once and cache —
-  // avoids a font swap + measureText every frame.
+  // It only changes when the active font size changes (desktop ⇄ mobile breakpoint),
+  // so measure once and cache — avoids a font swap + measureText every frame. The
+  // cache is invalidated in onSizeChange when the breakpoint flips.
   if (charWidth === null) {
-    ctx.font = `${FONT_SIZE}px ui-monospace, 'Courier New', monospace`;
+    ctx.font = `${fontSize}px ui-monospace, 'Courier New', monospace`;
     charWidth = ctx.measureText("M").width;
   }
   const CHAR_W = charWidth;
-  const CHAR_H = FONT_SIZE;
+  const CHAR_H = fontSize;
 
   // FIXED grid spacing in galaxy space (A3).
   const stepX = CHAR_W / scale;
-  const stepZ = CHAR_H / (scale * TILT_SIN);
+  const stepZ = CHAR_H / (scale * tiltSin);
 
   // The font GROWS with zoom — this is what enlarges existing glyphs (A3).
-  ctx.font = `${FONT_SIZE * zoom}px ui-monospace, 'Courier New', monospace`;
+  ctx.font = `${fontSize * zoom}px ui-monospace, 'Courier New', monospace`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
   // Project a galaxy point to the screen through the camera.
   const projX = scale * zoom;
-  const projZ = scale * TILT_SIN * zoom;
+  const projZ = scale * tiltSin * zoom;
 
   // Iterate ONLY the on-screen slice of (ix, iz) (A3 perf): invert the projection
   // at the screen edges, then clamp to the galaxy disc. Work shrinks as you zoom in.
@@ -287,7 +343,7 @@ function draw(canvas, elapsed) {
       if (isBlackHole) {
         const bhSet = "@#$·.";
         const ch = bhSet[Math.floor(hLook2 * bhSet.length)];
-        ctx.globalAlpha = (0.28 + hLook1 * 0.32) * (0.72 + tw * 0.28);
+        ctx.globalAlpha = (0.28 + hLook1 * 0.32) * (0.72 + tw * 0.28) * intensity;
         ctx.fillStyle = "#262638";
         ctx.fillText(ch, px, py);
         continue;
@@ -297,7 +353,7 @@ function draw(canvas, elapsed) {
       if (isRing) {
         const ringSet = "@#O";
         const ch = ringSet[Math.floor(hLook1 * ringSet.length)];
-        ctx.globalAlpha = Math.min(1, 0.82 + tw * 0.18 + shimmer);
+        ctx.globalAlpha = Math.min(1, 0.82 + tw * 0.18 + shimmer) * intensity;
         ctx.fillStyle = "#ffffff";
         ctx.fillText(ch, px, py);
         continue;
@@ -367,13 +423,13 @@ function draw(canvas, elapsed) {
           const ny = (dvy / dist) * len;
           for (let s = 1; s <= STREAK_COPIES; s++) {
             const f = s / STREAK_COPIES;
-            ctx.globalAlpha = alpha * (1 - f) * 0.55;
+            ctx.globalAlpha = alpha * (1 - f) * 0.55 * intensity;
             ctx.fillText(ch, px - nx * f, py - ny * f);
           }
         }
       }
 
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = alpha * intensity;
       ctx.fillText(ch, px, py);
     }
   }
@@ -392,12 +448,19 @@ function tick(ts) {
 }
 
 function syncSize(canvas) {
+  // Cap dpr at 2: beyond that the extra fill cost isn't worth it and phones get heavy.
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
-  if (canvas.width !== w || canvas.height !== h) {
-    canvas.width = w;
-    canvas.height = h;
+  const bw = Math.max(1, Math.round(w * ratio));
+  const bh = Math.max(1, Math.round(h * ratio));
+  if (canvas.width !== bw || canvas.height !== bh) {
+    canvas.width = bw;
+    canvas.height = bh;
   }
+  cssW = w;
+  cssH = h;
+  dpr = ratio;
 }
 
 function drawStatic() {
@@ -429,6 +492,7 @@ function onMotionChange(e) {
 
 function onSizeChange(e) {
   smallScreen = e.matches;
+  charWidth = null; // mobile uses a different FONT_SIZE → re-measure the cell
   applyMode();
 }
 
@@ -441,8 +505,9 @@ function onMouseMove(e) {
   const canvas = canvasRef.value;
   if (!canvas) return;
   const rect = canvas.getBoundingClientRect();
-  mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
-  mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+  // CSS pixels — draw() works in CSS-pixel space (the context is scaled by dpr).
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
 }
 
 function onMouseLeave() {
@@ -497,6 +562,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (animationId !== null) cancelAnimationFrame(animationId);
+  ctx2d = null; // a remount gets a fresh <canvas> → re-fetch its context
   resizeObserver?.disconnect();
   motionQuery?.removeEventListener("change", onMotionChange);
   sizeQuery?.removeEventListener("change", onSizeChange);
@@ -511,20 +577,14 @@ onUnmounted(() => {
   <canvas
     ref="canvasRef"
     class="galaxy-canvas fixed inset-0 w-full h-full z-0 pointer-events-none"
-    :style="{ opacity: intensity }"
     aria-hidden="true"
   />
 </template>
 
 <style scoped>
-/* Smooth out the per-frame intensity changes so the breathing reads as a glide,
-   not a flicker. Short enough not to lag the camera. */
-.galaxy-canvas {
-  transition: opacity 220ms linear;
-}
-@media (prefers-reduced-motion: reduce) {
-  .galaxy-canvas {
-    transition: none;
-  }
-}
+/* The galaxy stays at element opacity 1 — the breathing (`intensity`) is baked into
+   each glyph's alpha in draw() instead. Animating CSS opacity on this fixed full-viewport
+   canvas promoted it to a compositing layer that some GPUs rasterized at DPR-1 while the
+   opacity transitioned (during scroll), blurring the galaxy. Per-frame redraw already makes
+   the breathing a smooth glide, so no CSS transition is needed. */
 </style>
