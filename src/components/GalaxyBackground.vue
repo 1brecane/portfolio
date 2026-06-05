@@ -71,8 +71,13 @@ const TWINKLE_SPEED_VAR = 1.4; // extra rate spread (rad/s) → period ≈ 3–7
 // the lively "flicker" feel, kept small so it never reads as random blinking.
 const SHIMMER_SPEED = 2.0; // base fast-flicker rate (rad/s)
 const SHIMMER_AMP = 0.07; // amplitude — flicker, not blink
-const STREAK_MAX = 26; // px — max warp-streak length at full travel (tunable)
-const STREAK_COPIES = 3; // trailing ghost copies drawn per particle while warping
+const STREAK_MAX = 16; // px — max warp-streak length at full travel (tunable)
+// Trailing ghost copies drawn per particle while warping. Enough of them, spaced
+// LESS than a glyph apart (see the f below), that they overlap into a smooth motion
+// smear instead of reading as a few discrete mirrored duplicates behind the glyph.
+const STREAK_COPIES = 5;
+const STREAK_FADE = 0.45; // per-copy opacity base (lower than the old 3-copy value so
+// the now-overlapping copies don't accumulate into a heavier-looking trail)
 // Perf: only bright particles get warp streaks. Faint ones are the bulk of the
 // field but their streaks are ~invisible, and the gaps (where travel > 0) are
 // exactly where you scroll fastest — so skipping them cuts the heaviest frames.
@@ -422,8 +427,11 @@ function draw(canvas, elapsed) {
           const nx = (dvx / dist) * len;
           const ny = (dvy / dist) * len;
           for (let s = 1; s <= STREAK_COPIES; s++) {
-            const f = s / STREAK_COPIES;
-            ctx.globalAlpha = alpha * (1 - f) * 0.55 * intensity;
+            // f = s/(COPIES+1) keeps the copies BETWEEN the glyph and the full
+            // streak length — never one full glyph-step apart — so they overlap
+            // into a continuous smear rather than separating into ghost duplicates.
+            const f = s / (STREAK_COPIES + 1);
+            ctx.globalAlpha = alpha * (1 - f) * STREAK_FADE * intensity;
             ctx.fillText(ch, px - nx * f, py - ny * f);
           }
         }

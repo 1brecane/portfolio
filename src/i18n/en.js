@@ -1,4 +1,7 @@
 export default {
+  a11y: {
+    skipToContent: "Skip to content",
+  },
   nav: {
     home: "Home",
     about: "About",
@@ -32,8 +35,7 @@ export default {
   },
   stack: {
     title: "Tech Stack",
-    subtitle:
-      "The tools and technologies I use to build robust, scalable backend systems.",
+    subtitle: "The tools and technologies I use to build robust, scalable backend systems.",
     categories: {
       languages: "Languages, Frameworks & Tools",
       databases: "Databases & Cache",
@@ -169,6 +171,13 @@ export default {
     successTitle: "Message Sent!",
     successMessage: "Thank you for reaching out. I'll get back to you as soon as possible.",
     sendAnother: "Send another message",
-    errorMessage: "Failed to send message. Please try again later."
-  }
+    errorMessage: "Failed to send message. Please try again later.",
+    captchaHint: "Complete the verification below to enable sending.",
+    validation: {
+      nameRequired: "Please enter your name.",
+      emailRequired: "Please enter your email.",
+      emailInvalid: "Please enter a valid email address.",
+      messageRequired: "Please enter a message.",
+    },
+  },
 };

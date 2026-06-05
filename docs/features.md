@@ -190,10 +190,14 @@ space (`{0,0}` = core):
 - **Warp streaks:** the composable also emits `travel` (0 while holding, `sin(π·t)`
   mid-gap). `GalaxyBackground` uses it to draw faded ghost copies of each glyph trailing
   toward the vanishing point (`cx, cy`) — particles farther out streak more — so the
-  empty gaps feel like *flight*, not just zoom. Crisp on arrival (`travel → 0`). Knobs:
-  `STREAK_MAX`, `STREAK_COPIES` in `GalaxyBackground.vue`. **Perf:** only particles
-  brighter than `STREAK_MIN_ALPHA` streak — the gaps are the heaviest frames *and* where
-  you scroll fastest, and faint particles' streaks are ~invisible, so this caps the spike.
+  empty gaps feel like *flight*, not just zoom. Crisp on arrival (`travel → 0`). The
+  copies are spaced **less than a glyph apart** (`f = s/(STREAK_COPIES+1)`) so they
+  overlap into a **smooth smear** rather than reading as a few discrete mirrored
+  duplicates behind each glyph (the old `STREAK_MAX 26` / `3 copies` look). Knobs:
+  `STREAK_MAX` (length), `STREAK_COPIES` (count — more = smoother), `STREAK_FADE`
+  (per-copy opacity) in `GalaxyBackground.vue`. **Perf:** only particles brighter than
+  `STREAK_MIN_ALPHA` streak — the gaps are the heaviest frames *and* where you scroll
+  fastest, and faint particles' streaks are ~invisible, so this caps the spike.
 - **Chapter rail:** the composable emits `activeIndex` (held zone, or the nearer one
   mid-gap). [`JourneyRail.vue`](../src/components/JourneyRail.vue) renders a fixed
   right-edge dot-per-zone indicator with the active label lit and a progress fill. Each
@@ -361,6 +365,6 @@ canvas) are unaffected regardless. See `globals.css`.
 | `MOBILE_FILL` | `GalaxyBackground.vue` | how hard the contain-by-width mobile fit fills the width (≥1 crops faint outer arm tips for presence; up = bigger, down = more letterbox margin) |
 | `TILT_DEG` / `TILT_DEG_MOBILE` | `GalaxyBackground.vue` | perspective tilt (desktop 40° / phone 74°, near face-on so the disc reads as a round spiral, not just the core) |
 | `TWINKLE_SPEED_BASE/VAR` | `GalaxyBackground.vue` | twinkle rate / spread |
-| `STREAK_MAX` / `STREAK_COPIES` / `STREAK_MIN_ALPHA` | `GalaxyBackground.vue` | warp-streak length / ghost-copy count / min particle alpha that streaks (perf: faint particles skip streaks) |
+| `STREAK_MAX` / `STREAK_COPIES` / `STREAK_FADE` / `STREAK_MIN_ALPHA` | `GalaxyBackground.vue` | warp-streak length / ghost-copy count (more = smoother smear, less = discrete duplicates) / per-copy opacity / min particle alpha that streaks (perf: faint particles skip streaks) |
 | `OUTER_R` | `GalaxyBackground.vue` | galaxy disc radius |
 | scrim alphas | `globals.css` `.present-sticky::before` | section readability vs galaxy visibility |

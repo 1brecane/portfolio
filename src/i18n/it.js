@@ -1,4 +1,7 @@
 export default {
+  a11y: {
+    skipToContent: "Vai al contenuto",
+  },
   nav: {
     home: "Home",
     about: "Chi sono",
@@ -169,6 +172,13 @@ export default {
     successTitle: "Messaggio Inviato!",
     successMessage: "Grazie per avermi contattato. Ti risponderò il prima possibile.",
     sendAnother: "Invia un altro messaggio",
-    errorMessage: "Errore durante l'invio. Riprova più tardi."
-  }
+    errorMessage: "Errore durante l'invio. Riprova più tardi.",
+    captchaHint: "Completa la verifica qui sotto per abilitare l'invio.",
+    validation: {
+      nameRequired: "Inserisci il tuo nome.",
+      emailRequired: "Inserisci la tua email.",
+      emailInvalid: "Inserisci un indirizzo email valido.",
+      messageRequired: "Inserisci un messaggio.",
+    },
+  },
 };
