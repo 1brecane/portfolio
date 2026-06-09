@@ -33,6 +33,51 @@ const ZONES = [
   { id: "contact", zoom: 1.0, center: { x: 0, y: 0 }, bright: true },
 ];
 
+// ── Directional drift transitions ─────────────────────────────────────────────
+// (see docs/superpowers/specs/2026-06-09-journey-animations-design.md)
+// Screen-space flow vectors per zone: the slide you leave drifts OPPOSITE to the
+// camera pan toward the next zone, and the next slide enters offset ALONG the pan
+// (so it travels the same screen direction as the departing one) — the whole gap
+// reads as one continuous pan instead of a disappear/reappear.
+// Galaxy y projects to screen y squashed by the camera tilt.
+const FLOW_TILT = 0.643; // sin(40°) — matches the desktop galaxy projection
+
+function screenDelta(a, b) {
+  return {
+    x: b.center.x - a.center.x,
+    y: (b.center.y - a.center.y) * FLOW_TILT,
+  };
+}
+
+function normalize(v) {
+  const len = Math.hypot(v.x, v.y);
+  return len < 1e-6 ? { x: 0, y: 0 } : { x: v.x / len, y: v.y / len };
+}
+
+/**
+ * getZoneFlow(zoneId) → { enter: {x,y}, exit: {x,y} } (normalized, screen space).
+ * `enter`: offset direction the slide starts from (along the camera pan from the
+ * previous zone). `exit`: direction it drifts out toward (opposite of the pan to
+ * the next zone). CSS y is positive-down.
+ * Defaults preserve today's behavior: enter from below, exit gently upward —
+ * used for the first zone's enter, the last zone's exit, and unknown ids.
+ */
+export function getZoneFlow(zoneId) {
+  const i = ZONES.findIndex((z) => z.id === zoneId);
+  const fallback = { enter: { x: 0, y: 1 }, exit: { x: 0, y: -1 } };
+  if (i === -1) return fallback;
+
+  const enter =
+    i > 0 ? normalize(screenDelta(ZONES[i - 1], ZONES[i])) : fallback.enter;
+
+  let exit = fallback.exit;
+  if (i < ZONES.length - 1) {
+    const pan = normalize(screenDelta(ZONES[i], ZONES[i + 1]));
+    exit = { x: -pan.x, y: -pan.y };
+  }
+  return { enter, exit };
+}
+
 // Galaxy opacity while reading a dimmable (non-bright) section. TUNABLE:
 // lower = calmer reading sections; the gaps always bloom back to full (1.0).
 const DIM = 0.6;
