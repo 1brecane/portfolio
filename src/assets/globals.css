@@ -380,17 +380,24 @@
    (i+1)/steps. */
 .present-step {
   --t: clamp(0, calc(var(--reveal, 1) * var(--steps, 1) - var(--step, 0)), 1);
-  /* enter: --t fades + rises each step in (translateY). leave: --exit shrinks the
-     whole slide + fades it — receding toward the vanishing point, like it's left
-     behind down the tunnel as you scroll on. Both are exactly identity in the hold
-     band (--t = --exit = 1 → translateY 0, scale 1), which keeps text crisp. */
+  /* Directional drift (camera pan): enter slides in from --enter-x/y (set per zone
+     by JourneyPresentation from the real camera pan; defaults = the old rise-in),
+     exit drifts out along --exit-x/y with a micro lean (--exit-rot) and a whisper
+     of scale for depth. Drift distances are the 2.5rem/3.5rem factors. Everything
+     is exactly identity in the hold band (--t = --exit = 1 → translate 0, rotate 0,
+     scale 1), which keeps text crisp. */
   opacity: calc(var(--t) * var(--exit, 1));
-  transform: translateY(calc((1 - var(--t)) * 2.5rem)) scale(calc(0.85 + var(--exit, 1) * 0.15));
+  transform: translate(
+      calc((1 - var(--t)) * var(--enter-x, 0) * 2.5rem + (1 - var(--exit, 1)) * var(--exit-x, 0) * 3.5rem),
+      calc((1 - var(--t)) * var(--enter-y, 1) * 2.5rem + (1 - var(--exit, 1)) * var(--exit-y, 0) * 3.5rem)
+    )
+    rotate(calc((1 - var(--exit, 1)) * var(--exit-rot, 0deg)))
+    scale(calc(0.97 + var(--exit, 1) * 0.03));
   /* NO `will-change` here on purpose: a permanent GPU layer rasterizes text (and
      the glass cards' backdrop-filter) blurry whenever the translate sits at a
      sub-pixel offset — i.e. anywhere outside the fully-revealed hold band. The
      browser still composites these during active scroll; at rest it de-promotes
-     and they render crisp. (At present 0.62–0.82 the translate is exactly 0.) */
+     and they render crisp. (At present 0.62–0.82 the transform is exactly identity.) */
 }
 
 /* Reading "settle": one PROXIMITY scroll-snap point per pinned section, at its
