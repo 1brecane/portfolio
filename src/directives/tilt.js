@@ -61,6 +61,7 @@ export const vTilt = {
       }
       rect = null;
       el.style.transform = "";
+      el.style.transition = "";
     }
 
     el.addEventListener("mouseenter", onEnter);
