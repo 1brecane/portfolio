@@ -254,19 +254,26 @@ Each journey section (About, TechStack, Projects, HomeLab, Contact) is wrapped s
     --exit: clamp(0, calc((1 - var(--present, 1)) / 0.18), 1);
   }
   .present-step {
-    --t: clamp(0, calc(var(--reveal,1) * var(--steps,1) - var(--step,0)), 1);
+    --t: clamp(0, calc(var(--reveal, 1) * var(--steps, 1) - var(--step, 0)), 1);
     opacity: calc(var(--t) * var(--exit, 1));
-    transform:
-      translateY(calc((1 - var(--t)) * 2.5rem))   /* enter: rise in */
-      scale(calc(0.85 + var(--exit,1) * 0.15));    /* leave: recede + shrink */
+    transform: translate(
+        calc((1 - var(--t)) * var(--enter-x, 0) * 2.5rem + (1 - var(--exit, 1)) * var(--exit-x, 0) * 3.5rem),
+        calc((1 - var(--t)) * var(--enter-y, 1) * 2.5rem + (1 - var(--exit, 1)) * var(--exit-y, 0) * 3.5rem)
+      )
+      rotate(calc((1 - var(--exit, 1)) * var(--exit-rot, 0deg)))
+      scale(calc(0.97 + var(--exit, 1) * 0.03));
   }
   ```
 
-  So step *i* fades+rises in over `reveal` `i/steps → (i+1)/steps`, the slide holds
-  fully visible, then **shrinks + fades — receding toward the vanishing point** (scale
-  1 → 0.85) as you scroll on, like it's left behind down the tunnel. Each section reads
-  as a self-contained slide. Tune the pacing via the `0.62` / `0.18` split, and the
-  recede depth via the `0.85` floor (lower = recedes further).
+  So step *i* fades in over `reveal` `i/steps → (i+1)/steps`, entering from the
+  per-zone `--enter-x/y` direction (the camera pan from the previous zone; default
+  rise-from-below). The slide holds fully visible, then **drifts out along
+  `--exit-x/y`** — opposite to the camera pan toward the next zone, with a micro
+  lean (`--exit-rot`) and a whisper of scale (1 → 0.97) — so leaving a section
+  reads as the camera *panning away*, not the slide vanishing. The vectors are
+  computed by `getZoneFlow(zoneId)` in `useGalaxyJourney.js` from the `ZONES`
+  centers and set as CSS vars by `JourneyPresentation.vue`. Tune the drift
+  distances via the `2.5rem` (enter) / `3.5rem` (exit) factors in `globals.css`.
 - **Reading settle (scroll-snap):** each track also carries a single
   `<span class="present-snap">` at `0.7 · (trackHeight − vh)` — the fully-revealed hold
   position — with `scroll-snap-align: start` + `scroll-snap-stop: normal`, and
@@ -302,6 +309,14 @@ recedes with the slide** rather than doing its own vertical scroll-reveal drift 
 `SectionLayout` no longer uses `useScrollReveal`. (The `FooterSection`, which lives
 outside the journey, still uses `useScrollReveal` for a plain fade-in.)
 
+The title also **decodes** while the slide reveals: `JourneyPresentation`
+`provide()`s its `progress` ref (`presentProgress`), and `SectionHeader` renders
+the title resolving left-to-right from galaxy glyphs (`.·+*#@%&`), fully resolved
+by half the reveal. Deterministic hash per (char, quantized progress) — no
+timers; static at rest; the real title stays in an `sr-only` span (the scramble
+is `aria-hidden`). Plain title wherever `progress` is forced to 1 (flat / small /
+reduced motion).
+
 ### Navigation & view modes
 
 - **Anchor scrolling — `scrollToZone(id)`**
@@ -323,7 +338,13 @@ outside the journey, still uses `useScrollReveal` for a plain fade-in.)
   fallback — collapses gaps, un-pins tracks, reveals all steps) so repeat visitors can skip
   the long scroll. The galaxy camera holds the hero view in flat (still twinkles); the rail
   hides. Toggled by [`JourneyModeToggle.vue`](../src/components/ui/JourneyModeToggle.vue) in
-  the NavBar (next to `LocaleToggle`).
+  the NavBar (next to `LocaleToggle`) — desktop only: it's left out of the mobile menu
+  because < 768px the layout is already flattened, so the toggle would be a no-op there.
+  The toggle also shows a **one-time first-visit hint** (a small callout under the button,
+  ~2.5s after load, auto-dismissing after 12s) pointing out the simple view; it never
+  returns once dismissed or once a `journey-mode` choice exists in `localStorage`
+  (`journey-hint-seen` key). The button keeps a fixed accessible name ("Simple view")
+  with `aria-pressed` reflecting flat mode, while the hover `title` describes the action.
 
 ### Responsive / a11y fallback
 
@@ -361,6 +382,10 @@ canvas) are unaffected regardless. See `globals.css`.
 | `ZONES` zoom/center/`bright` | `useGalaxyJourney.js` | per-section camera target + which stay full-opacity |
 | `DIM` | `useGalaxyJourney.js` | galaxy opacity while reading a dimmable section (breathing) |
 | `PULLBACK` / `MIN_ZOOM` | `useGalaxyJourney.js` | mid-gap camera dezoom amount (the flight arc) / its floor |
+| `--enter-x/y`, `--exit-x/y`, `--exit-rot` | set by `JourneyPresentation.vue` from `getZoneFlow()` | per-zone drift directions (derived from `ZONES` centers; `FLOW_TILT` maps galaxy y → screen y) |
+| drift distances (`2.5rem` enter / `3.5rem` exit) + exit scale floor (`0.97`) | `globals.css` `.present-step` | how far slides travel in/out and the depth whisper |
+| `GLYPHS` / resolve point (`reveal / 0.5`) | `SectionHeader.vue` | title-decode glyph set / how early the title is fully readable |
+| `MAX_DEG` (5°) / `LIFT_PX` (4) | `src/directives/tilt.js` | glass-card hover tilt angle / lift |
 | `FONT_SIZE` / `FONT_SIZE_MOBILE` | `GalaxyBackground.vue` | base glyph size (desktop / phone) |
 | `MOBILE_FILL` | `GalaxyBackground.vue` | how hard the contain-by-width mobile fit fills the width (≥1 crops faint outer arm tips for presence; up = bigger, down = more letterbox margin) |
 | `TILT_DEG` / `TILT_DEG_MOBILE` | `GalaxyBackground.vue` | perspective tilt (desktop 40° / phone 74°, near face-on so the disc reads as a round spiral, not just the core) |
