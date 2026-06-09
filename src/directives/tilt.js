@@ -30,6 +30,7 @@ export const vTilt = {
     let rect = null;
     let lastX = 0;
     let lastY = 0;
+    let transitionTimer = null;
 
     function apply() {
       raf = null;
@@ -42,6 +43,7 @@ export const vTilt = {
     }
 
     function onEnter() {
+      clearTimeout(transitionTimer);
       rect = el.getBoundingClientRect();
       // Smooths the move updates and the leave snap-back; keeps card-glow's
       // box-shadow timing.
@@ -61,7 +63,12 @@ export const vTilt = {
       }
       rect = null;
       el.style.transform = "";
-      el.style.transition = "";
+      // Let the snap-back ease first, then drop the inline override so the
+      // stylesheet transitions apply untouched during scroll scrubbing.
+      clearTimeout(transitionTimer);
+      transitionTimer = setTimeout(() => {
+        el.style.transition = "";
+      }, 220);
     }
 
     el.addEventListener("mouseenter", onEnter);
@@ -69,6 +76,7 @@ export const vTilt = {
     el.addEventListener("mouseleave", onLeave);
 
     el._tiltCleanup = () => {
+      clearTimeout(transitionTimer);
       if (raf !== null) cancelAnimationFrame(raf);
       el.removeEventListener("mouseenter", onEnter);
       el.removeEventListener("mousemove", onMove);
