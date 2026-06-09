@@ -40,7 +40,7 @@ const ZONES = [
 // (so it travels the same screen direction as the departing one) — the whole gap
 // reads as one continuous pan instead of a disappear/reappear.
 // Galaxy y projects to screen y squashed by the camera tilt.
-const FLOW_TILT = 0.643; // sin(40°) — matches the desktop galaxy projection
+const FLOW_TILT = 0.643; // sin(40°) — matches the desktop galaxy projection. TUNABLE.
 
 function screenDelta(a, b) {
   return {
@@ -56,9 +56,10 @@ function normalize(v) {
 
 /**
  * getZoneFlow(zoneId) → { enter: {x,y}, exit: {x,y} } (normalized, screen space).
- * `enter`: offset direction the slide starts from (along the camera pan from the
- * previous zone). `exit`: direction it drifts out toward (opposite of the pan to
- * the next zone). CSS y is positive-down.
+ * `enter`: direction the slide is initially OFFSET from its resting spot (the
+ * camera-pan direction from the previous zone; it travels opposite — back to
+ * center — as it reveals). `exit`: direction it drifts out toward (opposite of
+ * the pan to the next zone). CSS y is positive-down.
  * Defaults preserve today's behavior: enter from below, exit gently upward —
  * used for the first zone's enter, the last zone's exit, and unknown ids.
  */
