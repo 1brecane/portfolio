@@ -4,6 +4,7 @@ import SectionLayout from "@/components/ui/SectionLayout.vue";
 import AppBadge from "@/components/ui/AppBadge.vue";
 import IconBox from "@/components/ui/IconBox.vue";
 import { useI18n } from "@/i18n";
+import { vTilt } from "@/directives/tilt";
 
 const { t } = useI18n();
 </script>
@@ -17,7 +18,7 @@ const { t } = useI18n();
   >
     <template #default>
       <div class="present-step max-w-2xl mx-auto" :style="{ '--step': 0 }">
-        <div class="glass-panel rounded-lg p-10 card-glow">
+        <div v-tilt class="glass-panel rounded-lg p-10 card-glow">
           <div class="flex flex-col items-center gap-5 text-center">
             <IconBox size="lg">
               <Construction class="h-8 w-8 text-primary" />

@@ -6,6 +6,7 @@ import AppBadge from "@/components/ui/AppBadge.vue";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
 import { SOCIAL_LINKS } from "@/constants/socialLinks";
+import { vTilt } from "@/directives/tilt";
 
 const { t } = useI18n();
 
@@ -18,6 +19,9 @@ const logos = {
   react:      `<img src="/react.png"      width="22" height="22" alt="React"      style="object-fit:contain" />`,
 };
 
+// Accents come from the site palette (the same primary/cyan/purple/amber set the
+// TechStack cards use) instead of each tech's brand colors, so the cards read as
+// part of the galaxy theme. The bar fades out to the right like a HUD readout.
 const projectDefs = [
   {
     id: 1,
@@ -26,8 +30,8 @@ const projectDefs = [
     github: "https://github.com/1brecane/cattenheimer",
     demo: null,
     type: "gaming",
-    accentColor: "from-[#3776AB] to-[#FFD43B]",
-    badgeClass: "bg-[#3776AB]/20 text-[#3776AB] border-[#3776AB]/30",
+    accentColor: "from-chart-4 via-chart-4/40 to-transparent",
+    badgeClass: "bg-chart-4/15 text-chart-4 border-chart-4/30",
   },
   {
     id: 4,
@@ -36,8 +40,8 @@ const projectDefs = [
     github: "https://github.com/1brecane/portfolio",
     demo: null,
     type: "frontend",
-    accentColor: "from-[#41b883] to-[#35495e]",
-    badgeClass: "bg-[#41b883]/20 text-[#41b883] border-[#41b883]/30",
+    accentColor: "from-chart-2 via-chart-2/40 to-transparent",
+    badgeClass: "bg-chart-2/15 text-chart-2 border-chart-2/30",
   },
   {
     id: 3,
@@ -46,8 +50,8 @@ const projectDefs = [
     github: "https://github.com/1brecane/paidia_be",
     demo: null,
     type: "lab",
-    accentColor: "from-[#E0234E] to-[#ea2845]",
-    badgeClass: "bg-[#E0234E]/20 text-[#E0234E] border-[#E0234E]/30",
+    accentColor: "from-primary via-primary/40 to-transparent",
+    badgeClass: "bg-primary/15 text-primary border-primary/30",
   },
   {
     id: 2,
@@ -57,8 +61,8 @@ const projectDefs = [
     githubFe: "https://github.com/1brecane/centro-sportivo-fe",
     demo: null,
     type: "fullstack",
-    accentColor: "from-[#F7DF1E] to-[#61DAFB]",
-    badgeClass: "bg-[#61DAFB]/20 text-[#61DAFB] border-[#61DAFB]/30",
+    accentColor: "from-chart-3 via-chart-3/40 to-transparent",
+    badgeClass: "bg-chart-3/15 text-chart-3 border-chart-3/30",
   },
 ];
 
@@ -84,6 +88,7 @@ const projects = computed(() =>
         <article
           v-for="(project, i) in projects"
           :key="project.id"
+          v-tilt
           class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow"
           :style="{ '--step': i }"
         >
@@ -112,14 +117,16 @@ const projects = computed(() =>
               {{ project.description }}
             </p>
 
+            <!-- Same chip component as the About timeline skills, for consistency. -->
             <div class="flex flex-wrap gap-2 mb-6">
-              <span
+              <AppBadge
                 v-for="tag in project.tags"
                 :key="tag"
-                class="px-2 py-1 text-xs font-mono bg-muted rounded border border-border text-muted-foreground"
+                variant="outline"
+                class="text-xs font-mono"
               >
                 {{ tag }}
-              </span>
+              </AppBadge>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
