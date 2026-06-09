@@ -1,5 +1,5 @@
 <script setup>
-import { provide, useTemplateRef } from "vue";
+import { computed, provide, useTemplateRef } from "vue";
 import { useScrollPresentation } from "@/composables/useScrollPresentation";
 import { getZoneFlow } from "@/composables/useGalaxyJourney";
 
@@ -18,16 +18,21 @@ const { progress } = useScrollPresentation(trackRef);
 // Slide progress for children — SectionHeader uses it for the title decode.
 provide("presentProgress", progress);
 
-// Static per-zone drift vectors (camera-pan direction, see getZoneFlow). The
-// micro-rotation leans the exiting slide into its horizontal motion.
-const flow = getZoneFlow(props.zone);
-const flowStyle = {
-  "--enter-x": flow.enter.x.toFixed(3),
-  "--enter-y": flow.enter.y.toFixed(3),
-  "--exit-x": flow.exit.x.toFixed(3),
-  "--exit-y": flow.exit.y.toFixed(3),
-  "--exit-rot": `${(flow.exit.x * 1.2).toFixed(2)}deg`,
-};
+// Per-zone drift vectors (camera-pan direction, see getZoneFlow). Note the
+// semantics: --enter-x/y is the slide's INITIAL OFFSET direction — it travels
+// the opposite way, settling at 0. The micro-rotation leans the exiting slide
+// into its horizontal motion. Computed so a (hypothetical) runtime zone change
+// stays correct.
+const flowStyle = computed(() => {
+  const flow = getZoneFlow(props.zone);
+  return {
+    "--enter-x": flow.enter.x.toFixed(3),
+    "--enter-y": flow.enter.y.toFixed(3),
+    "--exit-x": flow.exit.x.toFixed(3),
+    "--exit-y": flow.exit.y.toFixed(3),
+    "--exit-rot": `${(flow.exit.x * 1.2).toFixed(2)}deg`,
+  };
+});
 </script>
 
 <template>

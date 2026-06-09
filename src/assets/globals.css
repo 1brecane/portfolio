@@ -381,7 +381,8 @@
 .present-step {
   --t: clamp(0, calc(var(--reveal, 1) * var(--steps, 1) - var(--step, 0)), 1);
   /* Directional drift (camera pan): enter slides in from --enter-x/y (set per zone
-     by JourneyPresentation from the real camera pan; defaults = the old rise-in),
+     by JourneyPresentation from the real camera pan; enter default = the old
+     rise-in; exit default = fade-only, no drift),
      exit drifts out along --exit-x/y with a micro lean (--exit-rot) and a whisper
      of scale for depth. Drift distances are the 2.5rem/3.5rem factors. Everything
      is exactly identity in the hold band (--t = --exit = 1 → translate 0, rotate 0,
