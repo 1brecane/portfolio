@@ -1,6 +1,13 @@
 export default {
   a11y: {
     skipToContent: "Skip to content",
+    toggleMenu: "Toggle menu",
+    changeLanguage: "Change language",
+    scrollToTop: "Back to top",
+    terminalInput: "Interactive terminal input",
+    closeTerminal: "Close terminal",
+    minimizeTerminal: "Minimize terminal",
+    resetTerminal: "Reset terminal position",
   },
   nav: {
     home: "Home",
@@ -23,14 +30,18 @@ export default {
     headline: "From Code to",
     headlineHighlight: "Production",
     headlineEnd: "",
+    subheadline: "Backend developer — Node.js services, clean APIs & self-hosted infrastructure.",
     viewProjects: "View Projects",
     downloadCv: "Download CV",
     scrollCue: "scroll to begin",
     terminalHint: "tip: this terminal is interactive — try `color 2`",
   },
   journey: {
+    simpleView: "Simple view",
     switchToSimple: "Switch to simple view",
     switchToCinematic: "Switch to cinematic journey",
+    hint: "Prefer less scrolling? Switch to the simple view here.",
+    hintDismiss: "Got it",
     navAria: "Jump to section",
   },
   stack: {
@@ -156,6 +167,11 @@ export default {
   },
   footer: {
     builtWith: "Built with passion",
+  },
+  notFound: {
+    title: "404: Page Not Found",
+    description: "The page you are looking for has been moved, deleted, or possibly never existed.",
+    returnHome: "Return Home",
   },
   contact: {
     title: "Contact",

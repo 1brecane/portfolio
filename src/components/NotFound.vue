@@ -2,9 +2,11 @@
 import { computed } from 'vue';
 import AppButton from '@/components/ui/AppButton.vue';
 import { Home } from 'lucide-vue-next';
+import { useI18n } from '@/i18n';
 import { useTypewriter } from '@/composables/useTypewriter';
 
-const lines = computed(() => ["404: Page Not Found"]);
+const { t } = useI18n();
+const lines = computed(() => [t.value.notFound.title]);
 const { displayedLines } = useTypewriter(lines);
 </script>
 
@@ -20,13 +22,13 @@ const { displayedLines } = useTypewriter(lines);
       </h1>
       
       <p class="text-xl text-muted-foreground mb-10 max-w-lg mx-auto">
-        The page you are looking for has been moved, deleted, or possibly never existed.
+        {{ t.notFound.description }}
       </p>
-      
+
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
         <AppButton as="a" href="/" class="w-full sm:w-auto">
           <Home class="w-4 h-4 mr-2" />
-          Return Home
+          {{ t.notFound.returnHome }}
         </AppButton>
       </div>
     </div>

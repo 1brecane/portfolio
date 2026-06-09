@@ -132,7 +132,7 @@ const contactBtnClass =
           variant="ghost"
           size="icon"
           class="md:hidden"
-          aria-label="Toggle menu"
+          :aria-label="t.a11y.toggleMenu"
           :aria-expanded="isMobileMenuOpen"
           aria-controls="mobile-menu"
           @click="isMobileMenuOpen = !isMobileMenuOpen"
@@ -160,8 +160,9 @@ const contactBtnClass =
           >
             {{ link.label }}
           </a>
+          <!-- No JourneyModeToggle here: below 768px the journey is already
+               flattened by the responsive CSS, so the toggle would be a no-op. -->
           <div class="flex flex-wrap items-center gap-3">
-            <JourneyModeToggle />
             <LocaleToggle />
             <AppButton
               as="a"

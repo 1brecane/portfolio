@@ -1,6 +1,13 @@
 export default {
   a11y: {
     skipToContent: "Vai al contenuto",
+    toggleMenu: "Apri/chiudi menu",
+    changeLanguage: "Cambia lingua",
+    scrollToTop: "Torna su",
+    terminalInput: "Input del terminale interattivo",
+    closeTerminal: "Chiudi terminale",
+    minimizeTerminal: "Riduci terminale",
+    resetTerminal: "Ripristina posizione terminale",
   },
   nav: {
     home: "Home",
@@ -23,14 +30,18 @@ export default {
     headline: "Dal Codice alla",
     headlineHighlight: "Produzione",
     headlineEnd: "",
+    subheadline: "Backend developer — servizi Node.js, API pulite e infrastrutture self-hosted.",
     viewProjects: "Vedi Progetti",
     downloadCv: "Scarica CV",
     scrollCue: "scorri per iniziare",
     terminalHint: "suggerimento: questo terminale è interattivo — prova `color 2`",
   },
   journey: {
+    simpleView: "Vista semplice",
     switchToSimple: "Passa alla vista semplice",
     switchToCinematic: "Passa al viaggio cinematico",
+    hint: "Preferisci meno scroll? Passa alla vista semplice da qui.",
+    hintDismiss: "Capito",
     navAria: "Vai alla sezione",
   },
   stack: {
@@ -157,6 +168,11 @@ export default {
   },
   footer: {
     builtWith: "Costruito con passione",
+  },
+  notFound: {
+    title: "404: Pagina Non Trovata",
+    description: "La pagina che cerchi è stata spostata, eliminata o forse non è mai esistita.",
+    returnHome: "Torna alla Home",
   },
   contact: {
     title: "Contatti",

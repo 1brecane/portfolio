@@ -1,13 +1,19 @@
 <script setup>
 import { computed } from "vue";
 import { ArrowUp } from "lucide-vue-next";
+import { useI18n } from "@/i18n";
 import { useWindowScroll } from "@/composables/useWindowScroll";
 
+const { t } = useI18n();
 const { scrollY } = useWindowScroll();
 const isVisible = computed(() => scrollY.value > 600);
 
 function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  // The global CSS reduced-motion override doesn't reach an explicit JS smooth
+  // scroll, so check the preference here (the return trip crosses the whole
+  // journey — a long forced animation otherwise).
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
 }
 </script>
 
@@ -18,7 +24,7 @@ function scrollToTop() {
       class="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-primary text-primary-foreground
              shadow-lg neon-glow cursor-pointer transition-transform hover:scale-110
              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      aria-label="Scroll to top"
+      :aria-label="t.a11y.scrollToTop"
       @click="scrollToTop"
     >
       <ArrowUp class="h-5 w-5" />

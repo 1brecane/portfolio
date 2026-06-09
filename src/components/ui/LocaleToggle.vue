@@ -1,7 +1,7 @@
 <script setup>
 import { useI18n } from "@/i18n";
 
-const { locale, setLocale } = useI18n();
+const { locale, setLocale, t } = useI18n();
 
 const options = [
   { id: "it", label: "IT" },
@@ -13,7 +13,7 @@ const options = [
   <div
     class="inline-flex items-center rounded-md border border-border bg-muted/40 p-0.5 font-mono text-xs"
     role="group"
-    aria-label="Change language"
+    :aria-label="t.a11y.changeLanguage"
   >
     <button
       v-for="opt in options"

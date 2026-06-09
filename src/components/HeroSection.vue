@@ -42,9 +42,13 @@ const shownLines = computed(() =>
     : displayedLines.value,
 );
 
+// Keydown lands on a visually-hidden <input> inside the terminal body (so a tap
+// on touch screens opens the keyboard too). Tab and ctrl/meta shortcuts pass
+// through untouched; everything else is ours, so the input never holds text.
 function handleKey(e) {
-  if (!isFinished.value) return;
+  if (e.key === "Tab" || e.ctrlKey || e.metaKey) return;
   e.preventDefault();
+  if (!isFinished.value) return;
   if (e.key === "Backspace") {
     userInput.value = userInput.value.slice(0, -1);
   } else if (e.key === "Enter") {
@@ -65,11 +69,17 @@ function handleKey(e) {
       commandOutput.value = [];
     }
     userInput.value = "";
-  } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  } else if (e.key.length === 1 && !e.altKey) {
     commandOutput.value = [];
     lastCommand.value = "";
     if (userInput.value.length < 200) userInput.value += e.key;
   }
+}
+
+const cmdInputEl = ref(null);
+
+function focusTerminal() {
+  cmdInputEl.value?.focus({ preventScroll: true });
 }
 
 // ── drag logic ────────────────────────────────────────────────────────────────
@@ -102,9 +112,20 @@ function onDragStart(e) {
 
 function onDragMove(e) {
   if (!isDragging.value) return;
+  // Clamp to the viewport so the window (and its title-bar controls) can never
+  // be dragged out of reach — the only way back would be a reload.
+  const margin = 8;
+  const width = dragWidth.value ?? terminalEl.value?.offsetWidth ?? 0;
+  const titleBar = 48; // keep at least the draggable title bar on screen
   position.value = {
-    x: e.clientX - dragOffset.value.x,
-    y: e.clientY - dragOffset.value.y,
+    x: Math.min(
+      Math.max(e.clientX - dragOffset.value.x, margin),
+      Math.max(margin, window.innerWidth - width - margin),
+    ),
+    y: Math.min(
+      Math.max(e.clientY - dragOffset.value.y, margin),
+      Math.max(margin, window.innerHeight - titleBar),
+    ),
   };
 }
 
@@ -149,6 +170,11 @@ function reopenTerminal() {
           {{ t.hero.headlineEnd }}
         </h1>
 
+        <!-- One-line role pitch for the 5-second scanner who won't read the terminal. -->
+        <p class="-mt-3 text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed">
+          {{ t.hero.subheadline }}
+        </p>
+
         <div class="flex flex-col sm:flex-row items-start gap-4">
           <AppButton
             as="a"
@@ -190,8 +216,9 @@ function reopenTerminal() {
             >
               <button
                 class="p-2 -m-2 rounded-full group"
+                :title="t.a11y.closeTerminal"
+                :aria-label="t.a11y.closeTerminal"
                 @click.stop="isClosed = true"
-                title="Close"
               >
                 <span class="w-3 h-3 rounded-full bg-destructive hover:brightness-90 transition-all flex items-center justify-center">
                   <X class="w-2 h-2 opacity-0 group-hover:opacity-100 text-destructive-foreground" />
@@ -199,8 +226,9 @@ function reopenTerminal() {
               </button>
               <button
                 class="p-2 -m-2 rounded-full group"
+                :title="t.a11y.minimizeTerminal"
+                :aria-label="t.a11y.minimizeTerminal"
                 @click.stop="isMinimized = !isMinimized"
-                title="Minimize"
               >
                 <span class="w-3 h-3 rounded-full bg-chart-4 hover:brightness-90 transition-all flex items-center justify-center">
                   <Minus class="w-2 h-2 opacity-0 group-hover:opacity-100 text-black" />
@@ -208,7 +236,8 @@ function reopenTerminal() {
               </button>
               <button
                 class="p-2 -m-2 rounded-full group"
-                title="Reset position"
+                :title="t.a11y.resetTerminal"
+                :aria-label="t.a11y.resetTerminal"
                 @click.stop="position = { x: null, y: null }; isMinimized = false"
               >
                 <span class="w-3 h-3 rounded-full bg-chart-2 hover:brightness-90 transition-all flex items-center justify-center">
@@ -219,14 +248,27 @@ function reopenTerminal() {
             </div>
 
             <!-- Terminal body -->
+            <!-- Click/tap anywhere in the body focuses the hidden input below, so the
+                 terminal accepts typing from touch keyboards too (a tabindex div never
+                 opens one). Keyboard users tab straight to the input. -->
             <div
               v-if="!isMinimized"
-              class="terminal-body p-6 text-left font-mono text-sm outline-none"
-              tabindex="0"
-              @keydown="handleKey"
-              @focus="terminalFocused = true"
-              @blur="terminalFocused = false"
+              class="terminal-body relative p-6 text-left font-mono text-sm outline-none"
+              @click="focusTerminal"
             >
+              <input
+                ref="cmdInputEl"
+                class="terminal-input"
+                type="text"
+                :aria-label="t.a11y.terminalInput"
+                autocomplete="off"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                @keydown="handleKey"
+                @focus="terminalFocused = true"
+                @blur="terminalFocused = false"
+              />
               <div
                 v-for="(line, index) in shownLines"
                 :key="`line-${index}-${line}`"
@@ -293,11 +335,27 @@ function reopenTerminal() {
 
 <style scoped>
 /* Make the terminal's keyboard focus visible — it's typeable (easter eggs,
-   `color N`), but without a ring there's no hint that it accepts input. */
-.terminal-body:focus-visible {
+   `color N`), but without a ring there's no hint that it accepts input.
+   Focus lives on the hidden input, so key off :focus-within. */
+.terminal-body:focus-within {
   outline: 1px solid var(--primary);
   outline-offset: -2px;
   border-radius: 0.375rem;
+}
+
+/* The real input behind the fake terminal: invisible but focusable. The 16px
+   font-size stops iOS from zooming the page when it gains focus. */
+.terminal-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  font-size: 16px;
+  caret-color: transparent;
 }
 
 .cue-enter-active,
