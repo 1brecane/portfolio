@@ -154,7 +154,7 @@
    (≥768px wide — the narrower path already flattens) and to short viewports only, so
    normal/tall desktops are completely untouched (px-based things like the galaxy canvas
    are unaffected either way). Two tiers for a gentle ramp. */
-@media (min-width: 768px) and (max-height: 820px) {
+@media (min-width: 768px) and (max-height: 900px) {
   html {
     font-size: 15px;
   }
@@ -326,10 +326,13 @@
   position: relative;
   height: var(--present-track);
   /* Split the scroll progress into reveal → hold → exit so each section reads as a
-     self-contained slide. Reveal finishes by 62%, then a hold, then it fades back
-     out over 82→100%. Tune the 0.62 / 0.18 to shift the pacing. */
+     self-contained slide. Reveal finishes by 62%, then a LONG hold — the slide
+     belongs to its spot in the galaxy — and only at 90→100%, as the camera is about
+     to leave, does it drift out. Tune the 0.62 / 0.10 to shift the pacing. */
   --reveal: clamp(0, calc(var(--present, 1) / 0.62), 1);
-  --exit: clamp(0, calc((1 - var(--present, 1)) / 0.18), 1);
+  --exit: clamp(0, calc((1 - var(--present, 1)) / 0.10), 1);
+  /* 0→1 across the hold band (0.62→0.90) — drives the short-viewport hold-pan. */
+  --hold-t: clamp(0, calc((var(--present, 1) - 0.62) / 0.28), 1);
 }
 
 .present-sticky {
@@ -360,12 +363,22 @@
 }
 
 /* Slim the section's tall padding while pinned so it fits one screen, and lift the
-   content above the scrim. The fallbacks below restore padding when it flows. */
+   content above the scrim. The fallbacks below restore padding when it flows.
+   Hold-pan: when the slide is TALLER than the viewport (laptop heights — measured
+   as --pan px by JourneyPresentation), the hold scrub slowly pans it up by that
+   overflow so the bottom is readable before the exit. round(…, 1px) keeps the
+   offset integral → text stays crisp at rest mid-hold. --pan is 0 wherever the
+   slide fits, so big screens keep the exact identity (crispness rule intact). */
 .present-sticky > section {
   position: relative;
   z-index: 1;
-  padding-top: var(--present-pad, 3rem);
+  /* The 5rem floor only ever binds when the slide has NO centering slack (it
+     fills the viewport): then the title pins at padding distance from the top
+     and must clear the fixed navbar (~73px). With slack, flex-centering puts
+     content well below the nav and the floor is irrelevant. */
+  padding-top: max(var(--present-pad, 3rem), 5rem);
   padding-bottom: var(--present-pad, 3rem);
+  translate: 0 round(calc(var(--pan, 0px) * -1 * var(--hold-t, 0)), 1px);
 }
 
 /* Keep section headers legible over the bright galaxy even where the scrim is thin. */
@@ -398,12 +411,12 @@
      the glass cards' backdrop-filter) blurry whenever the translate sits at a
      sub-pixel offset — i.e. anywhere outside the fully-revealed hold band. The
      browser still composites these during active scroll; at rest it de-promotes
-     and they render crisp. (At present 0.62–0.82 the transform is exactly identity.) */
+     and they render crisp. (At present 0.62–0.90 the transform is exactly identity.) */
 }
 
 /* Reading "settle": one PROXIMITY scroll-snap point per pinned section, at its
    fully-revealed hold position (~0.7 of the track — reveal finishes ~0.62, exit
-   starts ~0.82). Proximity (not mandatory) keeps scrolling free everywhere — the
+   starts ~0.90). Proximity (not mandatory) keeps scrolling free everywhere — the
    gaps, mid-reveal — but when the user comes to rest near a section's reading
    spot, the browser eases them onto it, so they don't nudge up/down to frame it.
    Disabled wherever sections aren't pinned (small / reduced-motion / flat). */
@@ -454,6 +467,9 @@ html {
   }
   .present-sticky > section {
     --present-pad: 6rem;
+    /* un-pinned → --present is 1 → --hold-t is 1: the hold-pan translate must
+       be neutralized or the whole section would sit offset by its overflow */
+    translate: none;
   }
   .present-step {
     opacity: 1;
@@ -483,6 +499,7 @@ html {
   }
   .present-sticky > section {
     --present-pad: 8rem;
+    translate: none; /* neutralize the hold-pan (see the small-screen fallback) */
   }
   .present-step {
     opacity: 1;
@@ -514,6 +531,7 @@ html {
 }
 [data-journey-mode="flat"] .present-sticky > section {
   --present-pad: 6rem;
+  translate: none; /* neutralize the hold-pan (see the small-screen fallback) */
 }
 [data-journey-mode="flat"] .present-step {
   opacity: 1;

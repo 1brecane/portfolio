@@ -243,15 +243,19 @@ Each journey section (About, TechStack, Projects, HomeLab, Contact) is wrapped s
   ```
 
 - **Staged reveal → hold → exit**, pure CSS math (the only per-frame JS is setting
-  `--present`). The track derives two helpers from `--present`: `--reveal`
-  (`present / 0.62`, clamped) drives the staged entrance, and `--exit`
-  (`(1 - present) / 0.18`, clamped) fades the whole slide back out over the last 18%.
+  `--present`). The track derives three helpers from `--present`: `--reveal`
+  (`present / 0.62`, clamped) drives the staged entrance, `--exit`
+  (`(1 - present) / 0.10`, clamped) drifts the slide back out over the last 10% —
+  a LONG hold so the slide feels anchored to its spot in the galaxy, leaving only
+  as the camera does — and `--hold-t` (0→1 across the 0.62→0.90 hold band) drives
+  the short-viewport hold-pan (below).
   Each revealable child gets `class="present-step"` + inline `style="--step: <i>"`:
 
   ```css
   .present-track {
     --reveal: clamp(0, calc(var(--present, 1) / 0.62), 1);
-    --exit: clamp(0, calc((1 - var(--present, 1)) / 0.18), 1);
+    --exit: clamp(0, calc((1 - var(--present, 1)) / 0.10), 1);
+    --hold-t: clamp(0, calc((var(--present, 1) - 0.62) / 0.28), 1);
   }
   .present-step {
     --t: clamp(0, calc(var(--reveal, 1) * var(--steps, 1) - var(--step, 0)), 1);
@@ -274,6 +278,22 @@ Each journey section (About, TechStack, Projects, HomeLab, Contact) is wrapped s
   computed by `getZoneFlow(zoneId)` in `useGalaxyJourney.js` from the `ZONES`
   centers and set as CSS vars by `JourneyPresentation.vue`. Tune the drift
   distances via the `2.5rem` (enter) / `3.5rem` (exit) factors in `globals.css`.
+  The About timeline's connector rail (`timeline__line`/`__fill`) drifts out with
+  the same `--exit-x/y` vector (via the separate `translate` property) so it
+  leaves *with* its cards instead of lingering in place.
+- **Short-viewport hold-pan.** On laptop heights a slide can be taller than the
+  viewport: there's no flex slack to center it, the bottom is cut and the title
+  pins underneath the fixed navbar. Two mechanisms fix it: (a) the section's
+  `padding-top` has a `max(…, 5rem)` floor so the pinned title always clears the
+  navbar (the floor only binds when there's no slack), and (b)
+  `JourneyPresentation` measures the slide's overflow (`sticky.scrollHeight −
+  innerHeight`, ≥ 0) into a `--pan` px var, and the section translates up by
+  `round(pan · hold-t, 1px)` — the long hold scrub slowly pans the slide to
+  expose its bottom before the exit. `round(…, 1px)` keeps offsets integral
+  (crisp at rest); `--pan` is 0 wherever the slide fits, preserving the exact
+  hold-band identity on big screens. The three flattening fallbacks reset the
+  pan with `translate: none` (un-pinned layouts have `--present = 1` → `--hold-t
+  = 1`, which would otherwise offset the whole section).
 - **Reading settle (scroll-snap):** each track also carries a single
   `<span class="present-snap">` at `0.7 · (trackHeight − vh)` — the fully-revealed hold
   position — with `scroll-snap-align: start` + `scroll-snap-stop: normal`, and
@@ -356,14 +376,15 @@ Sections then flow normally. The chapter rail is hidden < 768px. The manual
 **flat** view (`[data-journey-mode="flat"]`) applies the exact same flattening on demand.
 
 **Short-viewport compaction.** Tailwind breakpoints are *width*-based, so a small laptop
-(12–13", ~1280×720–800, or any OS-scaled display) gets full desktop type/spacing even
-though the viewport is **short** — and since a pinned slide is `min-height:100vh` and can't
-scroll internally, the oversized content overflows and can't be fully read. Fix: scale the
-**root `font-size`** down on short viewports (`@media (min-width:768px) and (max-height:820px)
+(12–14", ~1280–1536 wide × 720–900 tall after OS scaling) gets full desktop type/spacing
+even though the viewport is **short** — and since a pinned slide is `min-height:100vh` and
+can't scroll internally, the oversized content overflows. Two layers of fix: scale the
+**root `font-size`** down on short viewports (`@media (min-width:768px) and (max-height:900px)
 → 15px`, `… and (max-height:720px) → 14px` + a trimmed `--present-pad`), which shrinks every
-rem-based size (type, padding, gaps, max-widths) proportionally so each slide fits one
-screen. Gated to the pinned range (≥768px wide; the narrower path already flattens) and to
-short heights only — normal/tall desktops are untouched, and px-based things (the galaxy
+rem-based size proportionally; and for whatever still doesn't fit, the **hold-pan**
+(see the journey section above) pans the slide up across the hold so the bottom is
+always reachable. Gated to the pinned range (≥768px wide; the narrower path already
+flattens) — normal/tall desktops are untouched, and px-based things (the galaxy
 canvas) are unaffected regardless. See `globals.css`.
 
 ---
@@ -376,7 +397,9 @@ canvas) are unaffected regardless. See `globals.css`.
 | `REVEAL_POINT` (`0.65`) | `useJourneyScroll.js` | where in a track an anchor jump lands (fully-revealed slide) |
 | `gap-bob` / `.journey-gap::before` | `globals.css` | the sticky "keep scrolling" chevron in each gap |
 | `--present-track` | `globals.css` `:root` | scroll distance / pace of a pinned reveal |
-| `--reveal` / `--exit` split (`0.62` / `0.18`) | `globals.css` `.present-track` | reveal vs hold vs exit-fade pacing of a slide |
+| `--reveal` / `--exit` split (`0.62` / `0.10`) | `globals.css` `.present-track` | reveal vs hold vs exit-drift pacing of a slide (long hold: exit only starts at 0.90) |
+| `--pan` + `--hold-t` | `JourneyPresentation.vue` + `globals.css` | short-viewport hold-pan: slide overflow exposed across the hold |
+| `padding-top` floor (`5rem`) | `globals.css` `.present-sticky > section` | keeps a slack-less pinned title clear of the fixed navbar |
 | snap point (`0.7`) | `globals.css` `.present-snap` | where the proximity scroll-snap settles a section for reading |
 | `:steps` | per section in `App.vue` | number of staged reveal steps |
 | `ZONES` zoom/center/`bright` | `useGalaxyJourney.js` | per-section camera target + which stay full-opacity |

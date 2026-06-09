@@ -115,7 +115,11 @@ const timeline = computed(() =>
 </template>
 
 <style scoped>
-/* Connector rail + its drawing fill. Both sit on the left edge where the dots are. */
+/* Connector rail + its drawing fill. Both sit on the left edge where the dots are.
+   On exit they DRIFT along the same per-zone vector as the present-step cards
+   (via the separate `translate` property, so the fill's scaleY transform is
+   untouched) — otherwise the rail visibly "stays behind" while the cards slide
+   away. Identity in the hold band (--exit = 1 → translate 0 0). */
 .timeline__line,
 .timeline__fill {
   position: absolute;
@@ -124,6 +128,8 @@ const timeline = computed(() =>
   bottom: 0.25rem;
   width: 2px;
   border-radius: 2px;
+  translate: calc((1 - var(--exit, 1)) * var(--exit-x, 0) * 3.5rem)
+    calc((1 - var(--exit, 1)) * var(--exit-y, 0) * 3.5rem);
 }
 
 /* faint base rail (the "uncharged" track). Fades IN with the reveal and OUT with
@@ -174,10 +180,10 @@ const timeline = computed(() =>
    fully visible there, matching how `.present-step` is forced visible. */
 @media (max-width: 767px), (prefers-reduced-motion: reduce) {
   .timeline__line,
-  .timeline__fill { opacity: 1; }
+  .timeline__fill { opacity: 1; translate: none; }
 }
 [data-journey-mode="flat"] .timeline__line,
-[data-journey-mode="flat"] .timeline__fill { opacity: 1; }
+[data-journey-mode="flat"] .timeline__fill { opacity: 1; translate: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .timeline__pulse { animation: none; }
