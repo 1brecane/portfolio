@@ -21,9 +21,7 @@ function scrollToTop() {
   <Transition name="fade">
     <button
       v-if="isVisible"
-      class="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-primary text-primary-foreground
-             shadow-lg neon-glow cursor-pointer transition-transform hover:scale-110
-             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      class="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-primary text-primary-foreground shadow-lg neon-glow cursor-pointer tactile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       :aria-label="t.a11y.scrollToTop"
       @click="scrollToTop"
     >
@@ -35,7 +33,9 @@ function scrollToTop() {
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 
 .fade-enter-from,

@@ -241,6 +241,57 @@
   transform: translateY(-4px);
 }
 
+/* ── Micro-interactions: tactile buttons ─────────────────────────────────────
+   .tactile — hover lifts 2px with a soft glow shadow, press squashes (scale
+   0.96) with a much shorter transition so the click feels immediate.
+   .tactile-press — press-only variant for small segmented/icon controls where
+   a hover lift would look broken inside their bordered group.
+   These classes own the `transition` property (they're un-layered, so they win
+   over Tailwind's layered `transition-colors`) — that's why color/background/
+   border are included in the list. Hover is gated to fine pointers (a tap on
+   touch would leave a stuck lift); :active stays global so mobile gets press
+   feedback too. Reduced motion: no transforms at all (see media block below). */
+.tactile {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.22s ease,
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+.tactile:active {
+  transform: translateY(0) scale(0.96);
+  transition-duration: 0.06s;
+}
+.tactile-press {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.22s ease,
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+.tactile-press:active {
+  transform: scale(0.94);
+  transition-duration: 0.06s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .tactile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px var(--neon-glow);
+  }
+  .tactile:active {
+    transform: translateY(0) scale(0.96);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tactile:hover,
+  .tactile:active,
+  .tactile-press:active {
+    transform: none;
+  }
+}
+
 /* Scroll reveal */
 .scroll-reveal {
   opacity: 0;

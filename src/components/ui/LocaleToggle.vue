@@ -20,7 +20,7 @@ const options = [
       :key="opt.id"
       type="button"
       :class="[
-        'min-w-[2.25rem] px-2.5 py-1.5 rounded-sm uppercase tracking-wide transition-all duration-200',
+        'min-w-[2.25rem] px-2.5 py-1.5 rounded-sm uppercase tracking-wide tactile-press',
         locale === opt.id
           ? 'bg-primary text-primary-foreground neon-glow shadow-sm'
           : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',

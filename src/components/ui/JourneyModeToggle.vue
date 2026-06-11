@@ -65,7 +65,7 @@ onBeforeUnmount(() => {
   <div class="relative">
     <button
       type="button"
-      class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 tactile-press"
       :aria-label="t.journey.simpleView"
       :aria-pressed="mode === 'flat'"
       :title="actionLabel"
