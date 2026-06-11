@@ -331,6 +331,49 @@
     0 0 56px var(--neon-glow);
 }
 
+/* ── Micro-interactions: glass-card sheen ────────────────────────────────────
+   A diagonal light strip sweeps across the card once per hover-enter (~0.7s,
+   transform-only, pointer-events: none). The transition lives ONLY on the
+   :hover state, so on mouseleave the strip snaps back off-screen invisibly
+   instead of visibly rewinding. Pairs with v-tilt: the tilt transforms the
+   card, the sheen transforms a pseudo-element child — no conflict. The whole
+   effect is hover-gated (touch never sees it) and removed under reduced
+   motion. Travel math: strip is 28% of card width starting at -35%; 560% of
+   its own width ≈ 1.57 card widths, so it fully clears the right edge. */
+@media (hover: hover) and (pointer: fine) {
+  .sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .sheen::after {
+    content: "";
+    position: absolute;
+    top: -20%;
+    bottom: -20%;
+    left: -35%;
+    width: 28%;
+    background: linear-gradient(
+      100deg,
+      transparent,
+      color-mix(in oklab, var(--primary) 12%, transparent) 45%,
+      color-mix(in oklab, white 9%, transparent) 55%,
+      transparent
+    );
+    transform: skewX(-14deg);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .sheen:hover::after {
+    transform: skewX(-14deg) translateX(560%);
+    transition: transform 0.7s ease;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheen::after {
+    display: none;
+  }
+}
+
 /* Scroll reveal */
 .scroll-reveal {
   opacity: 0;

@@ -102,7 +102,7 @@ const resolvedCategories = computed(() =>
           v-for="(category, i) in resolvedCategories"
           :key="category.title"
           v-tilt
-          class="present-step group glass-panel rounded-lg p-6 card-glow"
+          class="present-step group glass-panel rounded-lg p-6 card-glow sheen"
           :style="{ '--step': i }"
         >
           <div class="flex items-center gap-3 mb-6">

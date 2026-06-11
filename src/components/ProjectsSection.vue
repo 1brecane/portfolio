@@ -89,7 +89,7 @@ const projects = computed(() =>
           v-for="(project, i) in projects"
           :key="project.id"
           v-tilt
-          class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow"
+          class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow sheen"
           :style="{ '--step': i }"
         >
           <!-- coloured accent bar -->
