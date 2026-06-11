@@ -180,7 +180,7 @@ function reopenTerminal() {
             as="a"
             href="#projects"
             size="lg"
-            class="font-mono bg-primary text-primary-foreground hover:bg-primary/90 neon-glow"
+            class="font-mono bg-primary text-primary-foreground hover:bg-primary/90 neon-glow neon-cta"
             @click.prevent="scrollToZone('projects')"
           >
             {{ t.hero.viewProjects }}

@@ -192,7 +192,7 @@ const sendEmail = async () => {
 
           <AppButton
             type="submit"
-            class="w-full sm:w-auto font-mono bg-primary text-primary-foreground hover:bg-primary/90"
+            class="w-full sm:w-auto font-mono bg-primary text-primary-foreground hover:bg-primary/90 neon-cta"
             :disabled="status === 'loading' || !captchaToken"
             :aria-describedby="!captchaToken ? 'captcha-hint' : undefined"
           >

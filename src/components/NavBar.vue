@@ -71,7 +71,7 @@ watch(isMobileMenuOpen, async (open) => {
 onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 
 const contactBtnClass =
-  "font-mono text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground";
+  "font-mono text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground neon-cta";
 </script>
 
 <template>

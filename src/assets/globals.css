@@ -292,6 +292,45 @@
   }
 }
 
+/* ── Micro-interactions: neon CTA glow ───────────────────────────────────────
+   Phosphor halo on the three primary CTAs (nav Contact, hero CTA, contact form
+   submit) — deliberately scarce. Declared AFTER .tactile so its hover shadow
+   wins over .tactile's soft lift shadow (same specificity, later source order);
+   on the hero CTA the 24px/56px glow out-shines the static .neon-glow rest
+   state (20px/40px), so hover reads as "intensify". transform is included in
+   the transition list because this rule takes the `transition` property over
+   from .tactile on elements carrying both — dropping it would kill the lift
+   easing. Hover is gated to fine pointers (same as .tactile — a tap on touch
+   would leave a stuck glow); :focus-visible stays ungated, and it composes
+   Tailwind's focus ring back in via the --tw-ring-offset-shadow/--tw-ring-shadow
+   custom props (the ring utilities set them on the element, so they survive
+   this box-shadow override; transparent fallbacks for non-ring elements) —
+   a plain shadow here would clobber AppButton's keyboard focus ring. A glow
+   fade is not movement, so it stays active under reduced motion (the global
+   0.01ms override just makes it instant). */
+.neon-cta {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.22s ease,
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .neon-cta:hover {
+    box-shadow:
+      0 0 24px var(--neon-glow),
+      0 0 56px var(--neon-glow);
+  }
+}
+.neon-cta:focus-visible {
+  box-shadow:
+    var(--tw-ring-offset-shadow, 0 0 #0000),
+    var(--tw-ring-shadow, 0 0 #0000),
+    0 0 24px var(--neon-glow),
+    0 0 56px var(--neon-glow);
+}
+
 /* Scroll reveal */
 .scroll-reveal {
   opacity: 0;
