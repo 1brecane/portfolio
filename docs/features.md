@@ -389,6 +389,22 @@ canvas) are unaffected regardless. See `globals.css`.
 
 ---
 
+## Micro-interactions
+
+Four small, independent effects
+(spec: `docs/superpowers/specs/2026-06-11-micro-interactions-design.md`).
+All hover effects are gated on `(hover: hover) and (pointer: fine)`; transforms are
+suppressed under `prefers-reduced-motion: reduce`.
+
+| Effect | Where | How |
+|---|---|---|
+| `.tactile` press & lift | `AppButton` (all CTAs), `ScrollToTop`; `.tactile-press` (press-only, scale 0.94) on `LocaleToggle` / `JourneyModeToggle` | Hover lifts 2px (`translateY(-2px)`) + soft `--neon-glow` shadow (`box-shadow 0 4px 16px`); `:active` squashes (`.tactile`: scale 0.96, `.tactile-press`: scale 0.94) with a 60ms `transition-duration`. Both classes own the `transition` property — `transform`, `box-shadow`, `color`, `background-color`, `border-color` — so they win over Tailwind's layered `transition-colors` and the color easing is preserved. |
+| `v-scramble` (`src/directives/scramble.js`) | The 5 desktop nav links (label wrapped in `<span v-scramble>`) | Rescrambles the label with the SectionHeader glyph set `".·+*#@%&"`, resolving left-to-right over 12 frames × 26ms. Text is read at hover time (not cached at mount) so it stays locale-safe. Restores on leave/unmount; a reactive text change mid-scramble (e.g. locale flip) cancels via the `updated` hook and keeps Vue's new text. Mutates `firstChild.nodeValue` so the tracked text node keeps its identity. Single-text-node elements only. No-ops on touch/coarse pointers and under `prefers-reduced-motion`. |
+| `.neon-cta` glow | Nav **Contact** button, hero primary CTA, contact form submit — exactly three, deliberately scarce | Hover/focus-visible phosphor halo (`box-shadow: 0 0 24px` + `0 0 56px var(--neon-glow)`). Declared after `.tactile` so its hover shadow wins (same specificity, later source order); on the hero CTA it intensifies the static `.neon-glow` rest state (20px/40px), so hover reads as "intensify". `focus-visible` composes Tailwind's `--tw-ring-offset-shadow`/`--tw-ring-shadow` custom props in front of the glow, so the keyboard focus ring survives. Hover is media-gated; `focus-visible` is ungated. Glow is not movement, so it runs under reduced motion (the global 0.01ms override just makes it instant). |
+| `.sheen` sweep | The same glass cards that carry `v-tilt` (About, TechStack, Projects, HomeLab) | A skewed gradient strip (`::after`, `skewX(-14deg)`, `z-index: 1`, `pointer-events: none`) sweeps once per hover-enter (~0.7s, `transform` only). The transition lives only on `:hover`, so mouseleave snaps the strip back off-screen invisibly — no reverse sweep. The entire `position: relative` + `overflow: hidden` setup for `.sheen` is inside the `(hover: hover)` media block; touch never sees it. Travel math: strip is 28% of card width starting at left −35%; translateX(560%) ≈ 1.57 card widths so it fully clears the right edge. Removed under `prefers-reduced-motion` (`::after { display: none }`). |
+
+---
+
 ## Tunables at a glance
 
 | Knob | Where | Effect |
@@ -416,3 +432,7 @@ canvas) are unaffected regardless. See `globals.css`.
 | `STREAK_MAX` / `STREAK_COPIES` / `STREAK_FADE` / `STREAK_MIN_ALPHA` | `GalaxyBackground.vue` | warp-streak length / ghost-copy count (more = smoother smear, less = discrete duplicates) / per-copy opacity / min particle alpha that streaks (perf: faint particles skip streaks) |
 | `OUTER_R` | `GalaxyBackground.vue` | galaxy disc radius |
 | scrim alphas | `globals.css` `.present-sticky::before` | section readability vs galaxy visibility |
+| lift 2px / press scale 0.96 / 0.94 | `globals.css` `.tactile` / `.tactile-press` | hover lift height and `:active` squash depth for buttons vs small icon controls |
+| 12 × 26ms (`FRAMES` / `FRAME_MS`) | `src/directives/scramble.js` | scramble duration and frame count for nav-link glyph resolve |
+| 24px / 56px (`neon-cta` shadows) | `globals.css` `.neon-cta` | phosphor halo spread on the three primary CTAs |
+| sweep 0.7s + strip geometry (28%, −35%, 560%, −14deg) | `globals.css` `.sheen::after` | sheen sweep duration and strip dimensions / angle |
