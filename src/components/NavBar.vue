@@ -7,6 +7,7 @@ import JourneyModeToggle from "@/components/ui/JourneyModeToggle.vue";
 import { useI18n } from "@/i18n";
 import { useWindowScroll } from "@/composables/useWindowScroll";
 import { scrollToZone } from "@/composables/useJourneyScroll";
+import { vScramble } from "@/directives/scramble";
 
 const { t } = useI18n();
 
@@ -104,7 +105,7 @@ const contactBtnClass =
             :aria-current="i === activeIndex ? 'page' : undefined"
             @click.prevent="go(link.href)"
           >
-            {{ link.label }}
+            <span v-scramble>{{ link.label }}</span>
             <span
               class="absolute -bottom-1 left-0 h-0.5 bg-primary transition-all"
               :class="i === activeIndex ? 'w-full' : 'w-0 group-hover:w-full'"
