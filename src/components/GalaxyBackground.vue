@@ -83,6 +83,15 @@ const STREAK_FADE = 0.45; // per-copy opacity base (lower than the old 3-copy va
 // exactly where you scroll fastest — so skipping them cuts the heaviest frames.
 const STREAK_MIN_ALPHA = 0.3;
 
+// ── occasional comets ─────────────────────────────────────────────────────────
+// A rare screen-space comet crossing the sky during animated rendering — a
+// reward for whoever watches. Never in static mode (that path never runs the
+// per-frame loop). One at a time.
+const COMET_MIN_DELAY = 15; // s — min wait before the next comet. TUNABLE
+const COMET_MAX_DELAY = 30; // s — max wait. TUNABLE
+const COMET_TRAIL = 10; // trail ghost glyphs. TUNABLE
+const COMET_SPEED = 260; // px/s head speed. TUNABLE
+
 // ── galaxy shape constants ────────────────────────────────────────────────────
 const SPIRAL_K = 1 / Math.tan((10 * Math.PI) / 180);
 const N_ARMS = 3;
@@ -117,6 +126,26 @@ const MOUSE_RADIUS_SQ = MOUSE_RADIUS * MOUSE_RADIUS;
 const trailMap = new Map(); // particle key → hover intensity 0..1 (decays over time)
 const TRAIL_K = 0.5;
 let prevElapsed = 0;
+
+// ── comet state ───────────────────────────────────────────────────────────────
+let comet = null; // { x, y, vx, vy, trail: [{x,y}, …] } — trail objects reused
+let cometDueAt = 0; // elapsed-seconds timestamp; 0 = needs (re)scheduling
+
+function scheduleComet(elapsed) {
+  cometDueAt = elapsed + COMET_MIN_DELAY + Math.random() * (COMET_MAX_DELAY - COMET_MIN_DELAY);
+}
+
+function spawnComet(W, H) {
+  const fromLeft = Math.random() < 0.5;
+  const angle = ((12 + Math.random() * 18) * Math.PI) / 180; // shallow downward diagonal
+  comet = {
+    x: fromLeft ? -20 : W + 20,
+    y: H * (0.08 + Math.random() * 0.4),
+    vx: Math.cos(angle) * COMET_SPEED * (fromLeft ? 1 : -1),
+    vy: Math.sin(angle) * COMET_SPEED,
+    trail: [],
+  };
+}
 
 // Color bands as RGB tuples — mirrors charColor thresholds
 const BANDS_BASE = [
@@ -439,6 +468,34 @@ function draw(canvas, elapsed) {
 
       ctx.globalAlpha = alpha * intensity;
       ctx.fillText(ch, px, py);
+    }
+  }
+
+  // ── comet pass ──────────────────────────────────────────────────────────────
+  // dt outside (0, 0.5) means first frame or a return from a hidden tab — the
+  // schedule is re-anchored instead of "catching up" (no comet burst on return).
+  if (!comet) {
+    if (cometDueAt === 0 || dt <= 0 || dt >= 0.5) scheduleComet(elapsed);
+    else if (elapsed >= cometDueAt) spawnComet(W, H);
+  } else if (dt > 0 && dt < 0.5) {
+    comet.x += comet.vx * dt;
+    comet.y += comet.vy * dt;
+    // reuse the oldest trail point object — no per-frame allocation once warm
+    const p = comet.trail.length >= COMET_TRAIL ? comet.trail.pop() : { x: 0, y: 0 };
+    p.x = comet.x;
+    p.y = comet.y;
+    comet.trail.unshift(p);
+    // Screen-space element: pin the font to the unzoomed size (the particle pass
+    // left ctx.font at fontSize * zoom; draw() re-sets it every frame anyway).
+    ctx.font = `${fontSize}px ui-monospace, 'Courier New', monospace`;
+    ctx.fillStyle = `rgb(${starHover[0]},${starHover[1]},${starHover[2]})`;
+    for (let i = 0; i < comet.trail.length; i++) {
+      ctx.globalAlpha = (1 - i / COMET_TRAIL) * (i === 0 ? 0.95 : 0.5) * intensity;
+      ctx.fillText(i === 0 ? "*" : "·", comet.trail[i].x, comet.trail[i].y);
+    }
+    if (comet.x < -40 || comet.x > W + 40 || comet.y > H + 40) {
+      comet = null;
+      cometDueAt = 0; // reschedule from the next frame's elapsed
     }
   }
 
