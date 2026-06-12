@@ -99,6 +99,13 @@ const INTRO_START_ZOOM = 0.35; // where the flight starts. TUNABLE
 const INTRO_MS = 1800; // flight duration. TUNABLE
 const INTRO_SEEN_KEY = "journey-intro-seen";
 
+// ── velocity-aware warp ───────────────────────────────────────────────────────
+// Streak strength in the gaps scales with real scroll speed: cruising keeps a
+// shorter scia, flinging the wheel reads as full hyperspace. Holds stay at 0.
+const VEL_FULL = 3000; // px/s that counts as full speed. TUNABLE
+const VEL_FLOOR = 0.5; // fraction of the arc kept at crawl speed. TUNABLE
+const VEL_SMOOTH = 0.15; // EMA blend per update — higher = snappier. TUNABLE
+
 function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
@@ -132,6 +139,9 @@ export function useGalaxyJourney() {
   const retries = [];
   let introRaf = null;
   let introActive = false;
+  let lastY = 0;
+  let lastT = 0;
+  let vel = 0; // smoothed 0..1 scroll-speed factor
 
   // "Soft off": the camera holds the hero view (galaxy still twinkles) — used for
   // the manual flat/simple view, small screens, and reduced-data. Distinct from
@@ -148,6 +158,11 @@ export function useGalaxyJourney() {
     intensity.value = 1;
     travel.value = 0;
     activeIndex.value = 0;
+    // Every camera reset is also a velocity reset — don't rely on the >200ms
+    // stale-sample branch in update() to clean this up.
+    vel = 0;
+    lastY = 0;
+    lastT = 0;
     if (raf !== null) {
       cancelAnimationFrame(raf);
       raf = null;
@@ -279,8 +294,8 @@ export function useGalaxyJourney() {
     // gap midpoint, so the galaxy "exhales" as the camera flies through.
     const base = lerp(holdIntensity(i), holdIntensity(j), t);
     intensity.value = base + (1 - base) * arc;
-    // Warp peaks mid-flight and is zero at both ends (crisp on arrival/departure).
-    travel.value = arc;
+    // Warp peaks mid-flight, scaled by how fast you're actually scrolling.
+    travel.value = arc * (VEL_FLOOR + (1 - VEL_FLOOR) * vel);
     activeIndex.value = t < 0.5 ? i : j;
   }
 
@@ -289,6 +304,20 @@ export function useGalaxyJourney() {
     if (reduced || softOff()) return;
     if (introActive) return; // the intro owns the camera until done/cancelled
     const y = window.scrollY;
+    // Smoothed scroll velocity (px/s → 0..1). A long pause (or the first sample)
+    // resets to 0 so a gap entered slowly starts at cruise, not at a stale speed.
+    const now = performance.now();
+    if (lastT > 0) {
+      const dtMs = now - lastT;
+      if (dtMs > 0 && dtMs < 200) {
+        const instant = (Math.abs(y - lastY) / dtMs) * 1000;
+        vel += (Math.min(1, instant / VEL_FULL) - vel) * VEL_SMOOTH;
+      } else {
+        vel = 0;
+      }
+    }
+    lastY = y;
+    lastT = now;
     const first = ranges[0];
     if (!first) return;
 
