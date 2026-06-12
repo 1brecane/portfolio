@@ -147,8 +147,23 @@ this matters — it's the heaviest always-on runtime cost).
 module-level [`useColorScheme()`](../src/composables/useColorScheme.js) singleton, which
 the galaxy reads each frame (no prop drilling now that the galaxy is app-level).
 
+**Comets:** a rare **screen-space** comet crosses the sky — a reward for whoever watches.
+A head `*` leads a `COMET_TRAIL` (10)-point trail of fading `·` ghosts; trail point
+objects are **reused** once the trail is warm, so there's no per-frame allocation. One at
+a time: the next spawn is scheduled a random `COMET_MIN_DELAY`–`COMET_MAX_DELAY`
+(15–30 s) ahead, entering from a random side at `COMET_SPEED` (260 px/s) on a shallow
+**12–30° downward diagonal**. Animated mode only — the static paths (mobile /
+reduced-motion / reduced-data) draw one frame and never run the per-frame loop, so they
+never see a comet. The comet pass runs **after** the particle pass in `draw()`: it
+re-pins `ctx.font` to the unzoomed screen-space size (the particle pass left it at
+`fontSize * zoom` — the comet is foreground weather, not part of the galaxy), colors the
+glyphs with the current `color N` **star-hover palette**, and dims alpha by `intensity`.
+A `dt` guard re-anchors the schedule on the first frame and after a hidden-tab return
+instead of "catching up" — no comet burst when the tab comes back.
+
 **Tunable knobs** (top of the file): `FONT_SIZE`, `TWINKLE_SPEED_BASE` /
-`TWINKLE_SPEED_VAR`, `OUTER_R`.
+`TWINKLE_SPEED_VAR`, `OUTER_R`, `COMET_MIN_DELAY` / `COMET_MAX_DELAY` / `COMET_TRAIL` /
+`COMET_SPEED`.
 
 ---
 
@@ -198,11 +213,40 @@ space (`{0,0}` = core):
   (per-copy opacity) in `GalaxyBackground.vue`. **Perf:** only particles brighter than
   `STREAK_MIN_ALPHA` streak — the gaps are the heaviest frames *and* where you scroll
   fastest, and faint particles' streaks are ~invisible, so this caps the spike.
+  **Velocity-aware:** the gap `travel` is no longer the bare arc — it's
+  `arc · (VEL_FLOOR + (1−VEL_FLOOR)·vel)`, where `vel` is the real scroll speed
+  (px/s, normalized by `VEL_FULL`, EMA-smoothed by factor `VEL_SMOOTH` per update),
+  so cruising keeps a shorter scia and flinging the wheel reads as full hyperspace.
+  `vel` resets to 0 after a >200 ms pause between samples (a gap entered slowly starts
+  at cruise, not at a stale speed) and on **every camera reset**; holds stay at 0, and
+  stopping mid-gap still freezes the scia as before (no scroll → no update). The intro
+  fly-in (below) emits its own `travel` and bypasses this scaling.
+- **First-visit intro fly-in:** a one-shot ~1.8 s landing on the hero view. The camera
+  starts far out at `INTRO_START_ZOOM` (0.35) and eases in to the hero zone
+  (ease-out cubic), riding the existing warp pipeline with its own
+  `travel = sin(π·t)·(1−t)` — a flight scia that is fully dead by arrival. It runs only
+  on a visitor's very first load: from the top of the page (`scrollY ≤ 1`), with **no
+  deep-link hash**, and only when the journey is actually running (not soft-off /
+  reduced). Seen-state is the `journey-intro-seen` `localStorage` key, **written at
+  start** so a mid-intro reload counts as seen (try/catch-wrapped like `useJourneyMode`;
+  storage unavailable = treat as seen and skip). It never blocks input: any
+  wheel / touchstart / keydown / scroll cancels it instantly, as do flat / breakpoint /
+  reduced-data flips (`resetCamera`) and unmount; while it runs, `update()` is gated by
+  `introActive` so the intro owns the camera, and cancelling recomputes everything from
+  the live scroll position. Knobs: `INTRO_START_ZOOM`, `INTRO_MS`.
 - **Chapter rail:** the composable emits `activeIndex` (held zone, or the nearer one
   mid-gap). [`JourneyRail.vue`](../src/components/JourneyRail.vue) renders a fixed
   right-edge dot-per-zone indicator with the active label lit and a progress fill. Each
   dot is a real **button** that flies the camera to that section via `scrollToZone()`
-  (labels reveal on hover/focus) — an orientation cue *and* a quick-jump menu. It's a
+  (labels reveal on hover/focus) — an orientation cue *and* a quick-jump menu. Each row
+  also shows an always-visible **zero-padded chapter number** (`01`–`06`, mono 0.6rem,
+  muted, `aria-hidden` — the label is the accessible name; the active one lights up in
+  primary), and arriving at a chapter fires a one-shot **radar ping**: a ring `:key`ed on
+  `activeIndex` (so each arrival re-renders it) animating `rail-ping` — 900 ms, scale
+  0.5→2.1, fading out. The ping is anchored inside an **unscaled `__dotwrap` wrapper**:
+  the dot itself scales on hover/active, and nesting the ping in the dot would compound
+  that transform with the ping keyframes. It fires once on mount for the hero dot and is
+  `display:none` under reduced motion. The rail is a
   `<nav aria-label>`, hidden < 768px and in flat view. The camera is `prefers-reduced-motion`-
   and small-screen-aware, so the journey holds the hero view rather than running there.
 - Pinned sections are sticky, so their inner `#id` box is **not** a stable anchor. The
@@ -421,6 +465,8 @@ suppressed under `prefers-reduced-motion: reduce`.
 | `ZONES` zoom/center/`bright` | `useGalaxyJourney.js` | per-section camera target + which stay full-opacity |
 | `DIM` | `useGalaxyJourney.js` | galaxy opacity while reading a dimmable section (breathing) |
 | `PULLBACK` / `MIN_ZOOM` | `useGalaxyJourney.js` | mid-gap camera dezoom amount (the flight arc) / its floor |
+| `INTRO_START_ZOOM` / `INTRO_MS` | `useGalaxyJourney.js` | first-visit fly-in: starting zoom (0.35) / flight duration (1800 ms) |
+| `VEL_FULL` / `VEL_FLOOR` / `VEL_SMOOTH` | `useGalaxyJourney.js` | velocity-aware warp: px/s that counts as full speed / fraction of the arc kept at crawl / EMA blend per update (higher = snappier) |
 | `--enter-x/y`, `--exit-x/y`, `--exit-rot` | set by `JourneyPresentation.vue` from `getZoneFlow()` | per-zone drift directions (derived from `ZONES` centers; `FLOW_TILT` maps galaxy y → screen y) |
 | drift distances (`2.5rem` enter / `3.5rem` exit) + exit scale floor (`0.97`) | `globals.css` `.present-step` | how far slides travel in/out and the depth whisper |
 | `GLYPHS` / resolve point (`reveal / 0.5`) | `SectionHeader.vue` | title-decode glyph set / how early the title is fully readable |
@@ -431,6 +477,9 @@ suppressed under `prefers-reduced-motion: reduce`.
 | `TWINKLE_SPEED_BASE/VAR` | `GalaxyBackground.vue` | twinkle rate / spread |
 | `STREAK_MAX` / `STREAK_COPIES` / `STREAK_FADE` / `STREAK_MIN_ALPHA` | `GalaxyBackground.vue` | warp-streak length / ghost-copy count (more = smoother smear, less = discrete duplicates) / per-copy opacity / min particle alpha that streaks (perf: faint particles skip streaks) |
 | `OUTER_R` | `GalaxyBackground.vue` | galaxy disc radius |
+| `COMET_MIN_DELAY` / `COMET_MAX_DELAY` | `GalaxyBackground.vue` | comet spawn window (random delay between comets, in seconds) |
+| `COMET_TRAIL` / `COMET_SPEED` | `GalaxyBackground.vue` | comet trail length (ghost glyphs) / head speed in px/s |
+| `rail-ping` (900ms, scale 0.5→2.1) | `JourneyRail.vue` scoped CSS | the chapter-arrival radar ping's duration and spread |
 | scrim alphas | `globals.css` `.present-sticky::before` | section readability vs galaxy visibility |
 | lift 2px / press scale 0.96 / 0.94 | `globals.css` `.tactile` / `.tactile-press` | hover lift height and `:active` squash depth for buttons vs small icon controls |
 | 12 × 26ms (`FRAMES` / `FRAME_MS`) | `src/directives/scramble.js` | scramble duration and frame count for nav-link glyph resolve |
