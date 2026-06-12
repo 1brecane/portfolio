@@ -51,7 +51,18 @@ const progress = computed(() => {
           @click="scrollToZone(zone.id)"
         >
           <span class="journey-rail__label">{{ zone.label }}</span>
-          <span class="journey-rail__dot" />
+          <span class="journey-rail__num" aria-hidden="true">{{
+            String(i + 1).padStart(2, "0")
+          }}</span>
+          <span class="journey-rail__dotwrap">
+            <span class="journey-rail__dot" />
+            <span
+              v-if="i === activeIndex"
+              :key="activeIndex"
+              class="journey-rail__ping"
+              aria-hidden="true"
+            />
+          </span>
         </button>
       </li>
     </ul>
@@ -135,6 +146,27 @@ const progress = computed(() => {
   text-shadow: 0 1px 8px oklch(0.08 0 0 / 0.7);
 }
 
+/* always-visible chapter number — a quiet column next to the dots */
+.journey-rail__num {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: color-mix(in oklch, var(--foreground) 38%, transparent);
+  transition: color 280ms ease;
+  text-shadow: 0 1px 8px oklch(0.08 0 0 / 0.7);
+}
+
+.journey-rail__item.is-active .journey-rail__num {
+  color: var(--primary);
+}
+
+/* unscaled anchor for the arrival ping — the dot inside scales on hover/active,
+   and a ping nested in it would compound that transform with its own keyframes */
+.journey-rail__dotwrap {
+  position: relative;
+  display: inline-flex;
+}
+
 .journey-rail__dot {
   width: 6px;
   height: 6px;
@@ -168,6 +200,34 @@ const progress = computed(() => {
   background: var(--primary);
   transform: scale(1.5);
   box-shadow: 0 0 10px var(--neon-glow);
+}
+
+/* one-shot radar ping when the camera arrives at a chapter */
+.journey-rail__ping {
+  position: absolute;
+  inset: -5px;
+  border-radius: 9999px;
+  border: 1px solid var(--primary);
+  opacity: 0;
+  animation: rail-ping 900ms ease-out 1;
+  pointer-events: none;
+}
+
+@keyframes rail-ping {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-rail__ping {
+    display: none;
+  }
 }
 
 /* Tall pinned rails don't belong on small screens. */
