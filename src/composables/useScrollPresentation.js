@@ -1,4 +1,5 @@
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
+import { useJourneyMode } from "@/composables/useJourneyMode";
 
 /**
  * useScrollPresentation(trackRef)
@@ -14,16 +15,29 @@ import { ref, onMounted, onUnmounted } from "vue";
  * layout thrashing (reflow interleaved with the `--present` style writes) and
  * dropped frames on fast scroll. The per-frame path now reads only `scrollY`.
  *
- * Under prefers-reduced-motion, `progress` is pinned to 1 (everything revealed).
+ * Wherever the CSS flattens the layout (prefers-reduced-motion, < 768px, flat
+ * "simple view") `progress` is pinned to 1: the track is un-pinned (`height:
+ * auto`), so scroll-through progress is meaningless there — and a flattened
+ * section TALLER than the viewport would otherwise sit near 0 while its title
+ * is on screen, leaving the SectionHeader decode stuck on glyphs.
  *
  * @returns {{ progress: import('vue').Ref<number> }}
  */
 export function useScrollPresentation(trackRef) {
   const progress = ref(0);
+  const { mode } = useJourneyMode();
   let reduced = false;
+  let small = false;
   let raf = null;
   let motionQuery = null;
+  let smallQuery = null;
   let bodyObserver = null;
+  let listening = false;
+
+  // Mirrors the three flattening conditions in globals.css — keep in sync.
+  function flattened() {
+    return reduced || small || mode.value === "flat";
+  }
 
   // Cached layout — updated on layout changes only, not per scroll frame.
   let trackTop = 0;
@@ -44,7 +58,7 @@ export function useScrollPresentation(trackRef) {
   // Per-frame: reads scrollY only (no layout) → no reflow, no thrash.
   function apply() {
     raf = null;
-    if (reduced) {
+    if (flattened()) {
       progress.value = 1;
       return;
     }
@@ -66,6 +80,8 @@ export function useScrollPresentation(trackRef) {
   }
 
   function startListeners() {
+    if (listening) return;
+    listening = true;
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize, { passive: true });
     // Re-measure on any layout shift: lazy sections mounting above, locale text
@@ -79,17 +95,20 @@ export function useScrollPresentation(trackRef) {
   }
 
   function stopListeners() {
+    if (!listening) return;
+    listening = false;
     window.removeEventListener("scroll", onScroll);
     window.removeEventListener("resize", onResize);
     bodyObserver?.disconnect();
     bodyObserver = null;
   }
 
-  function onMotionChange(e) {
-    reduced = e.matches;
-    if (reduced) {
-      progress.value = 1;
+  // Any flattening input flipped (motion pref, breakpoint, journey mode) —
+  // pin to 1 or hand back to scroll, re-measuring since the layout just changed.
+  function reevaluate() {
+    if (flattened()) {
       stopListeners();
+      progress.value = 1;
     } else {
       startListeners();
       measure();
@@ -97,12 +116,27 @@ export function useScrollPresentation(trackRef) {
     }
   }
 
+  function onMotionChange(e) {
+    reduced = e.matches;
+    reevaluate();
+  }
+
+  function onSmallChange(e) {
+    small = e.matches;
+    reevaluate();
+  }
+
+  watch(mode, reevaluate);
+
   onMounted(() => {
     motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     reduced = motionQuery.matches;
     motionQuery.addEventListener("change", onMotionChange);
+    smallQuery = window.matchMedia("(max-width: 767px)");
+    small = smallQuery.matches;
+    smallQuery.addEventListener("change", onSmallChange);
 
-    if (reduced) {
+    if (flattened()) {
       progress.value = 1;
       return;
     }
@@ -114,6 +148,7 @@ export function useScrollPresentation(trackRef) {
   onUnmounted(() => {
     if (raf !== null) cancelAnimationFrame(raf);
     motionQuery?.removeEventListener("change", onMotionChange);
+    smallQuery?.removeEventListener("change", onSmallChange);
     stopListeners();
   });
 
