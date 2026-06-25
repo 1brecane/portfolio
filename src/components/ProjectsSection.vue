@@ -6,7 +6,6 @@ import AppBadge from "@/components/ui/AppBadge.vue";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
 import { SOCIAL_LINKS } from "@/constants/socialLinks";
-import { vTilt } from "@/directives/tilt";
 
 const { t } = useI18n();
 
@@ -88,8 +87,7 @@ const projects = computed(() =>
         <article
           v-for="(project, i) in projects"
           :key="project.id"
-          v-tilt
-          class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow sheen"
+          class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow"
           :style="{ '--step': i }"
         >
           <!-- coloured accent bar -->

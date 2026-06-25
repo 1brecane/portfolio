@@ -5,7 +5,6 @@ import AppBadge from "@/components/ui/AppBadge.vue";
 import IconBox from "@/components/ui/IconBox.vue";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
-import { vTilt } from "@/directives/tilt";
 
 const { t } = useI18n();
 
@@ -71,7 +70,7 @@ const timeline = computed(() =>
             <span v-if="entry.current" class="timeline__pulse" aria-hidden="true" />
           </div>
 
-          <div v-tilt :class="['glass-panel rounded-lg p-6 card-glow sheen', { 'is-current': entry.current }]">
+          <div :class="['glass-panel rounded-lg p-6 card-glow', { 'is-current': entry.current }]">
             <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
               <div class="flex items-center gap-3">
                 <IconBox :accent="entry.accent">

@@ -4,7 +4,6 @@ import { Server, Database, Container, Code2 } from "lucide-vue-next";
 import IconBox from "@/components/ui/IconBox.vue";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
-import { vTilt } from "@/directives/tilt";
 
 const { t } = useI18n();
 
@@ -101,8 +100,7 @@ const resolvedCategories = computed(() =>
         <div
           v-for="(category, i) in resolvedCategories"
           :key="category.title"
-          v-tilt
-          class="present-step group glass-panel rounded-lg p-6 card-glow sheen"
+          class="present-step group glass-panel rounded-lg p-6 card-glow"
           :style="{ '--step': i }"
         >
           <div class="flex items-center gap-3 mb-6">

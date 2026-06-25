@@ -1,7 +1,7 @@
 <script setup>
 import { ref, defineAsyncComponent, onMounted } from "vue";
-import AsciiStarfield from "@/components/AsciiStarfield.vue";
-import GalaxyBackground from "@/components/GalaxyBackground.vue";
+import StarfieldBackground from "@/components/StarfieldBackground.vue";
+import AsciiPlanets from "@/components/AsciiPlanets.vue";
 import NavBar from "@/components/NavBar.vue";
 import HeroSection from "@/components/HeroSection.vue";
 import JourneyPresentation from "@/components/JourneyPresentation.vue";
@@ -31,7 +31,7 @@ const ScrollToTop = defineAsyncComponent(() => import("@/components/ScrollToTop.
 const isNotFound = ref(false);
 
 // The camera that flies through the galaxy as you scroll the journey.
-const { zoom, center, intensity, travel, activeIndex } = useGalaxyJourney();
+const { zoom, center, intensity, travel, activeIndex, progress } = useGalaxyJourney();
 
 onMounted(() => {
   const path = window.location.pathname;
@@ -61,9 +61,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- Two fixed background layers at z-0, behind the page (content is z-[2]). -->
-  <AsciiStarfield />
-  <GalaxyBackground :zoom="zoom" :center="center" :intensity="intensity" :travel="travel" />
+  <!-- Fixed ASCII starfield at z-0, behind the page (content is z-[2]). Driven by
+       the scroll journey: intensity breathes, travel pushes/streaks between sections. -->
+  <StarfieldBackground :zoom="zoom" :center="center" :intensity="intensity" :travel="travel" />
+  <!-- The ASCII "worlds" met along the journey (hero rings → projects crescent → contact sphere). -->
+  <AsciiPlanets :progress="progress" />
 
   <template v-if="isNotFound">
     <div class="relative z-[2] min-h-screen">

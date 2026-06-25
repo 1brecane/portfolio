@@ -108,6 +108,11 @@ export function useGalaxyJourney() {
   const intensity = ref(1);
   const travel = ref(0); // 0 = holding, → 1 mid-gap: drives the warp streaks
   const activeIndex = ref(0); // current/nearest zone index, for the chapter rail
+  // Monotonic journey position: integer i = holding zone i, i+t = t through the
+  // gap toward zone i+1. Unlike `travel` (a symmetric 0→1→0 arc) this only ever
+  // increases as you scroll down, so consumers can tell "approaching" from
+  // "already passed" a zone — what AsciiPlanets needs to fly worlds toward you.
+  const progress = ref(0);
 
   let ranges = []; // per-zone { holdStart, holdEnd } in document coords
   let reduced = false;
@@ -133,6 +138,7 @@ export function useGalaxyJourney() {
     intensity.value = 1;
     travel.value = 0;
     activeIndex.value = 0;
+    progress.value = 0;
     if (raf !== null) {
       cancelAnimationFrame(raf);
       raf = null;
@@ -178,6 +184,7 @@ export function useGalaxyJourney() {
     intensity.value = holdIntensity(i);
     travel.value = 0;
     activeIndex.value = i;
+    progress.value = i;
   }
 
   function applyGap(i, j, t) {
@@ -197,6 +204,7 @@ export function useGalaxyJourney() {
     // Warp peaks mid-flight and is zero at both ends (crisp on arrival/departure).
     travel.value = arc;
     activeIndex.value = t < 0.5 ? i : j;
+    progress.value = i + t;
   }
 
   function update() {
@@ -324,5 +332,5 @@ export function useGalaxyJourney() {
     retries.forEach(clearTimeout);
   });
 
-  return { zoom, center, intensity, travel, activeIndex };
+  return { zoom, center, intensity, travel, activeIndex, progress };
 }
