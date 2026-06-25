@@ -122,7 +122,10 @@ const timeline = computed(() =>
 .timeline__line,
 .timeline__fill {
   position: absolute;
-  left: 0;
+  /* Center the 2px rail on the dots: each dot is -left-[9px] + 16px wide, so its
+     center sits at -1px from the timeline's left edge; a left:0 rail centers at
+     +1px (2px too far right). -2px puts the rail's center on the dot center. */
+  left: -2px;
   top: 0.25rem;
   bottom: 0.25rem;
   width: 2px;

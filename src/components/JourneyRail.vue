@@ -85,7 +85,11 @@ const progress = computed(() => {
 /* faint vertical rail with a primary fill that tracks journey progress */
 .journey-rail__track {
   position: absolute;
-  right: 3px;
+  /* Center the 1px track on the dots. A dot sits at the button's right edge minus
+     its 0.15rem right padding; dot center = 0.15rem + half the 6px dot. Centering
+     a 1px track there → right = 0.15rem + 3px - 0.5px. (Plain right:3px sat ~2px
+     too far right, since it ignored the button's right padding.) */
+  right: calc(0.15rem + 2.5px);
   top: 6px;
   bottom: 6px;
   width: 1px;
