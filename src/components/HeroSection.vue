@@ -1,15 +1,15 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, nextTick } from "vue";
 import { X, Minus, Square, ChevronDown } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import SocialLinks from "@/components/ui/SocialLinks.vue";
 import CvCaptchaModal from "@/components/ui/CvCaptchaModal.vue";
 import { useI18n } from "@/i18n";
 import { useTypewriter } from "@/composables/useTypewriter";
+import { useTerminalShell } from "@/composables/useTerminalShell";
 import { useColorScheme } from "@/composables/useColorScheme";
 import { useWindowScroll } from "@/composables/useWindowScroll";
 import { scrollToZone } from "@/composables/useJourneyScroll";
-import easterEggs from "@/data/terminalEasterEggs.json";
 
 const { t } = useI18n();
 
@@ -22,7 +22,7 @@ const { scrollY } = useWindowScroll();
 const showScrollCue = computed(() => scrollY.value < 60);
 
 const terminalLines = computed(() => t.value.hero.terminal);
-const { displayedLines, isFinished } = useTypewriter(terminalLines);
+const { displayedLines, isFinished, finish } = useTypewriter(terminalLines);
 
 const userInput = ref("");
 const isMinimized = ref(false);
@@ -30,11 +30,29 @@ const isClosed = ref(false);
 const showCaptcha = ref(false);
 const terminalFocused = ref(false);
 
-// ── easter egg state ──────────────────────────────────────────────────────────
-const lastCommand = ref("");
-const commandOutput = ref([]);
+// `clear` wipes the intro lines too, like a real terminal clear.
+const hideIntro = ref(false);
+const { entries, run, historyPrev, historyNext } = useTerminalShell({
+  t,
+  setColorScheme,
+  onClear: () => {
+    hideIntro.value = true;
+  },
+});
 
-const PALETTE_NAMES = { 1: "amber", 2: "cyan", 3: "green" };
+// Output `kind` → theme class (see useTerminalShell line constructors).
+const LINE_CLASS = {
+  plain: "text-foreground",
+  accent: "text-chart-2",
+  error: "text-destructive",
+  dim: "text-muted-foreground/70 italic",
+};
+
+const termBodyEl = ref(null);
+async function scrollToBottom() {
+  await nextTick();
+  if (termBodyEl.value) termBodyEl.value.scrollTop = termBodyEl.value.scrollHeight;
+}
 
 const shownLines = computed(() =>
   isFinished.value && displayedLines.value.length > 0
@@ -48,30 +66,24 @@ const shownLines = computed(() =>
 function handleKey(e) {
   if (e.key === "Tab" || e.ctrlKey || e.metaKey) return;
   e.preventDefault();
-  if (!isFinished.value) return;
+  // Any key during the intro fast-forwards it (the keystroke is consumed).
+  if (!isFinished.value) {
+    finish();
+    return;
+  }
   if (e.key === "Backspace") {
     userInput.value = userInput.value.slice(0, -1);
+  } else if (e.key === "ArrowUp") {
+    const c = historyPrev();
+    if (c !== null) userInput.value = c;
+  } else if (e.key === "ArrowDown") {
+    const c = historyNext();
+    if (c !== null) userInput.value = c;
   } else if (e.key === "Enter") {
-    const cmd = userInput.value.trim();
-    lastCommand.value = cmd;
-    if (easterEggs[cmd]) {
-      commandOutput.value = easterEggs[cmd];
-    } else if (/^color\s+[1-3]$/.test(cmd)) {
-      const n = parseInt(cmd.split(/\s+/)[1]);
-      setColorScheme(n);
-      commandOutput.value = [`> hover palette: #${n} (${PALETTE_NAMES[n]})`];
-    } else if (cmd === "color") {
-      commandOutput.value = [
-        "> usage: color <1|2|3>",
-        "> 1: amber  2: cyan  3: green",
-      ];
-    } else {
-      commandOutput.value = [];
-    }
+    run(userInput.value);
     userInput.value = "";
+    scrollToBottom();
   } else if (e.key.length === 1 && !e.altKey) {
-    commandOutput.value = [];
-    lastCommand.value = "";
     if (userInput.value.length < 200) userInput.value += e.key;
   }
 }
@@ -79,6 +91,7 @@ function handleKey(e) {
 const cmdInputEl = ref(null);
 
 function focusTerminal() {
+  if (!isFinished.value) finish();
   cmdInputEl.value?.focus({ preventScroll: true });
 }
 
@@ -253,7 +266,8 @@ function reopenTerminal() {
                  opens one). Keyboard users tab straight to the input. -->
             <div
               v-if="!isMinimized"
-              class="terminal-body relative p-6 text-left font-mono text-sm outline-none"
+              ref="termBodyEl"
+              class="terminal-body relative max-h-[22rem] overflow-y-auto p-6 text-left font-mono text-sm outline-none"
               @click="focusTerminal"
             >
               <input
@@ -269,24 +283,27 @@ function reopenTerminal() {
                 @focus="terminalFocused = true"
                 @blur="terminalFocused = false"
               />
-              <div
-                v-for="(line, index) in shownLines"
-                :key="`line-${index}-${line}`"
-                :class="line.startsWith('$') ? 'text-primary' : 'text-foreground'"
-              >
-                {{ line }}
-                <span
-                  v-if="!isFinished && index === shownLines.length - 1"
-                  class="inline-block w-2 h-4 bg-white ml-0.5 cursor-blink"
-                />
-              </div>
-              <template v-if="isFinished && lastCommand">
-                <div class="text-primary">$ {{ lastCommand }}</div>
+              <template v-if="!hideIntro">
                 <div
-                  v-for="(l, i) in commandOutput"
-                  :key="`out-${i}`"
-                  class="text-chart-2 whitespace-pre"
-                >{{ l }}</div>
+                  v-for="(line, index) in shownLines"
+                  :key="`line-${index}-${line}`"
+                  :class="line.startsWith('$') ? 'text-primary' : 'text-foreground'"
+                >
+                  {{ line }}
+                  <span
+                    v-if="!isFinished && index === shownLines.length - 1"
+                    class="inline-block w-2 h-4 bg-white ml-0.5 cursor-blink"
+                  />
+                </div>
+              </template>
+              <template v-for="entry in entries" :key="entry.id">
+                <div class="text-primary">$ {{ entry.cmd }}</div>
+                <div
+                  v-for="(l, li) in entry.output"
+                  :key="`${entry.id}-${li}`"
+                  class="whitespace-pre"
+                  :class="LINE_CLASS[l.kind]"
+                >{{ l.text }}</div>
               </template>
               <div v-if="isFinished" class="text-primary flex items-baseline gap-0.5">
                 <span>$&nbsp;</span>
@@ -294,7 +311,7 @@ function reopenTerminal() {
                 <span class="inline-block w-2 h-4 bg-white cursor-blink" />
               </div>
               <div
-                v-if="isFinished && !userInput && !lastCommand"
+                v-if="isFinished && !userInput && entries.length === 0"
                 class="mt-2 text-[0.7rem] italic select-none transition-colors"
                 :class="terminalFocused ? 'text-muted-foreground/90' : 'text-muted-foreground/55'"
               >
