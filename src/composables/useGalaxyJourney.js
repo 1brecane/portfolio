@@ -91,25 +91,6 @@ const PULLBACK = 0.5;
 // Floor so the pull-back never shrinks the galaxy much past the full-disc view.
 const MIN_ZOOM = 0.85;
 
-// ── First-visit intro fly-in ──────────────────────────────────────────────────
-// On a visitor's very first load (top of page, no deep-link hash, journey
-// running) the camera starts far out and "lands" on the hero view, riding the
-// existing warp-streak pipeline for the flight scia. Once per visitor.
-const INTRO_START_ZOOM = 0.35; // where the flight starts. TUNABLE
-const INTRO_MS = 1800; // flight duration. TUNABLE
-const INTRO_SEEN_KEY = "journey-intro-seen";
-
-// ── velocity-aware warp ───────────────────────────────────────────────────────
-// Streak strength in the gaps scales with real scroll speed: cruising keeps a
-// shorter scia, flinging the wheel reads as full hyperspace. Holds stay at 0.
-const VEL_FULL = 3000; // px/s that counts as full speed. TUNABLE
-const VEL_FLOOR = 0.5; // fraction of the arc kept at crawl speed. TUNABLE
-const VEL_SMOOTH = 0.15; // EMA blend per update — higher = snappier. TUNABLE
-
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-
 function smoothstep(t) {
   const c = t < 0 ? 0 : t > 1 ? 1 : t;
   return c * c * (3 - 2 * c);
@@ -127,6 +108,11 @@ export function useGalaxyJourney() {
   const intensity = ref(1);
   const travel = ref(0); // 0 = holding, → 1 mid-gap: drives the warp streaks
   const activeIndex = ref(0); // current/nearest zone index, for the chapter rail
+  // Monotonic journey position: integer i = holding zone i, i+t = t through the
+  // gap toward zone i+1. Unlike `travel` (a symmetric 0→1→0 arc) this only ever
+  // increases as you scroll down, so consumers can tell "approaching" from
+  // "already passed" a zone — what AsciiPlanets needs to fly worlds toward you.
+  const progress = ref(0);
 
   let ranges = []; // per-zone { holdStart, holdEnd } in document coords
   let reduced = false;
@@ -137,11 +123,6 @@ export function useGalaxyJourney() {
   let sizeQuery = null;
   let dataQuery = null;
   const retries = [];
-  let introRaf = null;
-  let introActive = false;
-  let lastY = 0;
-  let lastT = 0;
-  let vel = 0; // smoothed 0..1 scroll-speed factor
 
   // "Soft off": the camera holds the hero view (galaxy still twinkles) — used for
   // the manual flat/simple view, small screens, and reduced-data. Distinct from
@@ -151,92 +132,17 @@ export function useGalaxyJourney() {
   }
 
   function resetCamera() {
-    cancelIntro();
     zoom.value = 1;
     center.x = 0;
     center.y = 0;
     intensity.value = 1;
     travel.value = 0;
     activeIndex.value = 0;
-    // Every camera reset is also a velocity reset — don't rely on the >200ms
-    // stale-sample branch in update() to clean this up.
-    vel = 0;
-    lastY = 0;
-    lastT = 0;
+    progress.value = 0;
     if (raf !== null) {
       cancelAnimationFrame(raf);
       raf = null;
     }
-  }
-
-  // localStorage wrapped like useJourneyMode does — private mode must not throw.
-  // Storage unavailable → treat as seen (skip the intro).
-  function introSeen() {
-    try {
-      return localStorage.getItem(INTRO_SEEN_KEY) !== null;
-    } catch {
-      return true;
-    }
-  }
-
-  function markIntroSeen() {
-    try {
-      localStorage.setItem(INTRO_SEEN_KEY, "1");
-    } catch {
-      /* nothing to persist */
-    }
-  }
-
-  // Stop the intro (user input, completion, mode change, unmount) and hand the
-  // camera straight back to the scroll-driven state. Never blocks input.
-  function cancelIntro() {
-    if (!introActive) return;
-    introActive = false;
-    if (introRaf !== null) {
-      cancelAnimationFrame(introRaf);
-      introRaf = null;
-    }
-    window.removeEventListener("wheel", cancelIntro);
-    window.removeEventListener("touchstart", cancelIntro);
-    window.removeEventListener("keydown", cancelIntro);
-    window.removeEventListener("scroll", cancelIntro);
-    if (raf !== null) {
-      cancelAnimationFrame(raf);
-      raf = null;
-    }
-    update(); // recompute everything from the live scroll position
-  }
-
-  function startIntro() {
-    introActive = true;
-    // Written at START: a mid-intro reload counts as seen.
-    markIntroSeen();
-    window.addEventListener("wheel", cancelIntro, { passive: true });
-    window.addEventListener("touchstart", cancelIntro, { passive: true });
-    window.addEventListener("keydown", cancelIntro);
-    window.addEventListener("scroll", cancelIntro, { passive: true });
-    const t0 = performance.now();
-    const hero = ZONES[0];
-
-    function frame(now) {
-      if (!introActive) return;
-      if (window.scrollY > 0) {
-        cancelIntro();
-        return;
-      }
-      const t = Math.min(1, (now - t0) / INTRO_MS);
-      zoom.value = lerp(INTRO_START_ZOOM, hero.zoom, easeOutCubic(t));
-      center.x = hero.center.x;
-      center.y = hero.center.y;
-      intensity.value = 1;
-      // Flight scia through the existing warp pipeline; fully dead by arrival.
-      travel.value = Math.sin(Math.PI * t) * (1 - t);
-      activeIndex.value = 0;
-      if (t < 1) introRaf = requestAnimationFrame(frame);
-      else cancelIntro(); // done — clean up listeners, sync to scroll state
-    }
-
-    introRaf = requestAnimationFrame(frame);
   }
 
   function anchorEl(id) {
@@ -278,6 +184,7 @@ export function useGalaxyJourney() {
     intensity.value = holdIntensity(i);
     travel.value = 0;
     activeIndex.value = i;
+    progress.value = i;
   }
 
   function applyGap(i, j, t) {
@@ -294,30 +201,16 @@ export function useGalaxyJourney() {
     // gap midpoint, so the galaxy "exhales" as the camera flies through.
     const base = lerp(holdIntensity(i), holdIntensity(j), t);
     intensity.value = base + (1 - base) * arc;
-    // Warp peaks mid-flight, scaled by how fast you're actually scrolling.
-    travel.value = arc * (VEL_FLOOR + (1 - VEL_FLOOR) * vel);
+    // Warp peaks mid-flight and is zero at both ends (crisp on arrival/departure).
+    travel.value = arc;
     activeIndex.value = t < 0.5 ? i : j;
+    progress.value = i + t;
   }
 
   function update() {
     raf = null;
     if (reduced || softOff()) return;
-    if (introActive) return; // the intro owns the camera until done/cancelled
     const y = window.scrollY;
-    // Smoothed scroll velocity (px/s → 0..1). A long pause (or the first sample)
-    // resets to 0 so a gap entered slowly starts at cruise, not at a stale speed.
-    const now = performance.now();
-    if (lastT > 0) {
-      const dtMs = now - lastT;
-      if (dtMs > 0 && dtMs < 200) {
-        const instant = (Math.abs(y - lastY) / dtMs) * 1000;
-        vel += (Math.min(1, instant / VEL_FULL) - vel) * VEL_SMOOTH;
-      } else {
-        vel = 0;
-      }
-    }
-    lastY = y;
-    lastT = now;
     const first = ranges[0];
     if (!first) return;
 
@@ -424,19 +317,12 @@ export function useGalaxyJourney() {
     scheduleRetries();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize, { passive: true });
-
-    // First-visit cinematic landing — only from the very top, never on a
-    // deep-link, never when the journey is held (reduced/small/data/flat).
-    if (!softOff() && window.scrollY <= 1 && !window.location.hash && !introSeen()) {
-      startIntro();
-    }
   });
 
   // The manual cinematic ⇄ flat toggle (useJourneyMode) flips soft-off at runtime.
   watch(mode, reevaluate);
 
   onUnmounted(() => {
-    cancelIntro();
     if (raf !== null) cancelAnimationFrame(raf);
     motionQuery?.removeEventListener("change", onMotionChange);
     sizeQuery?.removeEventListener("change", onSizeChange);
@@ -446,5 +332,5 @@ export function useGalaxyJourney() {
     retries.forEach(clearTimeout);
   });
 
-  return { zoom, center, intensity, travel, activeIndex };
+  return { zoom, center, intensity, travel, activeIndex, progress };
 }
