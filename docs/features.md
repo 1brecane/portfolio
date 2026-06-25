@@ -391,16 +391,16 @@ Commands:
 | `cat ./starwars.txt` | ASCII art from `terminalEasterEggs.json` |
 | `neofetch` | ASCII badge + a localized profile card (role, stack, uptime) |
 | `sudo <anything>` | a localized permission-denied joke |
-| `color <1\|2\|3>` | sets the `useColorScheme` palette singleton (see note) |
 | `clear` | wipes scrollback + intro |
 | anything else | `bash: <cmd>: command not found` + a localized `help` hint |
 
-`command not found`, the `cat: … No such file or directory` error, and the `whoami`/`ls`/
-`color` outputs stay **literal English** (authentic shell speak); only descriptions and
-jokes are localized — and **both `en.js` and `it.js` carry the same-shaped `hero.shell`
-object**. Note: `color N` still writes the `useColorScheme` singleton, but the new
-starfield doesn't read it, so the command is currently cosmetically inert (kept for a
-future palette-driven background).
+`command not found`, the `cat: … No such file or directory` error, and the `whoami`/`ls`
+outputs stay **literal English** (authentic shell speak); only descriptions and jokes are
+localized — and **both `en.js` and `it.js` carry the same-shaped `hero.shell` object**.
+Note: a `color <1|2|3>` hover-palette command exists in the code but is **disabled for
+now** — it was cosmetically inert anyway (the new starfield doesn't read `useColorScheme`),
+so it's commented out in `dispatch()` (with revival instructions) and dropped from the
+`help` lists, kept dormant for a future palette-driven background.
 
 ### Prompt & window title
 

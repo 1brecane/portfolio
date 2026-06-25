@@ -8,15 +8,10 @@ import TerminalPrompt from "@/components/ui/TerminalPrompt.vue";
 import { useI18n } from "@/i18n";
 import { useTypewriter } from "@/composables/useTypewriter";
 import { useTerminalShell } from "@/composables/useTerminalShell";
-import { useColorScheme } from "@/composables/useColorScheme";
 import { useWindowScroll } from "@/composables/useWindowScroll";
 import { scrollToZone } from "@/composables/useJourneyScroll";
 
 const { t } = useI18n();
-
-// The galaxy now renders app-level (see App.vue). The `color N` egg writes its
-// hover palette through a shared singleton instead of a local prop.
-const { setColorScheme } = useColorScheme();
 
 // "Scroll to begin" cue — invites the user into the journey, fades on first scroll.
 const { scrollY } = useWindowScroll();
@@ -35,7 +30,6 @@ const terminalFocused = ref(false);
 const hideIntro = ref(false);
 const { entries, lastCmd, run, historyPrev, historyNext } = useTerminalShell({
   t,
-  setColorScheme,
   onClear: () => {
     hideIntro.value = true;
   },

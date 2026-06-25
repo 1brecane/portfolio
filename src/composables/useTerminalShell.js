@@ -4,7 +4,7 @@ import easterEggs from "@/data/terminalEasterEggs.json";
 // ── shell knobs (TUNABLE) ───────────────────────────────────────────────────────
 const MAX_ENTRIES = 50; // scrollback cap — oldest entries dropped
 
-const PALETTE_NAMES = { 1: "amber", 2: "cyan", 3: "green" };
+// const PALETTE_NAMES = { 1: "amber", 2: "cyan", 3: "green" }; // for the dormant `color` command (see dispatch)
 
 // Output line constructors. `kind` maps to a theme class in HeroSection.vue.
 const plain = (text) => ({ text, kind: "plain" });
@@ -23,7 +23,7 @@ const NEOFETCH_ART = [
 ];
 
 /**
- * useTerminalShell({ t, setColorScheme, onClear })
+ * useTerminalShell({ t, onClear })
  *
  * Interactive-shell brain for the hero terminal: scrollback entries, ↑/↓
  * command history (session-only) and command dispatch. The component renders
@@ -31,7 +31,7 @@ const NEOFETCH_ART = [
  *
  * @returns {{ entries, lastCmd, run, historyPrev, historyNext }}
  */
-export function useTerminalShell({ t, setColorScheme, onClear }) {
+export function useTerminalShell({ t, onClear }) {
   const entries = ref([]); // [{ id, cmd, output: [{ text, kind }] }]
   const lastCmd = ref(""); // drives the window title ("" → "~")
   const cmdHistory = []; // session-only, intentionally uncapped (a real session won't overflow)
@@ -90,15 +90,19 @@ export function useTerminalShell({ t, setColorScheme, onClear }) {
     if (easterEggs[cmd]) return easterEggs[cmd].map(accent);
     if (/^cat(\s|$)/.test(cmd)) return catFile(cmd);
     if (/^sudo(\s|$)/.test(cmd)) return [error(shellT().sudo)];
-    if (/^color\s+[1-3]$/.test(cmd)) {
-      const n = parseInt(cmd.split(/\s+/)[1]);
-      // Writes the shared palette singleton; currently unconsumed (the new starfield doesn't read it) — kept for a future palette-driven background.
-      setColorScheme(n);
-      return [accent(`> hover palette: #${n} (${PALETTE_NAMES[n]})`)];
-    }
-    if (cmd === "color") {
-      return [accent("> usage: color <1|2|3>"), accent("> 1: amber  2: cyan  3: green")];
-    }
+    // ── `color <1|2|3>` hover-palette command — DISABLED for now (kept for revival).
+    //    It was cosmetically inert anyway: the new starfield doesn't read useColorScheme.
+    //    To re-enable: uncomment this block + PALETTE_NAMES (top of file), add
+    //    `setColorScheme` back to the destructured params, and pass it from HeroSection
+    //    via `useColorScheme()`. Also restore the `color` line in both i18n help lists.
+    // if (/^color\s+[1-3]$/.test(cmd)) {
+    //   const n = parseInt(cmd.split(/\s+/)[1]);
+    //   setColorScheme(n);
+    //   return [accent(`> hover palette: #${n} (${PALETTE_NAMES[n]})`)];
+    // }
+    // if (cmd === "color") {
+    //   return [accent("> usage: color <1|2|3>"), accent("> 1: amber  2: cyan  3: green")];
+    // }
     // `command not found` stays literal-English (authentic shell speak); the
     // hint below it is localized.
     return [error(`bash: ${cmd}: command not found`), dim(shellT().notFoundHint)];
