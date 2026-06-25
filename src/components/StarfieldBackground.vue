@@ -49,6 +49,10 @@ let dpr = 1;
 
 let stars = [];
 
+// ── comet state ───────────────────────────────────────────────────────────────
+let comet = null; // { x, y, vx, vy, trail: [{x,y}, …] } — trail objects reused
+let cometDueAt = 0; // elapsed-seconds timestamp; 0 = needs (re)scheduling
+
 // ── TUNABLE KNOBS ─────────────────────────────────────────────────────────────
 const GLYPHS = [".", ":", "·", "*", "+", "=", "%", "@"]; // keep the ASCII identity
 const DENSITY = 6500; // one star per this many px² (lower = denser)
@@ -67,6 +71,16 @@ const NEAR_Z = 0.05; // recycle a star once it passes this close
 
 const STAR_RGB = [206, 214, 231]; // soft blue-white
 const NEON_RGB = [255, 90, 54]; // ≈ oklch(0.65 0.25 25), the site's --primary/--neon
+
+// ── occasional comets ─────────────────────────────────────────────────────────
+// A rare screen-space comet crossing the sky during animated rendering — a reward
+// for whoever watches. One at a time; never in static mode (that path passes dt=0,
+// so the spawn branch never fires). Drawn after the field, in the neon accent.
+const COMET_MIN_DELAY = 15; // s — min wait before the next comet. TUNABLE
+const COMET_MAX_DELAY = 30; // s — max wait. TUNABLE
+const COMET_TRAIL = 10; // trail ghost glyphs. TUNABLE
+const COMET_SPEED = 260; // px/s head speed. TUNABLE
+const COMET_FONT_PX = 16; // fixed (screen-space) glyph size. TUNABLE
 
 // Smoothed mouse position in [-0.5, 0.5] (viewport-relative).
 let mouseTX = 0;
@@ -93,6 +107,22 @@ function spawn(far) {
 function buildStars() {
   const count = Math.min(MAX_STARS, Math.round((cssW * cssH) / DENSITY));
   stars = Array.from({ length: count }, () => spawn(false));
+}
+
+function scheduleComet(elapsed) {
+  cometDueAt = elapsed + COMET_MIN_DELAY + Math.random() * (COMET_MAX_DELAY - COMET_MIN_DELAY);
+}
+
+function spawnComet(W, H) {
+  const fromLeft = Math.random() < 0.5;
+  const angle = ((12 + Math.random() * 18) * Math.PI) / 180; // shallow downward diagonal
+  comet = {
+    x: fromLeft ? -20 : W + 20,
+    y: H * (0.08 + Math.random() * 0.4),
+    vx: Math.cos(angle) * COMET_SPEED * (fromLeft ? 1 : -1),
+    vy: Math.sin(angle) * COMET_SPEED,
+    trail: [],
+  };
 }
 
 // ── draw one frame ────────────────────────────────────────────────────────────
@@ -171,6 +201,35 @@ function draw(elapsed, dt) {
 
     ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
     ctx.fillText(s.glyph, nx, ny);
+  }
+
+  // ── comet pass ────────────────────────────────────────────────────────────────
+  // dt <= 0 means a static one-frame render or a hidden-tab resume (lastTs reset):
+  // (re)schedule instead of spawning, so the timer never "catches up" into a burst.
+  // The comet is screen-space, so it's drawn at a fixed font size (the star loop
+  // left ctx.font at a per-star size) and in rgba (no globalAlpha to reset).
+  if (!comet) {
+    if (cometDueAt === 0 || dt <= 0) scheduleComet(elapsed);
+    else if (elapsed >= cometDueAt) spawnComet(W, H);
+  } else if (dt > 0) {
+    comet.x += comet.vx * dt;
+    comet.y += comet.vy * dt;
+    // reuse the oldest trail point object — no per-frame allocation once warm
+    const p = comet.trail.length >= COMET_TRAIL ? comet.trail.pop() : { x: 0, y: 0 };
+    p.x = comet.x;
+    p.y = comet.y;
+    comet.trail.unshift(p);
+    ctx.font = `${COMET_FONT_PX}px ui-monospace, 'Courier New', monospace`;
+    const [cr, cg, cb] = NEON_RGB;
+    for (let i = 0; i < comet.trail.length; i++) {
+      const a = (1 - i / COMET_TRAIL) * (i === 0 ? 0.95 : 0.5) * intensity;
+      ctx.fillStyle = `rgba(${cr},${cg},${cb},${a})`;
+      ctx.fillText(i === 0 ? "*" : "·", comet.trail[i].x, comet.trail[i].y);
+    }
+    if (comet.x < -40 || comet.x > W + 40 || comet.y > H + 40) {
+      comet = null;
+      cometDueAt = 0; // reschedule from the next frame's elapsed
+    }
   }
 }
 
