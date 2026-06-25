@@ -349,6 +349,71 @@ wide). See `globals.css`.
 
 ---
 
+## The hero terminal
+
+The hero's right column is a draggable fake terminal window that types an intro, then
+becomes a real interactive shell. Logic is split: `useTypewriter` (the intro animation),
+`useTerminalShell` (the shell brain — no DOM), and `HeroSection.vue` (window chrome +
+wiring). The keyboard model is unchanged from before: a visually-hidden focusable
+`<input>` receives keys (so touch keyboards open too) and `handleKey` forwards them.
+
+### Typewriter intro — `useTypewriter()`
+
+Types `t.hero.terminal` line-by-line with a **human rhythm**: per-char delay jittered
+`CHAR_MIN_MS`–`CHAR_MIN_MS+CHAR_JITTER_MS` (18–46 ms), `+PUNCT_PAUSE_MS` after `,.;:!?`,
+an occasional `SPACE_PAUSE_MS` hesitation on spaces, `LINE_PAUSE_MS` between lines.
+`finish()` reveals everything instantly — the hero calls it on the **first keypress or a
+click on the body** while the intro is still typing, so the intro never blocks input.
+Under `prefers-reduced-motion` (at mount or on a live media-query flip) it skips straight
+to the finished state. A locale switch restarts it (`watch(lines)`). Exposes
+`{ displayedLines, isFinished, finish }`.
+
+### Interactive shell — `useTerminalShell({ t, setColorScheme, onClear })`
+
+Once the intro finishes, Enter runs a command. The shell keeps a growing **scrollback**
+(`entries`, an array of `{ id, cmd, output: [{ text, kind }] }`, capped at
+`MAX_ENTRIES = 50`, oldest dropped) rendered above the live prompt; the terminal body has
+`max-h-[22rem] overflow-y-auto` and auto-scrolls to the bottom after each command, so the
+hero never grows. `kind` (`plain`/`accent`/`error`/`dim`) maps to a theme class via
+`LINE_CLASS` in `HeroSection`. Session-only **history**: ↑/↓ recall previous commands (a
+plain array, no persistence). `clear` empties the scrollback **and** the intro (via a
+`hideIntro` flag), like a real `clear`.
+
+Commands:
+
+| Command | Output |
+|---|---|
+| `help` | localized command list (`t.hero.shell.help`) |
+| `whoami` | `samuele_ruaro` |
+| `ls` | `about.txt  projects.txt  starwars.txt` |
+| `cat ./about.txt` | the intro's about lines (read back from `t.hero.terminal` — single source) |
+| `cat ./projects.txt` | project titles from `t.projects.items` + a dim "scroll down" invite |
+| `cat ./starwars.txt` | ASCII art from `terminalEasterEggs.json` |
+| `neofetch` | ASCII badge + a localized profile card (role, stack, uptime) |
+| `sudo <anything>` | a localized permission-denied joke |
+| `color <1\|2\|3>` | sets the `useColorScheme` palette singleton (see note) |
+| `clear` | wipes scrollback + intro |
+| anything else | `bash: <cmd>: command not found` + a localized `help` hint |
+
+`command not found`, the `cat: … No such file or directory` error, and the `whoami`/`ls`/
+`color` outputs stay **literal English** (authentic shell speak); only descriptions and
+jokes are localized — and **both `en.js` and `it.js` carry the same-shaped `hero.shell`
+object**. Note: `color N` still writes the `useColorScheme` singleton, but the new
+starfield doesn't read it, so the command is currently cosmetically inert (kept for a
+future palette-driven background).
+
+### Prompt & window title
+
+`TerminalPrompt.vue` renders a `samuele@portfolio:~$ ` prompt in theme tokens
+(`samuele@portfolio` in chart-2, `~` in primary, the rest foreground; `select-none` +
+`aria-hidden` since it's decorative repetition). It's used on the intro command lines (the
+i18n `"$ "` prefix is stripped at render), the scrollback command lines, and the live
+input line. The title bar (once a static `bash`) now mirrors the **last command** via a
+`windowTitle` computed: `samuele@portfolio: <lastCmd>` truncated past `TITLE_MAX` (24)
+chars, falling back to `~` at rest and after `clear`.
+
+---
+
 ## Micro-interactions
 
 Three small, independent effects
@@ -402,3 +467,6 @@ suppressed under `prefers-reduced-motion: reduce`.
 | lift 2px / press scale 0.96 / 0.94 | `globals.css` `.tactile` / `.tactile-press` | hover lift height and `:active` squash depth for buttons vs small icon controls |
 | 12 × 26ms (`FRAMES` / `FRAME_MS`) | `src/directives/scramble.js` | scramble duration and frame count for nav-link glyph resolve |
 | 24px / 56px (`neon-cta` shadows) | `globals.css` `.neon-cta` | phosphor halo spread on the three primary CTAs |
+| `CHAR_MIN_MS` / `CHAR_JITTER_MS` / `PUNCT_PAUSE_MS` / `SPACE_PAUSE_MS` / `SPACE_PAUSE_CHANCE` / `LINE_PAUSE_MS` | `useTypewriter.js` | terminal intro typing rhythm (per-char jitter, punctuation/space pauses, between-line pause) |
+| `MAX_ENTRIES` (50) | `useTerminalShell.js` | hero terminal scrollback cap (oldest entries dropped) |
+| `TITLE_MAX` (24) | `HeroSection.vue` | hero terminal window-title truncation length |
