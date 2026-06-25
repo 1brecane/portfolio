@@ -4,6 +4,7 @@ import { X, Minus, Square, ChevronDown } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import SocialLinks from "@/components/ui/SocialLinks.vue";
 import CvCaptchaModal from "@/components/ui/CvCaptchaModal.vue";
+import TerminalPrompt from "@/components/ui/TerminalPrompt.vue";
 import { useI18n } from "@/i18n";
 import { useTypewriter } from "@/composables/useTypewriter";
 import { useTerminalShell } from "@/composables/useTerminalShell";
@@ -32,7 +33,7 @@ const terminalFocused = ref(false);
 
 // `clear` wipes the intro lines too, like a real terminal clear.
 const hideIntro = ref(false);
-const { entries, run, historyPrev, historyNext } = useTerminalShell({
+const { entries, lastCmd, run, historyPrev, historyNext } = useTerminalShell({
   t,
   setColorScheme,
   onClear: () => {
@@ -47,6 +48,14 @@ const LINE_CLASS = {
   error: "text-destructive",
   dim: "text-muted-foreground/70 italic",
 };
+
+// Window title mirrors the last command, like a real terminal emulator.
+const TITLE_MAX = 24; // TUNABLE — truncation length
+const windowTitle = computed(() => {
+  const c = lastCmd.value;
+  const suffix = c ? (c.length > TITLE_MAX ? `${c.slice(0, TITLE_MAX - 1)}…` : c) : "~";
+  return `samuele@portfolio: ${suffix}`;
+});
 
 const termBodyEl = ref(null);
 async function scrollToBottom() {
@@ -257,7 +266,7 @@ function reopenTerminal() {
                   <Square class="w-1.5 h-1.5 opacity-0 group-hover:opacity-100 text-black" />
                 </span>
               </button>
-              <span class="ml-4 font-mono text-xs text-muted-foreground select-none">bash</span>
+              <span class="ml-4 font-mono text-xs text-muted-foreground select-none">{{ windowTitle }}</span>
             </div>
 
             <!-- Terminal body -->
@@ -287,9 +296,10 @@ function reopenTerminal() {
                 <div
                   v-for="(line, index) in shownLines"
                   :key="`line-${index}-${line}`"
-                  :class="line.startsWith('$') ? 'text-primary' : 'text-foreground'"
+                  class="text-foreground"
                 >
-                  {{ line }}
+                  <template v-if="line.startsWith('$')"><TerminalPrompt />{{ line.slice(2) }}</template>
+                  <template v-else>{{ line }}</template>
                   <span
                     v-if="!isFinished && index === shownLines.length - 1"
                     class="inline-block w-2 h-4 bg-white ml-0.5 cursor-blink"
@@ -297,7 +307,7 @@ function reopenTerminal() {
                 </div>
               </template>
               <template v-for="entry in entries" :key="entry.id">
-                <div class="text-primary">$ {{ entry.cmd }}</div>
+                <div class="text-foreground"><TerminalPrompt />{{ entry.cmd }}</div>
                 <div
                   v-for="(l, li) in entry.output"
                   :key="`${entry.id}-${li}`"
@@ -305,8 +315,8 @@ function reopenTerminal() {
                   :class="LINE_CLASS[l.kind]"
                 >{{ l.text }}</div>
               </template>
-              <div v-if="isFinished" class="text-primary flex items-baseline gap-0.5">
-                <span>$&nbsp;</span>
+              <div v-if="isFinished" class="text-foreground flex items-baseline">
+                <TerminalPrompt />
                 <span class="text-foreground">{{ userInput }}</span>
                 <span class="inline-block w-2 h-4 bg-white cursor-blink" />
               </div>
