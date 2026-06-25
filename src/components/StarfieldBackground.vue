@@ -52,6 +52,7 @@ let stars = [];
 // ── comet state ───────────────────────────────────────────────────────────────
 let comet = null; // { x, y, vx, vy, trail: [{x,y}, …] } — trail objects reused
 let cometDueAt = 0; // elapsed-seconds timestamp; 0 = needs (re)scheduling
+let cometInk = null; // { head, tail } baseline offsets to ink-center each glyph
 
 // ── TUNABLE KNOBS ─────────────────────────────────────────────────────────────
 const GLYPHS = [".", ":", "·", "*", "+", "=", "%", "@"]; // keep the ASCII identity
@@ -220,11 +221,28 @@ function draw(elapsed, dt) {
     p.y = comet.y;
     comet.trail.unshift(p);
     ctx.font = `${COMET_FONT_PX}px ui-monospace, 'Courier New', monospace`;
+    // Center each glyph's INK on the trail point. The asterisk head sits high in
+    // the cell while the middot is vertically centered, so textBaseline "middle"
+    // alone leaves the head above the tail line. Measure once (the font is fixed)
+    // and draw on the alphabetic baseline, offset so ink-center lands on the point.
+    if (!cometInk) {
+      const inkMid = (g) => {
+        const m = ctx.measureText(g);
+        return ((m.actualBoundingBoxAscent || 0) - (m.actualBoundingBoxDescent || 0)) / 2;
+      };
+      cometInk = { head: inkMid("*"), tail: inkMid("·") };
+    }
+    ctx.textBaseline = "alphabetic";
     const [cr, cg, cb] = NEON_RGB;
     for (let i = 0; i < comet.trail.length; i++) {
       const a = (1 - i / COMET_TRAIL) * (i === 0 ? 0.95 : 0.5) * intensity;
       ctx.fillStyle = `rgba(${cr},${cg},${cb},${a})`;
-      ctx.fillText(i === 0 ? "*" : "·", comet.trail[i].x, comet.trail[i].y);
+      const head = i === 0;
+      ctx.fillText(
+        head ? "*" : "·",
+        comet.trail[i].x,
+        comet.trail[i].y + (head ? cometInk.head : cometInk.tail),
+      );
     }
     if (comet.x < -40 || comet.x > W + 40 || comet.y > H + 40) {
       comet = null;
