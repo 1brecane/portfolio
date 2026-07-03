@@ -220,8 +220,9 @@ export function useGalaxyJourney() {
     if (journeyJump.active) {
       const j = ZONES.findIndex((z) => z.id === journeyJump.toId);
       if (j !== -1) {
-        if (!jumpFrom) {
+        if (!jumpFrom || jumpFrom.id !== journeyJump.toId) {
           jumpFrom = {
+            id: journeyJump.toId,
             zoom: zoom.value,
             cx: center.x,
             cy: center.y,
