@@ -227,6 +227,7 @@ export function useGalaxyJourney() {
             cx: center.x,
             cy: center.y,
             intensity: intensity.value,
+            prog: progress.value,
           };
         }
         const t = smoothstep(journeyJump.progress);
@@ -237,7 +238,11 @@ export function useGalaxyJourney() {
         intensity.value = lerp(jumpFrom.intensity, holdIntensity(j), t);
         travel.value = 0;
         activeIndex.value = j;
-        progress.value = j;
+        // Sweep `progress` continuously (not a snap to j): AsciiPlanets fades/scales
+        // its worlds off `progress`, so a hard jump would pop them in/out. Easing it
+        // from the captured origin to the destination lets the planets glide/loom
+        // smoothly as the camera flies through.
+        progress.value = lerp(jumpFrom.prog, j, t);
         return;
       }
     } else if (jumpFrom) {
