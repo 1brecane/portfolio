@@ -1,5 +1,6 @@
 import { ref, reactive, watch, onMounted, onUnmounted } from "vue";
 import { useJourneyMode } from "@/composables/useJourneyMode";
+import { journeyJump } from "@/composables/useJourneyScroll";
 
 /**
  * useGalaxyJourney()
@@ -119,6 +120,7 @@ export function useGalaxyJourney() {
   let small = false; // mobile: galaxy is static, camera off
   let reducedData = false; // metered connection: galaxy frozen, camera off
   let raf = null;
+  let jumpFrom = null; // camera state captured at jump start (see update())
   let motionQuery = null;
   let sizeQuery = null;
   let dataQuery = null;
@@ -139,6 +141,7 @@ export function useGalaxyJourney() {
     travel.value = 0;
     activeIndex.value = 0;
     progress.value = 0;
+    jumpFrom = null;
     if (raf !== null) {
       cancelAnimationFrame(raf);
       raf = null;
@@ -210,6 +213,42 @@ export function useGalaxyJourney() {
   function update() {
     raf = null;
     if (reduced || softOff()) return;
+
+    // Programmatic nav/rail jump (see useJourneyScroll.journeyJump): fly the camera
+    // straight to the destination zone, ignoring the per-gap warp sequence, so a
+    // long jump reads as one calm move instead of blasting through every gap.
+    if (journeyJump.active) {
+      const j = ZONES.findIndex((z) => z.id === journeyJump.toId);
+      if (j !== -1) {
+        if (!jumpFrom || jumpFrom.id !== journeyJump.toId) {
+          jumpFrom = {
+            id: journeyJump.toId,
+            zoom: zoom.value,
+            cx: center.x,
+            cy: center.y,
+            intensity: intensity.value,
+            prog: progress.value,
+          };
+        }
+        const t = smoothstep(journeyJump.progress);
+        const dz = ZONES[j];
+        zoom.value = lerp(jumpFrom.zoom, dz.zoom, t);
+        center.x = lerp(jumpFrom.cx, dz.center.x, t);
+        center.y = lerp(jumpFrom.cy, dz.center.y, t);
+        intensity.value = lerp(jumpFrom.intensity, holdIntensity(j), t);
+        travel.value = 0;
+        activeIndex.value = j;
+        // Sweep `progress` continuously (not a snap to j): AsciiPlanets fades/scales
+        // its worlds off `progress`, so a hard jump would pop them in/out. Easing it
+        // from the captured origin to the destination lets the planets glide/loom
+        // smoothly as the camera flies through.
+        progress.value = lerp(jumpFrom.prog, j, t);
+        return;
+      }
+    } else if (jumpFrom) {
+      jumpFrom = null;
+    }
+
     const y = window.scrollY;
     const first = ranges[0];
     if (!first) return;

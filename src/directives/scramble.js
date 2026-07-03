@@ -65,14 +65,22 @@ export const vScramble = {
       }, FRAME_MS);
     }
 
+    // A click on the label (its anchor navigates + smooth-scrolls) must not leave
+    // the text frozen mid-scramble. The NavBar is position:fixed, so the cursor
+    // can stay over the same link after the jump and never fire `mouseleave` —
+    // restore explicitly on pointerdown/blur so the label always returns to full.
     el.addEventListener("mouseenter", onEnter);
     el.addEventListener("mouseleave", restore);
+    el.addEventListener("pointerdown", restore);
+    el.addEventListener("blur", restore, true);
 
     el._scrambleCancel = cancel;
     el._scrambleCleanup = () => {
       restore();
       el.removeEventListener("mouseenter", onEnter);
       el.removeEventListener("mouseleave", restore);
+      el.removeEventListener("pointerdown", restore);
+      el.removeEventListener("blur", restore, true);
     };
   },
   // Only cancel when Vue actually rewrote the text node (text vnode children
