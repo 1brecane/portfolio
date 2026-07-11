@@ -106,6 +106,7 @@ export default {
     sourceFe: "Frontend",
     liveDemo: "Live Demo",
     viewAll: "View All Repositories",
+    caseStudy: "Case study",
     types: {
       gaming: "Game",
       fullstack: "Full-Stack",
@@ -212,5 +213,11 @@ export default {
       emailInvalid: "Please enter a valid email address.",
       messageRequired: "Please enter a message.",
     },
+  },
+  caseStudy: {
+    back: "Projects",
+    loading: "Loading case study…",
+    error: "Couldn't load this case study.",
+    errorCta: "Back to projects",
   },
 };
