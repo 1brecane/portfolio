@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 
 // ════════════════════════════════════════════════════════════════════════════
 // AsciiPlanets — the "worlds" you meet along the scroll journey, in ASCII.
@@ -27,7 +27,12 @@ import { ref, onMounted, onUnmounted } from "vue";
 
 const props = defineProps({
   progress: { type: Number, default: 0 }, // monotonic journey position (see useGalaxyJourney)
+  // Case-study pages: draw ONE fixed world ({style, palette, pos, scale}) instead
+  // of the journey worlds. null = journey mode (default, unchanged).
+  ambient: { type: Object, default: null },
 });
+
+const AMBIENT_ALPHA = 0.5; // emblem planet glyph alpha — subtle, text stays readable. TUNABLE.
 
 // Worlds keyed by ZONES index. pos = screen anchor (viewport fractions); the exit
 // direction (while passing you) is derived from pos → away from screen center.
@@ -208,6 +213,15 @@ function draw(elapsed) {
   const minDim = Math.min(W, H);
   const progress = props.progress ?? 0;
 
+  if (props.ambient) {
+    const a = props.ambient;
+    const radius = minDim * BASE_R * (a.scale ?? 1);
+    ctx.globalAlpha = AMBIENT_ALPHA;
+    drawPlanet(ctx, a.style, W * a.pos.x, H * a.pos.y, radius, ang, PALETTES[a.palette] || PALETTES.warm);
+    ctx.globalAlpha = 1;
+    return;
+  }
+
   for (const w of WORLDS) {
     const d = progress - w.index;
     if (d <= -APPROACH || d >= DEPART) continue; // outside this world's window
@@ -336,6 +350,14 @@ onUnmounted(() => {
   dataQuery?.removeEventListener("change", onDataChange);
   document.removeEventListener("visibilitychange", onVisibility);
 });
+
+// In static mode there's no rAF loop to pick up an ambient change on navigation.
+watch(
+  () => props.ambient,
+  () => {
+    if (staticMode()) drawStatic();
+  },
+);
 </script>
 
 <template>

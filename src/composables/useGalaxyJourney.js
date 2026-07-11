@@ -1,4 +1,5 @@
 import { ref, reactive, watch, onMounted, onUnmounted } from "vue";
+import { useRoute } from "vue-router";
 import { useJourneyMode } from "@/composables/useJourneyMode";
 import { journeyJump } from "@/composables/useJourneyScroll";
 
@@ -103,6 +104,7 @@ function lerp(a, b, t) {
 
 export function useGalaxyJourney() {
   const { mode } = useJourneyMode();
+  const route = useRoute();
 
   const zoom = ref(1);
   const center = reactive({ x: 0, y: 0 });
@@ -127,10 +129,11 @@ export function useGalaxyJourney() {
   const retries = [];
 
   // "Soft off": the camera holds the hero view (galaxy still twinkles) — used for
-  // the manual flat/simple view, small screens, and reduced-data. Distinct from
+  // the manual flat/simple view, small screens, reduced-data, and off-home routes
+  // (case-study pages hold the calm hero view instead of flying). Distinct from
   // `reduced`, which detaches all listeners (handled separately below).
   function softOff() {
-    return small || reducedData || mode.value === "flat";
+    return small || reducedData || mode.value === "flat" || route.name !== "home";
   }
 
   function resetCamera() {
@@ -360,6 +363,18 @@ export function useGalaxyJourney() {
 
   // The manual cinematic ⇄ flat toggle (useJourneyMode) flips soft-off at runtime.
   watch(mode, reevaluate);
+
+  // Route changes flip soft-off too: off-home pages hold the calm hero view.
+  // Returning home runs before RouterView swaps the DOM, so the immediate
+  // measure() inside reevaluate() sees no anchors — re-arm the retry ladder to
+  // re-measure once HomeView's sections have mounted.
+  watch(
+    () => route.name,
+    () => {
+      reevaluate();
+      if (!reduced && !softOff()) scheduleRetries();
+    },
+  );
 
   onUnmounted(() => {
     if (raf !== null) cancelAnimationFrame(raf);
