@@ -32,19 +32,25 @@ const html = ref("");
 const state = ref("loading"); // loading | ready | error
 
 async function load() {
+  // Capture the requested pair — if slug/locale change again before this
+  // resolves, we're stale and must not clobber a newer load()'s result.
+  const reqSlug = slug.value;
+  const reqLocale = locale.value;
   state.value = "loading";
-  const key = (lang) => `../content/case-studies/${slug.value}.${lang}.md`;
+  const key = (lang) => `../content/case-studies/${reqSlug}.${lang}.md`;
   // Missing translation falls back to EN.
-  const loader = mdModules[key(locale.value)] || mdModules[key("en")];
+  const loader = mdModules[key(reqLocale)] || mdModules[key("en")];
   if (!loader) {
     state.value = "error";
     return;
   }
   try {
     const [{ marked }, raw] = await Promise.all([import("marked"), loader()]);
+    if (reqSlug !== slug.value || reqLocale !== locale.value) return; // stale response — a newer load() owns the UI
     html.value = marked.parse(raw);
     state.value = "ready";
   } catch {
+    if (reqSlug !== slug.value || reqLocale !== locale.value) return;
     state.value = "error";
   }
 }
