@@ -11,7 +11,9 @@ const { displayedLines } = useTypewriter(lines);
 </script>
 
 <template>
-  <main class="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
+  <main
+    class="relative z-[2] min-h-screen flex items-center justify-center overflow-hidden bg-background"
+  >
     <!-- Grid Background -->
     <div class="absolute inset-0 grid-bg opacity-30"></div>
     
