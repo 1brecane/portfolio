@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onUnmounted } from "vue";
 import { useRoute, useRouter, RouterLink } from "vue-router";
 import { ArrowLeft, Github } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
@@ -58,10 +58,7 @@ async function load() {
 watch([slug, locale], load, { immediate: true });
 
 // ── document title ────────────────────────────────────────────────────────────
-let prevTitle = "";
-onMounted(() => {
-  prevTitle = document.title;
-});
+const prevTitle = document.title;
 watch(
   meta,
   (m) => {

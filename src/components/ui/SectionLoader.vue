@@ -1,5 +1,5 @@
 <script setup>
-// Placeholder shown while an async section chunk loads (see App.vue's
+// Placeholder shown while an async section chunk loads (see HomeView.vue's
 // defineAsyncComponent loaders). Reserves a screen of height so the page doesn't
 // pop / shift when the real section mounts (matters in flat view & on mobile,
 // where the .present-track height is auto rather than a fixed --present-track).

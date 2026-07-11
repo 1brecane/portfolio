@@ -364,10 +364,17 @@ export function useGalaxyJourney() {
   // The manual cinematic ⇄ flat toggle (useJourneyMode) flips soft-off at runtime.
   watch(mode, reevaluate);
 
-  // Route changes flip soft-off too: off-home pages hold the calm hero view,
-  // returning home resumes the flight (measure() re-runs; the lazy sections are
-  // already mounted from the first visit or re-measured by the retries).
-  watch(() => route.name, reevaluate);
+  // Route changes flip soft-off too: off-home pages hold the calm hero view.
+  // Returning home runs before RouterView swaps the DOM, so the immediate
+  // measure() inside reevaluate() sees no anchors — re-arm the retry ladder to
+  // re-measure once HomeView's sections have mounted.
+  watch(
+    () => route.name,
+    () => {
+      reevaluate();
+      if (!reduced && !softOff()) scheduleRetries();
+    },
+  );
 
   onUnmounted(() => {
     if (raf !== null) cancelAnimationFrame(raf);

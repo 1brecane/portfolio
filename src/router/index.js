@@ -17,7 +17,7 @@ export const router = createRouter({
       component: CaseStudyView,
       // Unknown slug → 404 (keeps the URL, shows NotFound).
       beforeEnter: (to) =>
-        to.params.slug in caseStudies ||
+        Object.hasOwn(caseStudies, to.params.slug) ||
         { name: "not-found", params: { pathMatch: to.path.slice(1).split("/") } },
     },
     { path: "/:pathMatch(.*)*", name: "not-found", component: NotFound },
