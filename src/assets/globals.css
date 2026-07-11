@@ -710,3 +710,7 @@ html {
   color: var(--color-muted-foreground);
   margin: 0 0 1em;
 }
+.prose strong {
+  font-weight: 700;
+  color: var(--color-foreground);
+}

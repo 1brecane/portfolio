@@ -9,7 +9,7 @@ viaggio: non scorri una pagina verso il basso, ma piloti una camera attraverso l
 e ogni sezione è una tappa lungo il percorso.
 
 È una single-page app in **Vue 3**, costruita con **Vite** e **Tailwind CSS 4**. I
-contenuti sono bilingue (inglese e italiano), e tutto ciò che è animato deve saper
+contenuti sono bilingui (inglese e italiano), e tutto ciò che è animato deve saper
 diventare statico quando il dispositivo o le preferenze di chi guarda lo richiedono. L'ho
 sviluppato appoggiandomi molto ad AI — **Claude Code** e **Cursor** — cosa dichiarata
 apertamente nei tag del progetto. Fa parte della storia: il lavoro interessante è stato il
@@ -24,7 +24,7 @@ Alcune cose hanno reso il tutto più difficile di una normale pagina vetrina:
 - **Lo scroll doveva risultare cinematografico senza rompere l'accessibilità.** Sezioni
   fissate e guidate da una camera penalizzano proprio chi preferisce meno movimento, o chi
   naviga da uno smartphone piccolo o da una connessione a consumo.
-- **Due lingue, senza framework pesanti.** Non volevo tirare dentro una grande libreria di
+- **Due lingue, senza framework pesanti.** Non volevo portarmi in casa una grande libreria di
   i18n per quello che, in fondo, è un sito personale.
 - **Un CV scaricabile da proteggere** senza mettere in piedi un vero server di backend.
 
@@ -47,7 +47,7 @@ vuoti tra una sezione e l'altra interpola verso la successiva con un arco di all
 a metà tragitto — si allarga per mostrare di più, poi rientra. Le sezioni stesse sono
 **slide fissate**: una piccola composable (`useScrollPresentation`) trasforma la posizione
 di scroll in un progresso da `0` a `1`, e delle custom property CSS scandiscono la comparsa
-di ogni blocco. Persino i titoli si decodificano lettera per lettera a partire da dei glifi
+di ogni blocco. Persino i titoli si decodificano lettera per lettera a partire dai glifi
 mentre la slide arriva.
 
 Il punto chiave è che tutto questo ha un interruttore di spegnimento incorporato. Entrambi
@@ -60,7 +60,7 @@ manuale di "vista semplice" permette anche a chi torna di rinunciarci.
 
 Per le due lingue ho scritto un **piccolo layer di i18n custom**: due semplici oggetti di
 messaggi e un `locale` reattivo condiviso, persistito in `localStorage`, senza dipendenze
-esterne. Il form di contatto invia tramite **EmailJS**, importato solo al momento dell'invio,
+esterne. Il form di contatto invia i messaggi tramite **EmailJS**, importato solo al momento dell'invio,
 ed è protetto da **hCaptcha**. Il download del CV è filtrato da un **Cloudflare Worker** che
 verifica il token hCaptcha lato server prima di lasciar passare `/cv.pdf`, con Nginx che fa
 rate-limiting sullo stesso path come seconda linea di difesa.
