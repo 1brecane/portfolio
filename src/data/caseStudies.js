@@ -9,6 +9,10 @@ export const caseStudies = {
     projectId: 4,
     planet: { style: "sphere", palette: "warm", pos: { x: 0.78, y: 0.28 }, scale: 0.9 },
   },
+  cattenheimer: {
+    projectId: 1,
+    planet: { style: "rings", palette: "green", pos: { x: 0.78, y: 0.3 }, scale: 0.95 },
+  },
 };
 
 export function caseStudySlugForProject(projectId) {
