@@ -83,6 +83,9 @@ const PALETTES = {
   warm: [[0, [58, 16, 12]], [0.25, [200, 55, 30]], [0.5, [255, 110, 65]], [0.75, [255, 190, 140]], [1, [255, 250, 245]]],
   blue: [[0, [10, 28, 66]], [0.25, [22, 95, 185]], [0.5, [55, 175, 255]], [0.75, [170, 232, 255]], [1, [248, 252, 255]]],
   green: [[0, [10, 42, 16]], [0.25, [34, 140, 38]], [0.5, [95, 220, 85]], [0.75, [200, 255, 175]], [1, [248, 255, 248]]],
+  // Python's two-tone identity: navy shadow → Python blue → azure, with the
+  // brightest bands tipping into gold (case-study emblem for pygame projects).
+  python: [[0, [12, 24, 54]], [0.3, [38, 86, 150]], [0.55, [80, 160, 220]], [0.8, [255, 208, 92]], [1, [255, 248, 225]]],
 };
 
 function staticMode() {
@@ -115,6 +118,18 @@ function tex(lon, lat) {
     0.28 * Math.sin(lat * 3.0) +
     0.3 * Math.sin(lon * 2.0 + 1.3) * Math.cos(lat * 1.7) +
     0.18 * Math.sin(lon * 5.0 + lat * 3.0);
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+// Jupiter-like gas giant: wavy latitudinal bands plus one bright "great spot".
+// lon is body-space, so the spot travels around as the planet rotates.
+function bandTex(lon, lat) {
+  let v =
+    0.52 +
+    0.3 * Math.sin(lat * 6.0 + 0.5 * Math.sin(lon * 3.0 + lat * 2.0)) +
+    0.14 * Math.sin(lat * 13.0 + 0.35 * Math.sin(lon * 2.0));
+  const dLon = Math.atan2(Math.sin(lon - 0.9), Math.cos(lon - 0.9));
+  const spot = (dLon * dLon) / 0.36 + ((lat - 0.38) * (lat - 0.38)) / 0.055;
+  if (spot < 1) v = Math.max(v, 0.95 - 0.55 * spot);
   return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 function smoothstep(t) {
@@ -183,6 +198,8 @@ function drawPlanet(ctx, style, cxp, cyp, Rpx, ang, stops) {
       if (style === "crescent") {
         shade = Math.pow(bright, 1.7);
         if (shade < 0.06) continue;
+      } else if (style === "bands") {
+        shade = bright * (0.5 + 0.5 * bandTex(lon, lat)) + 0.04;
       } else {
         shade = bright * (0.55 + 0.45 * tex(lon, lat)) + 0.04;
       }
