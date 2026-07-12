@@ -87,7 +87,9 @@ function backToProjects() {
 </script>
 
 <template>
-  <main class="relative z-[2] min-h-screen">
+  <!-- --card-accent: the project's tech color drives its buttons here too,
+       matching the card in ProjectsSection (the back button stays site-red). -->
+  <main class="relative z-[2] min-h-screen" :style="def ? { '--card-accent': def.accent } : null">
     <div class="max-w-3xl mx-auto px-6 py-8">
       <!-- top bar -->
       <div class="flex items-center justify-between mb-12">
@@ -123,7 +125,7 @@ function backToProjects() {
             as="a"
             variant="outline"
             size="sm"
-            class="font-mono text-xs gap-2 border-border hover:border-primary hover:text-primary"
+            class="font-mono text-xs gap-2 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
             :href="def.github"
             target="_blank"
             rel="noopener noreferrer"
@@ -136,7 +138,7 @@ function backToProjects() {
             as="a"
             variant="outline"
             size="sm"
-            class="font-mono text-xs gap-2 border-border hover:border-primary hover:text-primary"
+            class="font-mono text-xs gap-2 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
             :href="def.githubFe"
             target="_blank"
             rel="noopener noreferrer"

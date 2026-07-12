@@ -12,6 +12,10 @@ const logos = {
 // Accents come from the site palette (the same primary/cyan/purple/amber set the
 // TechStack cards use) instead of each tech's brand colors, so the cards read as
 // part of the galaxy theme. The bar fades out to the right like a HUD readout.
+// `accent` feeds the `--card-accent` CSS var: inside a card (and on its
+// case-study page) every interactive element — solid buttons, outline hovers,
+// the hover glow — takes the project's color instead of the site red, so each
+// card reads as one self-consistent "world".
 export const projectDefs = [
   {
     id: 1,
@@ -20,6 +24,7 @@ export const projectDefs = [
     github: "https://github.com/1brecane/cattenheimer",
     demo: null,
     type: "gaming",
+    accent: "var(--chart-4)",
     accentColor: "from-chart-4 via-chart-4/40 to-transparent",
     badgeClass: "bg-chart-4/15 text-chart-4 border-chart-4/30",
   },
@@ -30,6 +35,7 @@ export const projectDefs = [
     github: "https://github.com/1brecane/portfolio",
     demo: null,
     type: "frontend",
+    accent: "var(--chart-2)",
     accentColor: "from-chart-2 via-chart-2/40 to-transparent",
     badgeClass: "bg-chart-2/15 text-chart-2 border-chart-2/30",
   },
@@ -40,6 +46,7 @@ export const projectDefs = [
     github: "https://github.com/1brecane/paidia_be",
     demo: null,
     type: "lab",
+    accent: "var(--primary)",
     accentColor: "from-primary via-primary/40 to-transparent",
     badgeClass: "bg-primary/15 text-primary border-primary/30",
   },
@@ -51,6 +58,7 @@ export const projectDefs = [
     githubFe: "https://github.com/1brecane/centro-sportivo-fe",
     demo: null,
     type: "fullstack",
+    accent: "var(--chart-3)",
     accentColor: "from-chart-3 via-chart-3/40 to-transparent",
     badgeClass: "bg-chart-3/15 text-chart-3 border-chart-3/30",
   },

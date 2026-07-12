@@ -36,7 +36,7 @@ const projects = computed(() =>
           v-for="(project, i) in projects"
           :key="project.id"
           class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow"
-          :style="{ '--step': i }"
+          :style="{ '--step': i, '--card-accent': project.accent }"
         >
           <!-- coloured accent bar -->
           <div :class="`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${project.accentColor}`" />
@@ -84,8 +84,9 @@ const projects = computed(() =>
               >
                 <AppButton
                   as="a"
+                  variant="accent"
                   size="sm"
-                  class="font-mono text-xs gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                  class="font-mono text-xs gap-2"
                   :href="href"
                   @click="navigate"
                 >
@@ -97,7 +98,7 @@ const projects = computed(() =>
                 as="a"
                 variant="outline"
                 size="sm"
-                class="font-mono text-xs gap-2 border-border hover:border-primary hover:text-primary"
+                class="font-mono text-xs gap-2 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
                 :href="project.github"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -110,7 +111,7 @@ const projects = computed(() =>
                 as="a"
                 variant="outline"
                 size="sm"
-                class="font-mono text-xs gap-2 border-border hover:border-primary hover:text-primary"
+                class="font-mono text-xs gap-2 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
                 :href="project.githubFe"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -121,8 +122,9 @@ const projects = computed(() =>
               <AppButton
                 v-if="project.demo"
                 as="a"
+                variant="accent"
                 size="sm"
-                class="font-mono text-xs gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                class="font-mono text-xs gap-2"
                 :href="project.demo"
                 target="_blank"
                 rel="noopener noreferrer"
