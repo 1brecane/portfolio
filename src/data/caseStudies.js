@@ -5,13 +5,15 @@
 // the case-study page (style/palette from AsciiPlanets; pos in viewport
 // fractions, kept near an edge so long text stays readable). TUNABLE.
 export const caseStudies = {
+  // planet palette follows the project's main tech: Vue green for the
+  // portfolio, Python blue-and-gold for cattenheimer.
   portfolio: {
     projectId: 4,
-    planet: { style: "sphere", palette: "warm", pos: { x: 0.78, y: 0.28 }, scale: 0.9 },
+    planet: { style: "sphere", palette: "green", pos: { x: 0.78, y: 0.28 }, scale: 0.9 },
   },
   cattenheimer: {
     projectId: 1,
-    planet: { style: "rings", palette: "green", pos: { x: 0.78, y: 0.3 }, scale: 0.95 },
+    planet: { style: "bands", palette: "python", pos: { x: 0.78, y: 0.3 }, scale: 0.95 },
   },
 };
 
