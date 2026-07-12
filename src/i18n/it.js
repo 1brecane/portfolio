@@ -107,6 +107,7 @@ export default {
     sourceFe: "Codice Frontend",
     liveDemo: "Demo Live",
     viewAll: "Vedi Tutti i Repository",
+    caseStudy: "Caso studio",
     types: {
       gaming: "Gioco",
       fullstack: "Full-Stack",
@@ -213,5 +214,11 @@ export default {
       emailInvalid: "Inserisci un indirizzo email valido.",
       messageRequired: "Inserisci un messaggio.",
     },
+  },
+  caseStudy: {
+    back: "Progetti",
+    loading: "Carico il case study…",
+    error: "Impossibile caricare questo case study.",
+    errorCta: "Torna ai progetti",
   },
 };

@@ -1,69 +1,16 @@
 <script setup>
 import { computed } from "vue";
-import { ExternalLink, Github } from "lucide-vue-next";
+import { RouterLink } from "vue-router";
+import { BookOpen, ExternalLink, Github } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppBadge from "@/components/ui/AppBadge.vue";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { useI18n } from "@/i18n";
 import { SOCIAL_LINKS } from "@/constants/socialLinks";
+import { projectDefs } from "@/data/projects";
+import { caseStudySlugForProject } from "@/data/caseStudies";
 
 const { t } = useI18n();
-
-// ── tech logos ────────────────────────────────────────────────────────────────
-const logos = {
-  python:     `<img src="/python.png"     width="22" height="22" alt="Python"     style="object-fit:contain" />`,
-  nestjs:     `<img src="/nestjs.png"     width="22" height="22" alt="NestJS"     style="object-fit:contain" />`,
-  vue:        `<img src="/vue.png"        width="22" height="22" alt="Vue.js"     style="object-fit:contain" />`,
-  javascript: `<img src="/javascript.png" width="22" height="22" alt="JavaScript" style="object-fit:contain" />`,
-  react:      `<img src="/react.png"      width="22" height="22" alt="React"      style="object-fit:contain" />`,
-};
-
-// Accents come from the site palette (the same primary/cyan/purple/amber set the
-// TechStack cards use) instead of each tech's brand colors, so the cards read as
-// part of the galaxy theme. The bar fades out to the right like a HUD readout.
-const projectDefs = [
-  {
-    id: 1,
-    logoHtml: logos.python,
-    tags: ["Python", "pygame", "Game Dev"],
-    github: "https://github.com/1brecane/cattenheimer",
-    demo: null,
-    type: "gaming",
-    accentColor: "from-chart-4 via-chart-4/40 to-transparent",
-    badgeClass: "bg-chart-4/15 text-chart-4 border-chart-4/30",
-  },
-  {
-    id: 4,
-    logoHtml: logos.vue,
-    tags: ["Vue.js", "Tailwind", "JavaScript", "Claude Code", "Cursor"],
-    github: "https://github.com/1brecane/portfolio",
-    demo: null,
-    type: "frontend",
-    accentColor: "from-chart-2 via-chart-2/40 to-transparent",
-    badgeClass: "bg-chart-2/15 text-chart-2 border-chart-2/30",
-  },
-  {
-    id: 3,
-    logoHtml: logos.nestjs,
-    tags: ["NestJS", "Redis", "MySQL"],
-    github: "https://github.com/1brecane/paidia_be",
-    demo: null,
-    type: "lab",
-    accentColor: "from-primary via-primary/40 to-transparent",
-    badgeClass: "bg-primary/15 text-primary border-primary/30",
-  },
-  {
-    id: 2,
-    logoHtml: `<span class="flex items-center gap-1">${logos.javascript}${logos.react}</span>`,
-    tags: ["Fastify", "React", "MySQL", "Docker"],
-    github: "https://github.com/1brecane/centro-sportivo-be",
-    githubFe: "https://github.com/1brecane/centro-sportivo-fe",
-    demo: null,
-    type: "fullstack",
-    accentColor: "from-chart-3 via-chart-3/40 to-transparent",
-    badgeClass: "bg-chart-3/15 text-chart-3 border-chart-3/30",
-  },
-];
 
 const projects = computed(() =>
   projectDefs.map((def, i) => ({
@@ -71,6 +18,7 @@ const projects = computed(() =>
     title: t.value.projects.items[i].title,
     description: t.value.projects.items[i].description,
     typeLabel: t.value.projects.types[def.type],
+    caseStudy: caseStudySlugForProject(def.id),
   }))
 );
 </script>
@@ -88,7 +36,7 @@ const projects = computed(() =>
           v-for="(project, i) in projects"
           :key="project.id"
           class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow"
-          :style="{ '--step': i }"
+          :style="{ '--step': i, '--card-accent': project.accent }"
         >
           <!-- coloured accent bar -->
           <div :class="`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${project.accentColor}`" />
@@ -128,11 +76,29 @@ const projects = computed(() =>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
+              <RouterLink
+                v-if="project.caseStudy"
+                v-slot="{ href, navigate }"
+                :to="`/projects/${project.caseStudy}`"
+                custom
+              >
+                <AppButton
+                  as="a"
+                  variant="accent"
+                  size="sm"
+                  class="font-mono text-xs gap-2"
+                  :href="href"
+                  @click="navigate"
+                >
+                  <BookOpen class="h-4 w-4" />
+                  {{ t.projects.caseStudy }}
+                </AppButton>
+              </RouterLink>
               <AppButton
                 as="a"
                 variant="outline"
                 size="sm"
-                class="font-mono text-xs gap-2 border-border hover:border-primary hover:text-primary"
+                class="font-mono text-xs gap-2 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
                 :href="project.github"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -145,7 +111,7 @@ const projects = computed(() =>
                 as="a"
                 variant="outline"
                 size="sm"
-                class="font-mono text-xs gap-2 border-border hover:border-primary hover:text-primary"
+                class="font-mono text-xs gap-2 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
                 :href="project.githubFe"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -156,8 +122,9 @@ const projects = computed(() =>
               <AppButton
                 v-if="project.demo"
                 as="a"
+                variant="accent"
                 size="sm"
-                class="font-mono text-xs gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                class="font-mono text-xs gap-2"
                 :href="project.demo"
                 target="_blank"
                 rel="noopener noreferrer"

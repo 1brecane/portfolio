@@ -6,6 +6,7 @@ dist
 .claude
 CLAUDE.md
 ONBOARDING.md
+docs/
 tsconfig.tsbuildinfo
 # Visual brainstorming sessions
 .superpowers/

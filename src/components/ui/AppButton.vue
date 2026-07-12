@@ -17,6 +17,9 @@ defineProps({
         'bg-primary text-primary-foreground hover:bg-primary/90': variant === 'default',
         'border border-input bg-background hover:bg-muted': variant === 'outline',
         'hover:bg-muted': variant === 'ghost',
+        // solid button in the surrounding --card-accent (project tech color)
+        'bg-[var(--card-accent,var(--primary))] text-background hover:brightness-110':
+          variant === 'accent',
       },
       {
         'h-10 px-4 py-2': size === 'default',
