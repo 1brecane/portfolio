@@ -107,7 +107,7 @@ export default {
     sourceFe: "Codice Frontend",
     liveDemo: "Demo Live",
     viewAll: "Vedi Tutti i Repository",
-    caseStudy: "Case study",
+    caseStudy: "Caso studio",
     types: {
       gaming: "Gioco",
       fullstack: "Full-Stack",
