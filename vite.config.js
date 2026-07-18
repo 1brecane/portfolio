@@ -16,12 +16,5 @@ export default defineConfig({
   build: {
     target: "esnext",
     cssMinify: "lightningcss",
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes("@emailjs")) return "emailjs";
-        },
-      },
-    },
   },
 });
