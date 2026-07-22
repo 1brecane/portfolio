@@ -1,8 +1,0 @@
-name = "portfolio-cv-gate"
-main = "worker.js"
-compatibility_date = "2024-11-01"
-
-# Route: intercepts /cv.pdf on your domain before it reaches the origin.
-[[routes]]
-pattern = "samueleruaro.com/cv.pdf"
-zone_name = "samueleruaro.com"
