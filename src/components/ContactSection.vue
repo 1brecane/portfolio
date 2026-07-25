@@ -6,6 +6,7 @@ import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { Send, CheckCircle, AlertCircle, Loader2 } from "lucide-vue-next";
 import { useI18n } from "@/i18n";
 import { HCAPTCHA_SITE_KEY } from "@/constants/captcha.js";
+import { API_BASE_URL } from "@/constants/api.js";
 
 const { t } = useI18n();
 
@@ -46,17 +47,20 @@ const sendEmail = async () => {
   status.value = "loading";
 
   try {
-    const { default: emailjs } = await import("@emailjs/browser");
-    await emailjs.send(
-      import.meta.env.VITE_EMAILJS_SERVICE_ID,
-      import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-      {
-        from_name: form.value.name,
-        reply_to: form.value.email,
+    const response = await fetch(`${API_BASE_URL}/api/contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.value.name,
+        email: form.value.email,
         message: form.value.message,
-      },
-      import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
-    );
+        captcha_token: captchaToken.value,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`contact request failed with status ${response.status}`);
+    }
 
     status.value = "success";
     form.value = { name: "", email: "", message: "" };
