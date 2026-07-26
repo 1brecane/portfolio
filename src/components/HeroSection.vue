@@ -216,8 +216,19 @@ function reopenTerminal() {
         </div>
       </div>
 
-      <!-- Right column: terminal -->
-      <div>
+      <!-- Right column: planet zone (top) + terminal (bottom, shrunk). §C:
+           dedicated stacked rows so the planet's drag hit-region and the
+           terminal's OWN existing drag-to-move (onDragStart below) never
+           fight over the same screen space. -->
+      <div class="flex flex-col gap-6">
+        <!-- Reserved space for the `hero` world (AsciiPlanets.vue WORLDS,
+             style "rings"). The planet itself is drawn by the app-level
+             AsciiPlanets layer (fixed, z-1, behind this content at z-10) —
+             this div is a sizing reservation + visual breathing room, not a
+             canvas mount point. Hidden below `lg` (single-column hero keeps
+             the planet in its mobile/static framing, no dedicated zone). -->
+        <div class="hidden lg:block h-48 xl:h-56 shrink-0" aria-hidden="true" />
+
         <div
           v-if="!isClosed"
           ref="terminalEl"
@@ -270,7 +281,7 @@ function reopenTerminal() {
             <div
               v-if="!isMinimized"
               ref="termBodyEl"
-              class="terminal-body relative max-h-[22rem] overflow-y-auto p-6 text-left font-mono text-sm outline-none"
+              class="terminal-body relative max-h-[22rem] lg:max-h-[14rem] overflow-y-auto p-6 lg:p-4 text-left font-mono text-sm outline-none"
               @click="focusTerminal"
             >
               <input

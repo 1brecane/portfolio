@@ -10,3 +10,6 @@ docs/
 tsconfig.tsbuildinfo
 # Visual brainstorming sessions
 .superpowers/
+.claude/
+.meridian/
+.agents/

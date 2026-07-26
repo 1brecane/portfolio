@@ -60,6 +60,13 @@ export default {
     hint: "Prefer less scrolling? Switch to the simple view here.",
     hintDismiss: "Got it",
     navAria: "Jump to section",
+    // Hover-tooltip copy for the three ASCII "worlds" met along the scroll
+    // journey (AsciiPlanets.vue). Keyed by world id, not zone index.
+    planets: {
+      hero: { name: "Ringed world", tech: "// the start of the journey" },
+      projects: { name: "Crescent world", tech: "// passing through, projects ahead" },
+      contact: { name: "Home world", tech: "// journey's end — say hello" },
+    },
   },
   stack: {
     title: "Tech Stack",

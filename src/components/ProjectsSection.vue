@@ -31,7 +31,13 @@ const projects = computed(() =>
     grid-bg
   >
     <template #default>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- §B "pinwheel": same 2x2 grid, but a deliberately wide gap at md+ so
+           the four cards pull toward the corners and the `projects` world
+           (crescent, AsciiPlanets.vue WORLDS) reads as sitting in the gutter
+           between them. Below md there's a single column — no pinwheel, the
+           planet stays in its static mobile framing behind the stacked cards,
+           so the gap doesn't just add dead vertical space there. -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-x-16 md:gap-y-10">
         <article
           v-for="(project, i) in projects"
           :key="project.id"
@@ -75,7 +81,7 @@ const projects = computed(() =>
               </AppBadge>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="flex flex-wrap items-center gap-4 md:gap-3">
               <RouterLink
                 v-if="project.caseStudy"
                 v-slot="{ href, navigate }"
@@ -86,7 +92,7 @@ const projects = computed(() =>
                   as="a"
                   variant="accent"
                   size="sm"
-                  class="font-mono text-xs gap-2"
+                  class="font-mono text-xs gap-2 max-md:min-h-11"
                   :href="href"
                   @click="navigate"
                 >
@@ -98,7 +104,7 @@ const projects = computed(() =>
                 as="a"
                 variant="outline"
                 size="sm"
-                class="font-mono text-xs gap-2 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
+                class="font-mono text-xs gap-2 max-md:min-h-11 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
                 :href="project.github"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -111,7 +117,7 @@ const projects = computed(() =>
                 as="a"
                 variant="outline"
                 size="sm"
-                class="font-mono text-xs gap-2 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
+                class="font-mono text-xs gap-2 max-md:min-h-11 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
                 :href="project.githubFe"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -124,7 +130,7 @@ const projects = computed(() =>
                 as="a"
                 variant="accent"
                 size="sm"
-                class="font-mono text-xs gap-2"
+                class="font-mono text-xs gap-2 max-md:min-h-11"
                 :href="project.demo"
                 target="_blank"
                 rel="noopener noreferrer"

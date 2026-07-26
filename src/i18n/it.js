@@ -60,6 +60,13 @@ export default {
     hint: "Preferisci meno scroll? Passa alla vista semplice da qui.",
     hintDismiss: "Capito",
     navAria: "Vai alla sezione",
+    // Copy del tooltip hover per i tre "mondi" ASCII incontrati lungo il
+    // viaggio (AsciiPlanets.vue). Chiave per world id, non per indice zona.
+    planets: {
+      hero: { name: "Mondo ad anelli", tech: "// l'inizio del viaggio" },
+      projects: { name: "Mondo a falce", tech: "// di passaggio, i progetti sono vicini" },
+      contact: { name: "Mondo natale", tech: "// fine del viaggio — scrivimi" },
+    },
   },
   stack: {
     title: "Tech Stack",
