@@ -90,7 +90,7 @@ function backToProjects() {
   <!-- --card-accent: the project's tech color drives its buttons here too,
        matching the card in ProjectsSection (the back button stays site-red). -->
   <main class="relative z-[2] min-h-screen" :style="def ? { '--card-accent': def.accent } : null">
-    <div class="max-w-3xl mx-auto px-6 py-8">
+    <div class="max-w-4xl mx-auto px-6 py-8">
       <!-- top bar -->
       <div class="flex items-center justify-between mb-12">
         <RouterLink v-slot="{ href }" to="/" custom>
