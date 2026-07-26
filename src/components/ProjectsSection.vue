@@ -29,19 +29,28 @@ const projects = computed(() =>
     :title="t.projects.title"
     :subtitle="t.projects.subtitle"
     grid-bg
+    bleed-gutter
   >
     <template #default>
-      <!-- §B "pinwheel": same 2x2 grid, but a deliberately wide gap at md+ so
-           the four cards pull toward the corners and the `projects` world
-           (crescent, AsciiPlanets.vue WORLDS) reads as sitting in the gutter
-           between them. Below md there's a single column — no pinwheel, the
-           planet stays in its static mobile framing behind the stacked cards,
-           so the gap doesn't just add dead vertical space there. -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-x-16 md:gap-y-10">
+      <!-- §1 "corner-cut diamond" (planets3d-layout-rework.md): same 2x2 grid,
+           but each card's INNER corner (the one facing the grid center) is
+           clip-path-beveled, so the four bevels together form one coherent
+           diamond opening at the center where the `projects` world (crescent,
+           AsciiPlanets.vue WORLDS) sits — unobstructed by any card's hit
+           region (clip-path clips hit-testing too, not just paint). The gap
+           is equalized (md:gap-12) so the opening is a true diamond, not a
+           rhombus. Below md there's a single column — no cut, no pinwheel,
+           the planet stays in its static mobile framing behind the stacked
+           cards, so the gap doesn't just add dead vertical space there.
+           `pointer-events-none` here (opted back to `auto` per-card): the
+           grid container's own box spans the gap too — with the default
+           `auto` it swallows clicks meant for the crescent hotspot in that
+           gap even though no card actually renders there. -->
+      <div class="projects-grid grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-24 pointer-events-none">
         <article
           v-for="(project, i) in projects"
           :key="project.id"
-          class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow"
+          class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow pointer-events-auto"
           :style="{ '--step': i, '--card-accent': project.accent }"
         >
           <!-- coloured accent bar -->
@@ -143,7 +152,7 @@ const projects = computed(() =>
         </article>
       </div>
 
-      <div class="present-step text-center mt-12" :style="{ '--step': 4 }">
+      <div class="present-step text-center mt-12 pointer-events-auto" :style="{ '--step': 4 }">
         <AppButton
           as="a"
           variant="outline"
@@ -160,3 +169,53 @@ const projects = computed(() =>
     </template>
   </SectionLayout>
 </template>
+
+<style scoped>
+/* §1.3 corner-cut diamond — md+ only (§1.5: below md the cards stay full
+   rounded rects, a diagonal slice on a full-width stacked card would look
+   broken). --cut is a single bevel size used on both axes so the cut stays a
+   true 45° regardless of card aspect ratio (rem is absolute). Each card's
+   INNER corner (facing the grid center) is beveled — see the table in
+   planets3d-layout-rework.md §1.2. clip-path also clips hit-testing, so this
+   removes the corner rectangle from each card's pointer-events-auto area,
+   which is what used to overlap the crescent's centered hotspot. */
+@media (min-width: 768px) {
+  .projects-grid > article {
+    --cut: 4.5rem; /* TUNABLE — tuned against a real screenshot at md/lg/xl */
+  }
+  /* i=0 top-left → cut bottom-right */
+  .projects-grid > article:nth-child(1) {
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - var(--cut)),
+      calc(100% - var(--cut)) 100%,
+      0 100%
+    );
+  }
+  /* i=1 top-right → cut bottom-left */
+  .projects-grid > article:nth-child(2) {
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% 100%,
+      var(--cut) 100%,
+      0 calc(100% - var(--cut))
+    );
+  }
+  /* i=2 bottom-left → cut top-right */
+  .projects-grid > article:nth-child(3) {
+    clip-path: polygon(
+      0 0,
+      calc(100% - var(--cut)) 0,
+      100% var(--cut),
+      100% 100%,
+      0 100%
+    );
+  }
+  /* i=3 bottom-right → cut top-left */
+  .projects-grid > article:nth-child(4) {
+    clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut));
+  }
+}
+</style>

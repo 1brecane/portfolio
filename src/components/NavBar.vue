@@ -77,7 +77,7 @@ const contactBtnClass =
 <template>
   <nav
     :class="[
-      'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
+      'fixed top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-auto',
       isScrolled || isMobileMenuOpen ? 'glass border-b border-border' : 'bg-transparent',
     ]"
   >
@@ -184,7 +184,7 @@ const contactBtnClass =
        panel stays clickable while a tap anywhere else closes the menu. -->
   <div
     v-if="isMobileMenuOpen"
-    class="fixed inset-0 z-40 md:hidden"
+    class="fixed inset-0 z-40 md:hidden pointer-events-auto"
     aria-hidden="true"
     @click="closeMobileMenu"
   />

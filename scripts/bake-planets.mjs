@@ -137,7 +137,11 @@ const assets = {
   "sphere-warm": bakeSphere("warm", tex),
   "sphere-green": bakeSphere("green", tex, { dimFactor: 0.5 }),
   "bands-python": bakeSphere("python", bandTex, { dimFactor: 0.5 }),
-  "crescent-warm": bakeSphere("warm", null), // flat albedo — the crescent look comes from directionalLight, not texture
+  // Was flat albedo (textureFn null) — read as a smooth, featureless gradient
+  // ("too linear") next to sphere-warm's rocky relief. Same tex() surface
+  // detail now; the crescent silhouette still comes from CRESCENT_LIGHT's
+  // strong directional + low ambient, not from this texture.
+  "crescent-warm": bakeSphere("warm", tex),
   "ring-warm": bakeRing("warm"),
 };
 

@@ -1,7 +1,6 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 import { createGlyphScene, createGlyphCamera } from "glyphcss";
-import { useI18n } from "@/i18n";
 import sphereWarm from "@/assets/planets/sphere-warm.json";
 import sphereGreen from "@/assets/planets/sphere-green.json";
 import bandsPython from "@/assets/planets/bands-python.json";
@@ -57,8 +56,6 @@ const props = defineProps({
   ambient: { type: Object, default: null },
 });
 
-const { t } = useI18n();
-
 // Worlds keyed by ZONES index. pos = screen anchor (viewport fractions); the exit
 // direction (while passing you) is derived from pos → away from screen center.
 // scale = relative size. TUNABLE.
@@ -67,59 +64,90 @@ const WORLDS = [
     id: "hero",
     index: 0,
     style: "rings",
-    // §C stacked-column retune: was {x:0.72, y:0.42} (pre-reservation guess).
-    // HeroSection.vue's right column is the grid's `2fr` of `3fr_2fr` (right
-    // ~40% of the max-w-6xl container, itself page-centered) — x:0.78 targets
-    // that column's horizontal center. The new planet-zone reservation
-    // (`h-48 xl:h-56`, §C) sits at the TOP of the stacked right column, above
-    // the shrunk terminal, and the whole column is vertically centered on the
-    // page — y:0.38 estimates that reserved zone's own center sitting above
-    // page-center. Both are structurally-reasoned, NOT verified in a browser
-    // (no eyes on screen). VERIFY AND RE-TUNE empirically at the hero hold
-    // across common breakpoints (esp. lg/xl) before merge — see spec §C/§F.
-    pos: { x: 0.78, y: 0.38 },
-    scale: 1.05,
+    // planets3d-layout-rework.md §2/H1 retune: was {x:0.78, y:0.38}, scale:1.05
+    // (§C stacked-column guess, pre-H1, never verified in a browser). H1 grew
+    // the reserved zone (HeroSection.vue: `h-48 xl:h-56` → `h-64 xl:h-80`) so
+    // the ring + its shadow band have more room; pos/scale re-measured against
+    // the zone's real `getBoundingClientRect()` (headless Chromium). Because
+    // the right column lives in a fixed `max-w-6xl` container, the zone's
+    // center as a VIEWPORT fraction shrinks as the viewport widens beyond it
+    // (measured ≈0.80 at the narrowest `lg` 1024px, ≈0.72 at 1440, ≈0.68 at
+    // 1920) — no single x is exact everywhere. x:0.75 is chosen to keep the
+    // ring clear of the headline at 1024 (first pass at 0.71 had it visibly
+    // overlapping "Produzione") while still reading well at 1440/1920 with
+    // comfortable margin above the terminal. y:0.42 (≈ the measured zone
+    // center across all three). scale grown 1.05→1.15 to use the extra room.
+    // Confirmed: hotspot (screen pos ≈ pos × viewport) sits well clear of the
+    // terminal's title-bar drag handle at every breakpoint; neither drag
+    // affects the other.
+    pos: { x: 0.77, y: 0.42 },
+    scale: 1.25,
     // #11 fix: the hero world's depart window is tightened (default DEPART=1.15
     // would still be scale>0 at progress=1, when the About zone's hold begins —
     // a faint bleed into the next section). 0.9 reaches scale 0 comfortably
     // before that hold starts.
     depart: 0.9,
+    // planets3d-porthole.md §1.3: full-bleed split viewport, open space around
+    // the ring — the soft outer concentric ring reads well here.
+    porthole: true,
+    ringMargin: 1.2,
+    softRing: true,
   },
   {
     id: "projects",
     index: 3,
     style: "crescent",
-    // §B pinwheel retune: was {x:0.3, y:0.5} (arbitrary, pre-pinwheel). The
-    // ProjectsSection.vue grid is horizontally centered on the page
-    // (SectionLayout's `mx-auto max-w-6xl`), so the gutter between the 2x2
-    // cards' widened md:gap-x-16/md:gap-y-10 (§B) converges near the
-    // horizontal center — x:0.5 is a structurally-reasoned estimate, NOT
-    // verified in a browser (no eyes on screen). y:0.5 is an unchanged
-    // starting guess for the vertical center of the pinned hold. VERIFY AND
-    // RE-TUNE both empirically at the projects zone hold across common
-    // breakpoints before merge — see spec §B/§F.
-    pos: { x: 0.5, y: 0.5 },
+    // planets3d-layout-rework.md §1.7 corner-cut-diamond retune: was
+    // {x:0.5, y:0.5}, scale:1.0 (§B pinwheel guess, pre-diamond, never
+    // verified in a browser). Screenshotted empirically (headless Chromium)
+    // at the projects hold, lg (1440x900): x:0.5 was already correct (grid
+    // is page-centered), but at scale 1.0 the crescent's on-screen diameter
+    // (minDim*BASE_R*scale ≈ 306px at 1440x900) badly outsized the small
+    // diamond opening formed by ProjectsSection.vue's `--cut`/gap, bleeding
+    // up into the top-row cards' body well above the actual cut corners —
+    // not "centered in the opening". Fix is two-sided: ProjectsSection grew
+    // its diamond (gap-12→gap-24, --cut 2.25rem→3.5rem) AND the crescent
+    // shrank (1.0→0.85) to meet it with margin; y nudged 0.5→0.56 because the
+    // opening's true center sits slightly below viewport-mid at this hold
+    // (header + row heights above it). Confirmed on screenshots at md (768),
+    // lg (1440), xl (1920): diamond opening visible and unobstructed at all
+    // three; a center-viewport hit-test at lg resolves to the crescent's
+    // `.glyph-hotspot`, not a card.
+    pos: { x: 0.5, y: 0.56 },
     scale: 1.0,
+    // planets3d-porthole.md §3.2: round window in the angular diamond hull —
+    // single thin ring, tight margin, no soft outer ring (avoids "two frames
+    // fighting" against the clip-path cuts).
+    porthole: true,
+    ringMargin: 1.1,
+    softRing: false,
   },
   {
     id: "contact",
     index: 5,
     style: "sphere",
-    // §D beside-the-form retune: was {x:0.52, y:0.46} — the reported
-    // centering bug (never precisely tuned; barely off-center by mistake).
-    // Replaced with an intentional "beside the form" anchor, not a mere
-    // {0.5,0.5} correction (decision #7 — the bug fix is a side effect of the
-    // redesign, not a standalone task). ContactSection.vue's form stays
-    // `max-w-2xl mx-auto` inside SectionLayout's `max-w-6xl` (unchanged, per
-    // spec §D — no new column) — that already leaves free space on both
-    // sides at wide viewports; x:0.8 targets the right-side gutter, y:0.5
-    // sits alongside the form's own vertical center. Structurally-reasoned,
-    // NOT verified in a browser (no eyes on screen). VERIFY AND RE-TUNE
-    // empirically at the contact hold across common wide breakpoints before
-    // merge, and confirm the old mis-centering is visibly gone — see spec
-    // §D/§F.
-    pos: { x: 0.8, y: 0.5 },
-    scale: 1.15,
+    // planets3d-layout-rework.md §3/C1 retune: was {x:0.8, y:0.5} (§D
+    // beside-the-form guess, pre-C1, never verified in a browser).
+    // ContactSection.vue's form kept its structure but swapped `mx-auto` for
+    // a left pin (`lg:ml-0 lg:mr-auto`, C1) so 100% of the leftover width is
+    // a single deterministic right gutter instead of a symmetric split.
+    // Measured that gutter's real center (headless Chromium,
+    // `getBoundingClientRect` on the form panel) at the contact hold: ≈{0.79,
+    // 0.60} at lg (1440x900), ≈{0.78, 0.59} at xl (1920x1080) — consistent
+    // enough for one pos. x:0.79/y:0.60 (was y:0.5, which is why the sphere
+    // used to read slightly high relative to the form). scale kept at 1.15 —
+    // the gutter (≈600-830px wide across lg/xl) comfortably fits the
+    // sphere's on-screen diameter (≈350-420px) with margin on both sides, no
+    // growth needed. Confirmed: sphere clears the form's right edge by
+    // 120px+ and stays inside the right viewport edge by 125px+ at both
+    // breakpoints.
+    pos: { x: 0.78, y: 0.55 },
+    scale: 1.2,
+    // planets3d-porthole.md §2.3: mirrors Hero — the open→close bookend, same
+    // side, same treatment.
+    porthole: true,
+    ringMargin: 1.2,
+    softRing: true,
   },
 ];
 
@@ -131,12 +159,7 @@ const ASSETS = {
 };
 
 const hostRef = ref(null);
-const tooltipRef = ref(null);
-// { x, y, name, tech, below } in viewport px, or null = hidden. x/y start as
-// the raw anchor point; clampTooltip() below corrects them post-render once
-// the tooltip's real size is known, so it never overflows the viewport.
-const tooltip = ref(null);
-const TOOLTIP_MARGIN = 8; // px kept clear of the viewport edge
+const ringRef = ref(null); // porthole ring device (planets3d-porthole.md §4) — fixed sibling of .planets-host
 
 let scene = null;
 let camera = null;
@@ -145,11 +168,9 @@ let resizeObserver = null;
 let motionQuery = null;
 let sizeQuery = null;
 let dataQuery = null;
-let hoverQuery = null; // (hover: none) — touch/no-pointer devices
 let reducedMotion = false;
 let smallScreen = false;
 let reducedData = false;
-let noHover = false;
 let minDim = 0;
 
 // Active journey-world mesh(es) + hit region, swapped only when the active
@@ -165,7 +186,7 @@ let hitRegionCleanup = null;
 // exactly one world is ever mounted at a time (same constraint as the
 // positioning system above). ────────────────────────────────────────────────
 let userYaw = 0; // deg, accumulated from horizontal drag — same axis as baseYaw
-let userPitch = 0; // deg, accumulated from vertical drag, clamped to ±PITCH_CLAMP
+let userPitch = 0; // deg, accumulated from vertical drag; the composed camera.rotX is clamped, not this accumulator (see clampOrbitPitch)
 let yawVel = 0; // deg/s — inertia velocity after release
 let dragging = false; // pointerdown fired AND movement exceeded DRAG_THRESHOLD_PX
 let dragPointerId = null;
@@ -196,7 +217,14 @@ const CHAR_W_RATIO = 0.6; // monospace advance width ≈ 0.6× font-size — use
 const DRAG_THRESHOLD_PX = 4; // below this, a press+release is a tap/click, not a drag
 const DRAG_YAW_DEG_PER_PX = 0.5; // horizontal drag sensitivity
 const DRAG_PITCH_DEG_PER_PX = 0.5; // vertical drag sensitivity
-const PITCH_CLAMP = 60; // degrees — keeps the planet from flipping to a degenerate pole-on view
+// Camera-orbit rotation (spec-planets3d-002 §3.1) — the mesh no longer
+// carries any live rotation, so the camera's rest angles must be explicit.
+const BASE_ROT_X = 65; // camera resting orbit tilt (deg) — today's createGlyphCamera default
+const BASE_ROT_Y = 45; // camera resting orbit azimuth (deg) — ditto
+// Pole-avoiding clamp band on the COMPOSED camera.rotX (base + userPitch),
+// not the raw accumulator — supersedes the old PITCH_CLAMP.
+const ORBIT_PITCH_MIN = 10; // deg
+const ORBIT_PITCH_MAX = 90; // deg
 const VEL_WINDOW_MS = 100; // release-velocity averaging window (avoids a jerky end-of-drag spike)
 const INERTIA_TAU = 0.4; // seconds — exponential friction time constant, ≈1-2s to settle
 const INERTIA_MIN_VEL = 2; // deg/s — below this, inertia is considered at rest
@@ -208,8 +236,8 @@ const MAX_YAW_VEL = 2000; // deg/s — sane upper bound on release velocity; gua
 // Crescent needs its own strong-directional/low-ambient light for the
 // terminator look (§3); every other style uses glyphcss's own scene defaults,
 // restored explicitly here so switching worlds is a plain setOptions() call.
-const DEFAULT_LIGHT = { directionalLight: { direction: [0.5, 0.7, 0.5], intensity: 1 }, ambientLight: { intensity: 0.4 } };
-const CRESCENT_LIGHT = { directionalLight: { direction: [0.8, 0.3, 0.5], intensity: 1.2 }, ambientLight: { intensity: 0.05 } };
+const DEFAULT_LIGHT = { directionalLight: { direction: [0.9, 0.25, 0.35], intensity: 1.15 }, ambientLight: { intensity: 0.32 } };
+const CRESCENT_LIGHT = { directionalLight: { direction: [0.8, 0.3, 0.5], intensity: 1.2 }, ambientLight: { intensity: 0.16 } };
 
 function smoothstep(t) {
   const c = t < 0 ? 0 : t > 1 ? 1 : t;
@@ -218,6 +246,13 @@ function smoothstep(t) {
 
 function staticMode() {
   return reducedMotion || smallScreen || reducedData;
+}
+
+// Clamps the FINAL composed camera.rotX (base + userPitch), not userPitch in
+// isolation — the Euler path has gimbal lock at the poles, so this keeps the
+// orbit inside a band that never flips through one (spec §3.1).
+function clampOrbitPitch(rotX) {
+  return Math.max(ORBIT_PITCH_MIN, Math.min(ORBIT_PITCH_MAX, rotX));
 }
 
 function assetFor(style, palette) {
@@ -292,7 +327,6 @@ function removeHitRegion() {
   hotspotHandle?.remove();
   hotspotHandle = null;
   hitRegionCleanup = null;
-  tooltip.value = null;
 }
 
 function disposeActiveMeshes() {
@@ -316,27 +350,6 @@ function hitRegionSizeCh(worldScale) {
   const diameterPx = 2 * minDim * BASE_R * worldScale;
   const cols = Math.max(2, diameterPx / charWpx);
   return [cols, cols / 2]; // height gets ×cellAspect internally (≈2), so /2 keeps it roughly circular
-}
-
-// Flip/clamp near edges (§4): re-measures the real tooltip box once it has
-// rendered and nudges x/y so it never overflows the viewport.
-async function clampTooltip() {
-  await nextTick();
-  const el = tooltipRef.value;
-  if (!el || !tooltip.value) return;
-  const rect = el.getBoundingClientRect();
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  let x = tooltip.value.x;
-  let below = tooltip.value.below;
-  const halfW = rect.width / 2;
-  x = Math.min(Math.max(x, halfW + TOOLTIP_MARGIN), vw - halfW - TOOLTIP_MARGIN);
-  // Above the anchor by default; flip below if that would clip the top edge.
-  if (!below && tooltip.value.y - rect.height - TOOLTIP_MARGIN < 0) below = true;
-  else if (below && tooltip.value.y + rect.height + TOOLTIP_MARGIN > vh) below = false;
-  if (x !== tooltip.value.x || below !== tooltip.value.below) {
-    tooltip.value = { ...tooltip.value, x, below };
-  }
 }
 
 // §A.3 — Pointer Events state machine (mouse+touch+pen, one code path).
@@ -368,11 +381,19 @@ function onPointerMove(e) {
       return;
     }
     dragging = true;
-    tooltip.value = null; // suppress the tooltip for the whole drag (§A.3)
   }
-  const dYaw = dx * DRAG_YAW_DEG_PER_PX;
+  // Camera-orbit sign (§3.3): the near-facing surface follows the drag ("grab
+  // and throw" feel) — orbiting the camera around a stationary mesh is the
+  // visual inverse of rotating the mesh itself, so the yaw sign is flipped
+  // relative to the old mesh-rotation code. Pitch verified against the
+  // running app and flipped again to match the "drag up → near surface tips
+  // up toward the viewer" feel (human visual pass, not derivable from the
+  // yaw case alone — pitch and yaw aren't mirror images of each other under
+  // this camera's Euler convention). userPitch is intentionally unclamped
+  // here — the clamp lives on the composed camera.rotX (§3.1).
+  const dYaw = -dx * DRAG_YAW_DEG_PER_PX;
   userYaw += dYaw;
-  userPitch = Math.max(-PITCH_CLAMP, Math.min(PITCH_CLAMP, userPitch - dy * DRAG_PITCH_DEG_PER_PX));
+  userPitch -= dy * DRAG_PITCH_DEG_PER_PX;
   velocitySamples.push({ t: now, dyaw: dYaw });
   const cutoff = now - VEL_WINDOW_MS;
   while (velocitySamples.length && velocitySamples[0].t < cutoff) velocitySamples.shift();
@@ -418,11 +439,9 @@ function endDrag(e) {
   // else: stays interacting=true, decay handled per-frame in advanceInertia()
 }
 
-// A.1: the drag target is the SAME .el as the hover hotspot — no new hit
-// layer. `withTooltip` gates only the hover tooltip (mouseenter/mouseleave);
-// the hit region itself (and drag) is created unconditionally, including on
-// touch/(hover:none) devices, which previously had no `.el` to drag at all.
-function mountHitRegion(world, { withTooltip }) {
+// A.1: the drag target is the SAME .el that used to also host the hover
+// tooltip (removed — the planets are drag-only now, no informational popup).
+function mountHitRegion(world) {
   hotspotHandle = scene.addHotspot({ id: world.id, at: [0, 0, 0], size: hitRegionSizeCh(world.scale) });
   const el = hotspotHandle.el;
   el.style.touchAction = "none"; // a finger-drag on the planet rotates it, not the page (§A.3)
@@ -431,30 +450,11 @@ function mountHitRegion(world, { withTooltip }) {
   el.addEventListener("pointerup", endDrag);
   el.addEventListener("pointercancel", endDrag);
 
-  let onEnter = null;
-  let onLeave = null;
-  if (withTooltip && !noHover) {
-    const copy = t.value.journey.planets[world.id];
-    onEnter = () => {
-      if (dragging) return; // §A.3: suppressed for the whole drag
-      const rect = el.getBoundingClientRect();
-      tooltip.value = { x: rect.left + rect.width / 2, y: rect.top, name: copy.name, tech: copy.tech, below: false };
-      clampTooltip();
-    };
-    onLeave = () => {
-      tooltip.value = null;
-    };
-    el.addEventListener("mouseenter", onEnter);
-    el.addEventListener("mouseleave", onLeave);
-  }
-
   hitRegionCleanup = () => {
     el.removeEventListener("pointerdown", onPointerDown);
     el.removeEventListener("pointermove", onPointerMove);
     el.removeEventListener("pointerup", endDrag);
     el.removeEventListener("pointercancel", endDrag);
-    if (onEnter) el.removeEventListener("mouseenter", onEnter);
-    if (onLeave) el.removeEventListener("mouseleave", onLeave);
   };
 }
 
@@ -463,12 +463,16 @@ function mountWorld(world) {
   applyLight(world.style === "crescent" ? "crescent" : "default");
   const asset = assetFor(world.style, "warm");
   const polygons = asset.map((p) => ({ vertices: p.vertices, color: p.color }));
-  bodyHandle = scene.add(polygons);
+  // castShadow: the sphere's own shadow-map cast is what gives the ring a
+  // real light/dark band (see ringHandle below) — a flat ring's faces all
+  // share ~the same normal, so directional+ambient light alone shades it
+  // uniformly no matter the orbit angle; only a projected shadow varies.
+  bodyHandle = scene.add(polygons, { castShadow: true });
   if (world.style === "rings") {
     const ringPolys = ringWarm.map((p) => ({ vertices: p.vertices, color: p.color }));
-    ringHandle = scene.add(ringPolys, { rotation: [RING_TILT_DEG, 0, 0] });
+    ringHandle = scene.add(ringPolys, { rotation: [RING_TILT_DEG, 0, 0], receiveShadow: true });
   }
-  mountHitRegion(world, { withTooltip: true });
+  mountHitRegion(world);
   activeWorldId = world.id;
 }
 
@@ -478,9 +482,8 @@ function mountAmbient(ambient) {
   const asset = assetFor(ambient.style, ambient.palette);
   const polygons = asset.map((p) => ({ vertices: p.vertices, color: p.color }));
   bodyHandle = scene.add(polygons);
-  // §E: emblems get the same drag mechanism as journey worlds, but never a
-  // hover tooltip (they never had one — out of scope to add here).
-  mountHitRegion({ id: "ambient", scale: ambient.scale ?? 1 }, { withTooltip: false });
+  // §E: emblems get the same drag mechanism as journey worlds.
+  mountHitRegion({ id: "ambient", scale: ambient.scale ?? 1 });
   activeWorldId = "ambient";
 }
 
@@ -506,6 +509,30 @@ function angleDeg(elapsed) {
   return ((elapsed * ROT_SPEED * 180) / Math.PI) % 360;
 }
 
+// Porthole ring (planets3d-porthole.md §4) — driven imperatively from draw(),
+// same style as the rest of the file (no per-frame reactive churn). Hidden by
+// setting opacity 0; the <lg media query hides it outright regardless.
+function hidePortholeRing() {
+  if (!ringRef.value) return;
+  ringRef.value.style.opacity = "0";
+}
+
+function updatePortholeRing(active, fade, scale) {
+  if (!ringRef.value) return;
+  if (!active.porthole || fade.out > 0) {
+    hidePortholeRing();
+    return;
+  }
+  const d = 2 * minDim * BASE_R * scale * (active.ringMargin ?? 1.2);
+  const x = active.pos.x * window.innerWidth;
+  const y = active.pos.y * window.innerHeight;
+  const el = ringRef.value;
+  el.style.width = el.style.height = `${d}px`;
+  el.style.transform = `translate(${x - d / 2}px, ${y - d / 2}px)`;
+  el.style.opacity = String(fade.scale);
+  el.classList.toggle("porthole-ring--soft", !!active.softRing);
+}
+
 function draw(elapsed) {
   if (!scene) return;
 
@@ -517,11 +544,15 @@ function draw(elapsed) {
 
   if (props.ambient) {
     if (activeWorldId !== "ambient") mountAmbient(props.ambient);
+    // §4: emblems get the same camera-orbit treatment as journey worlds —
+    // rotX/rotY written before the progress-driven zoom/center below.
+    const baseYaw = angleDeg(elapsed);
+    camera.rotY = BASE_ROT_Y + baseYaw + userYaw;
+    camera.rotX = clampOrbitPitch(BASE_ROT_X + userPitch);
     const radius = minDim * BASE_R * (props.ambient.scale ?? 1);
     camera.zoom = radius; // world radius is 1, so zoom==on-screen radius directly
     camera.center = [props.ambient.pos.x, props.ambient.pos.y];
-    const baseYaw = angleDeg(elapsed);
-    bodyHandle?.setTransform({ rotation: [userPitch, baseYaw + userYaw, 0] });
+    hidePortholeRing(); // ambient/case-study pages draw one fixed emblem with no porthole
     scene.rerender();
     return;
   }
@@ -542,29 +573,36 @@ function draw(elapsed) {
       disposeActiveMeshes();
       activeWorldId = null;
     }
+    hidePortholeRing();
     return;
   }
   if (activeWorldId !== active.id) mountWorld(active);
 
-  const scale = fade.scale * active.scale;
-  // §A.2: baseYaw (auto-spin) never stops advancing; userYaw/userPitch are the
-  // drag/inertia offsets composed on top, applied identically to body + ring
-  // so the ringed world stays rigid (its fixed 68° X-tilt simply adds to
-  // userPitch — an approximation of composing two rotations as summed Euler
-  // X, acceptable for a decorative planet; don't "fix" this into a heavier
-  // quaternion composition).
+  // §3.1: baseYaw (auto-spin) never stops advancing; userYaw/userPitch are the
+  // drag/inertia offsets composed on top, applied to the CAMERA. Neither mesh
+  // gets a live transform any more — body sits at its rest pose and the ring
+  // keeps only its fixed mount-time tilt (RING_TILT_DEG), so the two are
+  // trivially rigid with each other at every orbit angle (no more summed-
+  // Euler approximation needed).
   const baseYaw = angleDeg(elapsed);
-  const spin = baseYaw + userYaw;
-  bodyHandle?.setTransform({ scale, rotation: [userPitch, spin, 0] });
-  ringHandle?.setTransform({ scale, rotation: [RING_TILT_DEG + userPitch, spin, 0] });
+  camera.rotY = BASE_ROT_Y + baseYaw + userYaw;
+  camera.rotX = clampOrbitPitch(BASE_ROT_X + userPitch);
 
+  // The approach/loom-past size change is camera work, not mesh work — same
+  // pattern as the ambient branch above (`camera.zoom` IS the on-screen
+  // radius). The journey owns `camera.zoom`/`center` end to end; meshes must
+  // never carry a journey-driven `scale`, or rotation and the fly-in/loom-past
+  // size would be fighting over the same transform.
+  const scale = fade.scale * active.scale;
+  camera.zoom = minDim * BASE_R * scale;
   // Exit direction: outward from screen center (away from the viewer's path),
   // so a world you pass slides toward the edge while it shrinks away.
-  camera.zoom = minDim * BASE_R;
   camera.center = [
     active.pos.x + (active.pos.x - 0.5) * fade.out * OUT_PUSH,
     active.pos.y + (active.pos.y - 0.5) * fade.out * OUT_PUSH,
   ];
+
+  updatePortholeRing(active, fade, scale);
 
   scene.rerender();
 }
@@ -609,14 +647,6 @@ function onDataChange(e) {
   reducedData = e.matches;
   applyMode();
 }
-function onHoverChange(e) {
-  noHover = e.matches;
-  // A.1: the hit region (and drag) must persist regardless of hover capability
-  // — only clear a currently-visible tooltip. (Tooltip *listeners* are gated
-  // at mount time in mountHitRegion(); a live hover-capability toggle mid-
-  // session is a rare edge case not worth a remount to re-gate retroactively.)
-  if (noHover) tooltip.value = null;
-}
 function onVisibility() {
   if (document.hidden) {
     if (animationId !== null) {
@@ -636,15 +666,12 @@ onMounted(() => {
   motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   sizeQuery = window.matchMedia("(max-width: 767px)");
   dataQuery = window.matchMedia("(prefers-reduced-data: reduce)");
-  hoverQuery = window.matchMedia("(hover: none)");
   reducedMotion = motionQuery.matches;
   smallScreen = sizeQuery.matches;
   reducedData = dataQuery.matches;
-  noHover = hoverQuery.matches;
   motionQuery.addEventListener("change", onMotionChange);
   sizeQuery.addEventListener("change", onSizeChange);
   dataQuery.addEventListener("change", onDataChange);
-  hoverQuery.addEventListener("change", onHoverChange);
   document.addEventListener("visibilitychange", onVisibility);
 
   host.style.fontSize = `${staticMode() ? FONT_MOBILE : FONT_DESKTOP}px`;
@@ -663,6 +690,18 @@ onMounted(() => {
     cellAspect: 2.0,
     mode: "solid",
     useColors: true,
+    // Interpolates normals across adjacent faces instead of flat per-face
+    // shading, so the low-poly baked spheres (320 faces, kept low for bundle
+    // size — see scripts/bake-planets.mjs) read as smoothly curved under
+    // lighting/rotation instead of visibly faceted. Zero bundle cost, unlike
+    // baking more polygons.
+    smoothShading: true,
+    // Enables the shadow-map technique scene-wide — without this key present
+    // (even empty), the per-mesh castShadow/receiveShadow flags (hero's ring)
+    // are no-ops. opacity below the library default (0.25) since the ring is
+    // already fairly dim against the dark background; too dark reads as a
+    // hole instead of a shadow.
+    shadow: { opacity: 0.35 },
     ...DEFAULT_LIGHT,
   });
 
@@ -690,7 +729,6 @@ onUnmounted(() => {
   motionQuery?.removeEventListener("change", onMotionChange);
   sizeQuery?.removeEventListener("change", onSizeChange);
   dataQuery?.removeEventListener("change", onDataChange);
-  hoverQuery?.removeEventListener("change", onHoverChange);
   document.removeEventListener("visibilitychange", onVisibility);
 });
 
@@ -709,16 +747,7 @@ watch(
     class="planets-host fixed inset-0 w-full h-full z-[1] pointer-events-none"
     aria-hidden="true"
   />
-  <div
-    v-if="tooltip"
-    ref="tooltipRef"
-    class="planets-tooltip"
-    :class="{ 'planets-tooltip--below': tooltip.below }"
-    :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }"
-  >
-    <span class="planets-tooltip__name">{{ tooltip.name }}</span>
-    <span class="planets-tooltip__tech">{{ tooltip.tech }}</span>
-  </div>
+  <div ref="ringRef" class="porthole-ring" aria-hidden="true" />
 </template>
 
 <style scoped>
@@ -729,49 +758,32 @@ watch(
   font-family: var(--font-mono), ui-monospace, "Courier New", monospace;
 }
 
-/* I7: planet-scoped light-mode awareness — tooltip colors come from the site's
-   CSS tokens, not hardcoded rgb, so it stays legible if/when a light theme
-   lands (full site light mode is out of scope of this branch). The baked mesh
-   colors themselves (src/assets/planets/*.json) are intentionally NOT given a
-   light-theme variant here: they're saturated, absolute hex values chosen
-   against the current dark --background, and there is no light :root token
-   set yet to validate a rebake against (§6 explicitly defers full light mode
-   to a future issue). Re-bake a light variant (bake-planets.mjs's `dim()` blend
-   already supports mixing toward an arbitrary background) once that theme
-   exists — don't guess at it now. */
-.planets-tooltip {
+/* Porthole ring (planets3d-porthole.md §4) — a sibling of .planets-host, NOT
+   a child: the host clips via overflow:hidden and would clip this. Geometry
+   (width/height/transform/opacity) is driven imperatively from draw() each
+   frame, matching the ring's live on-screen size/position/fade. */
+.porthole-ring {
   position: fixed;
-  /* Anchored above the hotspot by default (top: anchor.y, pulled up by its own
-     height + a gap). --below flips to sit under the hotspot instead, for
-     worlds anchored too close to the top edge (clampTooltip() decides). */
-  transform: translate(-50%, calc(-100% - 10px));
-  z-index: 30;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.4rem 0.6rem;
-  border-radius: 0.375rem;
-  border: 1px solid color-mix(in oklch, var(--foreground) 18%, transparent);
-  background: color-mix(in oklch, var(--background) 88%, transparent);
-  backdrop-filter: blur(4px);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  white-space: nowrap;
-  box-shadow: 0 4px 16px oklch(0.08 0 0 / 0.35);
+  left: 0;
+  top: 0;
+  z-index: 1; /* same layer as the planet host */
+  border-radius: 50%;
+  border: 1px solid var(--porthole-ring);
+  pointer-events: none; /* never intercepts; the drag hotspot is unaffected */
+  opacity: 0; /* driven imperatively in draw() */
 }
-
-.planets-tooltip--below {
-  transform: translate(-50%, 10px);
+/* faint outer concentric ring (softRing worlds only) */
+.porthole-ring--soft::before {
+  content: "";
+  position: absolute;
+  inset: -8%; /* slightly larger concentric ring; TUNABLE */
+  border-radius: 50%;
+  border: 1px solid var(--porthole-ring-soft);
 }
-
-.planets-tooltip__name {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--foreground);
-}
-
-.planets-tooltip__tech {
-  font-size: 0.65rem;
-  color: var(--muted-foreground);
+/* porthole device is an lg+ enhancement — never on mobile/tablet */
+@media (max-width: 1023px) {
+  .porthole-ring {
+    display: none !important;
+  }
 }
 </style>

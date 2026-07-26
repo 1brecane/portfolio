@@ -173,13 +173,24 @@ function reopenTerminal() {
 </script>
 
 <template>
-  <section id="hero" class="relative min-h-screen overflow-hidden flex items-center">
+  <!-- pointer-events-none on the WHOLE section, re-enabled on each actually-
+       interactive piece below (CTAs/social links, terminal, reopen button,
+       scroll cue): `min-h-screen` means this section's own box spans every
+       pixel of the hero fold, so with the default `auto` it swallows clicks
+       over the "empty" reserved planet zone (§C) no matter how far down the
+       tree a `pointer-events-none` is placed on that spacer alone — the
+       opt-out has to start at the section root. -->
+  <section id="hero" class="relative min-h-screen overflow-hidden flex items-center pointer-events-none">
     <div class="absolute inset-0 z-[1] bg-gradient-to-b from-background/10 via-background/20 to-transparent pointer-events-none" />
 
-    <div class="relative z-10 w-full mx-auto max-w-6xl px-6 py-24 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-12 lg:gap-16 items-center">
+    <div class="relative z-10 w-full mx-auto max-w-6xl px-6 py-24 flex items-center">
 
-      <!-- Left column: text + actions -->
-      <div class="flex flex-col items-start gap-8">
+      <!-- Single left-aligned, capped column (planets3d-porthole.md §1.1):
+           the whole right side is the fixed porthole's territory, rendered by
+           AsciiPlanets.vue (§4) — no reserved DOM space needed here. Capped
+           at lg:max-w-2xl so it stays clear of the porthole (§1.4 clearance
+           rule); full width below lg (single-column stack, unchanged). -->
+      <div class="flex flex-col items-start gap-8 pointer-events-auto w-full lg:max-w-2xl">
         <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-balance">
           {{ t.hero.headline }}
           <span class="text-primary neon-text">{{ t.hero.headlineHighlight }}</span>
@@ -214,26 +225,12 @@ function reopenTerminal() {
         <div class="inline-flex items-center gap-6 px-5 py-2.5 rounded-full bg-card/30 backdrop-blur-sm border border-border/40">
           <SocialLinks icon-class="h-6 w-6" />
         </div>
-      </div>
-
-      <!-- Right column: planet zone (top) + terminal (bottom, shrunk). §C:
-           dedicated stacked rows so the planet's drag hit-region and the
-           terminal's OWN existing drag-to-move (onDragStart below) never
-           fight over the same screen space. -->
-      <div class="flex flex-col gap-6">
-        <!-- Reserved space for the `hero` world (AsciiPlanets.vue WORLDS,
-             style "rings"). The planet itself is drawn by the app-level
-             AsciiPlanets layer (fixed, z-1, behind this content at z-10) —
-             this div is a sizing reservation + visual breathing room, not a
-             canvas mount point. Hidden below `lg` (single-column hero keeps
-             the planet in its mobile/static framing, no dedicated zone). -->
-        <div class="hidden lg:block h-48 xl:h-56 shrink-0" aria-hidden="true" />
 
         <div
           v-if="!isClosed"
           ref="terminalEl"
           :style="terminalStyle"
-          :class="['w-full', isDragging ? 'select-none' : '']"
+          :class="['w-full pointer-events-auto', isDragging ? 'select-none' : '']"
         >
           <div class="bg-card/5 backdrop-blur-sm border border-border rounded-lg overflow-hidden shadow-2xl">
             <!-- Title bar -->
@@ -337,7 +334,7 @@ function reopenTerminal() {
         </div>
 
         <!-- Reopen button if closed -->
-        <div v-else class="flex justify-start">
+        <div v-else class="flex justify-start pointer-events-auto">
           <button
             class="font-mono text-xs text-muted-foreground border border-border rounded px-3 py-1 hover:border-primary hover:text-primary transition-colors"
             @click="reopenTerminal"
@@ -353,7 +350,7 @@ function reopenTerminal() {
       <a
         v-if="showScrollCue"
         href="#about"
-        class="scroll-cue absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+        class="scroll-cue absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors pointer-events-auto"
         @click.prevent="scrollToZone('about')"
       >
         <span>{{ t.hero.scrollCue }}</span>
