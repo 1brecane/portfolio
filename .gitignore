@@ -13,3 +13,6 @@ tsconfig.tsbuildinfo
 .claude/
 .meridian/
 .agents/
+
+# Claude Code skill tooling
+skills-lock.json
