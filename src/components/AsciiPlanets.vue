@@ -64,22 +64,18 @@ const WORLDS = [
     id: "hero",
     index: 0,
     style: "rings",
-    // planets3d-layout-rework.md §2/H1 retune: was {x:0.78, y:0.38}, scale:1.05
-    // (§C stacked-column guess, pre-H1, never verified in a browser). H1 grew
-    // the reserved zone (HeroSection.vue: `h-48 xl:h-56` → `h-64 xl:h-80`) so
-    // the ring + its shadow band have more room; pos/scale re-measured against
-    // the zone's real `getBoundingClientRect()` (headless Chromium). Because
-    // the right column lives in a fixed `max-w-6xl` container, the zone's
-    // center as a VIEWPORT fraction shrinks as the viewport widens beyond it
-    // (measured ≈0.80 at the narrowest `lg` 1024px, ≈0.72 at 1440, ≈0.68 at
-    // 1920) — no single x is exact everywhere. x:0.75 is chosen to keep the
-    // ring clear of the headline at 1024 (first pass at 0.71 had it visibly
-    // overlapping "Produzione") while still reading well at 1440/1920 with
-    // comfortable margin above the terminal. y:0.42 (≈ the measured zone
-    // center across all three). scale grown 1.05→1.15 to use the extra room.
-    // Confirmed: hotspot (screen pos ≈ pos × viewport) sits well clear of the
-    // terminal's title-bar drag handle at every breakpoint; neither drag
-    // affects the other.
+    // planets3d-porthole.md §1.4 retune (current architecture: HeroSection.vue
+    // is now a SINGLE left-aligned `lg:max-w-2xl` column — no reserved spacer,
+    // no right column; the ring owns the whole free right region as a fixed
+    // device, see §4). Confirmed via headless-Chromium screenshot + rect
+    // checks at lg(1024)/xlw(1440)/xl(1920): the ring reads large and clear
+    // of both the headline and the (now left-column) terminal's title-bar
+    // drag handle at every width — at 1024 the ring's bounding SQUARE
+    // technically overlaps the terminal's box, but the visible circle stroke
+    // and the terminal's own opaque card never visually collide (verified on
+    // screenshot, not just rects — a bounding-box check alone over-reports
+    // here because a circle's corners are empty). x:0.77/y:0.42/scale:1.25
+    // kept from the spec's starting values — they held up as-is.
     pos: { x: 0.77, y: 0.42 },
     scale: 1.25,
     // #11 fix: the hero world's depart window is tightened (default DEPART=1.15
@@ -97,24 +93,22 @@ const WORLDS = [
     id: "projects",
     index: 3,
     style: "crescent",
-    // planets3d-layout-rework.md §1.7 corner-cut-diamond retune: was
-    // {x:0.5, y:0.5}, scale:1.0 (§B pinwheel guess, pre-diamond, never
-    // verified in a browser). Screenshotted empirically (headless Chromium)
-    // at the projects hold, lg (1440x900): x:0.5 was already correct (grid
-    // is page-centered), but at scale 1.0 the crescent's on-screen diameter
-    // (minDim*BASE_R*scale ≈ 306px at 1440x900) badly outsized the small
-    // diamond opening formed by ProjectsSection.vue's `--cut`/gap, bleeding
-    // up into the top-row cards' body well above the actual cut corners —
-    // not "centered in the opening". Fix is two-sided: ProjectsSection grew
-    // its diamond (gap-12→gap-24, --cut 2.25rem→3.5rem) AND the crescent
-    // shrank (1.0→0.85) to meet it with margin; y nudged 0.5→0.56 because the
-    // opening's true center sits slightly below viewport-mid at this hold
-    // (header + row heights above it). Confirmed on screenshots at md (768),
-    // lg (1440), xl (1920): diamond opening visible and unobstructed at all
-    // three; a center-viewport hit-test at lg resolves to the crescent's
-    // `.glyph-hotspot`, not a card.
+    // planets3d-porthole.md §3.3 retune: the spec's own suggested starting
+    // point (grow scale 0.85→1.0 to "fill the bigger diamond") was WRONG —
+    // verified via headless Chromium screenshot at 1440x900, scale 1.0
+    // (306px on-screen diameter) badly outsized the real opening (measured
+    // from live card rects: --cut=4.5rem/72px cut on each of 4 corners,
+    // real card-to-card gap ~116px horizontal/~93px vertical), bleeding the
+    // BRIGHT crescent body under the glass-panel cards' bottom edges —
+    // exactly the "obscured behind glass" problem the whole Porthole pass
+    // was meant to fix. Went the other way instead: scale 1.0→0.55 (153px
+    // diameter). x:0.5/y:0.56 unchanged (grid is page-centered; y accounts
+    // for the header+row height above the hold). Confirmed via screenshot
+    // AND hit-test at md(768)/lg(1024)/xlw(1440)/xl(1920): crescent centered
+    // in the diamond with visible margin to every cut edge, porthole ring
+    // (below) visible around it, no bleed under any card.
     pos: { x: 0.5, y: 0.56 },
-    scale: 1.0,
+    scale: 0.55,
     // planets3d-porthole.md §3.2: round window in the angular diamond hull —
     // single thin ring, tight margin, no soft outer ring (avoids "two frames
     // fighting" against the clip-path cuts).
@@ -126,23 +120,21 @@ const WORLDS = [
     id: "contact",
     index: 5,
     style: "sphere",
-    // planets3d-layout-rework.md §3/C1 retune: was {x:0.8, y:0.5} (§D
-    // beside-the-form guess, pre-C1, never verified in a browser).
-    // ContactSection.vue's form kept its structure but swapped `mx-auto` for
-    // a left pin (`lg:ml-0 lg:mr-auto`, C1) so 100% of the leftover width is
-    // a single deterministic right gutter instead of a symmetric split.
-    // Measured that gutter's real center (headless Chromium,
-    // `getBoundingClientRect` on the form panel) at the contact hold: ≈{0.79,
-    // 0.60} at lg (1440x900), ≈{0.78, 0.59} at xl (1920x1080) — consistent
-    // enough for one pos. x:0.79/y:0.60 (was y:0.5, which is why the sphere
-    // used to read slightly high relative to the form). scale kept at 1.15 —
-    // the gutter (≈600-830px wide across lg/xl) comfortably fits the
-    // sphere's on-screen diameter (≈350-420px) with margin on both sides, no
-    // growth needed. Confirmed: sphere clears the form's right edge by
-    // 120px+ and stays inside the right viewport edge by 125px+ at both
-    // breakpoints.
-    pos: { x: 0.78, y: 0.55 },
-    scale: 1.2,
+    // planets3d-porthole.md §2.4 retune: the porthole-ring era's starting
+    // guess ({x:0.78, y:0.55}, scale:1.2) put the ring in NEGATIVE clearance
+    // (~-74px, overlapping the form) at the narrow end of `lg` (1024px,
+    // headless Chromium measured), even though it read fine at 1440/1920 —
+    // the ring's on-screen diameter is driven by `minDim` (viewport height,
+    // effectively constant across widths at a fixed test height) while the
+    // form's pixel position shifts with viewport width, so a single fixed
+    // pos/scale pair can't satisfy both ends at scale 1.2. Shrunk scale
+    // 1.2→1.0 (smaller ring, needs less clearance everywhere) and pushed
+    // x 0.78→0.85 (recenters it in the actually-available gutter). Verified
+    // (headless Chromium, form panel + ring `getBoundingClientRect()`):
+    // clearance ≈+34px at lg (1024), ≈+208px at 1440, ≈+104px-to-viewport-edge
+    // at xl (1920) — positive at every tested width. y:0.55 unchanged.
+    pos: { x: 0.85, y: 0.55 },
+    scale: 1.0,
     // planets3d-porthole.md §2.3: mirrors Hero — the open→close bookend, same
     // side, same treatment.
     porthole: true,

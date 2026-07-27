@@ -38,7 +38,7 @@ const projects = computed(() =>
            diamond opening at the center where the `projects` world (crescent,
            AsciiPlanets.vue WORLDS) sits — unobstructed by any card's hit
            region (clip-path clips hit-testing too, not just paint). The gap
-           is equalized (md:gap-12) so the opening is a true diamond, not a
+           is equalized (md:gap-24) so the opening is a true diamond, not a
            rhombus. Below md there's a single column — no cut, no pinwheel,
            the planet stays in its static mobile framing behind the stacked
            cards, so the gap doesn't just add dead vertical space there.
