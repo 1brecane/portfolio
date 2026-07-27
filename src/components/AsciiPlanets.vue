@@ -64,82 +64,48 @@ const WORLDS = [
     id: "hero",
     index: 0,
     style: "rings",
-    // planets3d-porthole.md §1.4 retune (current architecture: HeroSection.vue
-    // is now a SINGLE left-aligned `lg:max-w-2xl` column — no reserved spacer,
-    // no right column; the ring owns the whole free right region as a fixed
-    // device, see §4). Confirmed via headless-Chromium screenshot + rect
-    // checks at lg(1024)/xlw(1440)/xl(1920): the ring reads large and clear
-    // of both the headline and the (now left-column) terminal's title-bar
-    // drag handle at every width — at 1024 the ring's bounding SQUARE
-    // technically overlaps the terminal's box, but the visible circle stroke
-    // and the terminal's own opaque card never visually collide (verified on
-    // screenshot, not just rects — a bounding-box check alone over-reports
-    // here because a circle's corners are empty). x:0.77/y:0.42/scale:1.25
-    // kept from the spec's starting values — they held up as-is.
-    pos: { x: 0.77, y: 0.42 },
-    scale: 1.25,
+    // Retune 2026-07-27: the porthole era's 1.25 read as too large/dominant
+    // once seen live (direct user feedback — "il pianeta nell'hero è troppo
+    // grande"). Shrunk to 0.95, x nudged 0.77→0.8 to stay clear of the
+    // headline at the narrower `lg` widths now that it's smaller. Full-bleed
+    // single-column layout (HeroSection.vue) is otherwise unchanged.
+    pos: { x: 0.8, y: 0.42 },
+    scale: 0.95,
     // #11 fix: the hero world's depart window is tightened (default DEPART=1.15
     // would still be scale>0 at progress=1, when the About zone's hold begins —
     // a faint bleed into the next section). 0.9 reaches scale 0 comfortably
     // before that hold starts.
     depart: 0.9,
-    // planets3d-porthole.md §1.3: full-bleed split viewport, open space around
-    // the ring — the soft outer concentric ring reads well here.
-    porthole: true,
-    ringMargin: 1.2,
-    softRing: true,
   },
   {
     id: "projects",
     index: 3,
     style: "crescent",
-    // planets3d-porthole.md §3.3 retune: the spec's own suggested starting
-    // point (grow scale 0.85→1.0 to "fill the bigger diamond") was WRONG —
-    // verified via headless Chromium screenshot at 1440x900, scale 1.0
-    // (306px on-screen diameter) badly outsized the real opening (measured
-    // from live card rects: --cut=4.5rem/72px cut on each of 4 corners,
-    // real card-to-card gap ~116px horizontal/~93px vertical), bleeding the
-    // BRIGHT crescent body under the glass-panel cards' bottom edges —
-    // exactly the "obscured behind glass" problem the whole Porthole pass
-    // was meant to fix. Went the other way instead: scale 1.0→0.55 (153px
-    // diameter). x:0.5/y:0.56 unchanged (grid is page-centered; y accounts
-    // for the header+row height above the hold). Confirmed via screenshot
-    // AND hit-test at md(768)/lg(1024)/xlw(1440)/xl(1920): crescent centered
-    // in the diamond with visible margin to every cut edge, porthole ring
-    // (below) visible around it, no bleed under any card.
+    // Retune 2026-07-27: at scale 1.0 the crescent badly outsized the real
+    // clip-path diamond opening (measured from live card rects: --cut=4.5rem
+    // cut on each of 4 corners, ~116px horizontal / ~93px vertical card-to-
+    // card gap), bleeding its bright body under the glass-panel cards'
+    // bottom edges. Shrunk to 0.55 (153px on-screen diameter) — confirmed via
+    // screenshot AND hit-test at md(768)/lg(1024)/xlw(1440)/xl(1920):
+    // centered in the diamond with visible margin to every cut edge, no
+    // bleed under any card. x:0.5/y:0.56 unchanged (grid is page-centered; y
+    // accounts for the header+row height above the hold).
     pos: { x: 0.5, y: 0.56 },
     scale: 0.55,
-    // planets3d-porthole.md §3.2: round window in the angular diamond hull —
-    // single thin ring, tight margin, no soft outer ring (avoids "two frames
-    // fighting" against the clip-path cuts).
-    porthole: true,
-    ringMargin: 1.1,
-    softRing: false,
   },
   {
     id: "contact",
     index: 5,
     style: "sphere",
-    // planets3d-porthole.md §2.4 retune: the porthole-ring era's starting
-    // guess ({x:0.78, y:0.55}, scale:1.2) put the ring in NEGATIVE clearance
-    // (~-74px, overlapping the form) at the narrow end of `lg` (1024px,
-    // headless Chromium measured), even though it read fine at 1440/1920 —
-    // the ring's on-screen diameter is driven by `minDim` (viewport height,
-    // effectively constant across widths at a fixed test height) while the
-    // form's pixel position shifts with viewport width, so a single fixed
-    // pos/scale pair can't satisfy both ends at scale 1.2. Shrunk scale
-    // 1.2→1.0 (smaller ring, needs less clearance everywhere) and pushed
-    // x 0.78→0.85 (recenters it in the actually-available gutter). Verified
-    // (headless Chromium, form panel + ring `getBoundingClientRect()`):
-    // clearance ≈+34px at lg (1024), ≈+208px at 1440, ≈+104px-to-viewport-edge
-    // at xl (1920) — positive at every tested width. y:0.55 unchanged.
+    // Retune 2026-07-27: the previous pass's pos/scale (0.78/1.2) put a real
+    // porthole-ring device in negative clearance (~-74px, overlapping the
+    // form) at the narrow end of `lg` (1024px) even though it read fine at
+    // 1440/1920 — headless Chromium measured. Shrunk scale 1.2→1.0, pushed
+    // x 0.78→0.85 to recenter in the actually-available gutter. Clearance
+    // to the form is positive at every tested width (≈+34px at 1024,
+    // ≈+208px at 1440, ≈+104px-to-viewport-edge at 1920). y:0.55 unchanged.
     pos: { x: 0.85, y: 0.55 },
     scale: 1.0,
-    // planets3d-porthole.md §2.3: mirrors Hero — the open→close bookend, same
-    // side, same treatment.
-    porthole: true,
-    ringMargin: 1.2,
-    softRing: true,
   },
 ];
 
@@ -151,7 +117,6 @@ const ASSETS = {
 };
 
 const hostRef = ref(null);
-const ringRef = ref(null); // porthole ring device (planets3d-porthole.md §4) — fixed sibling of .planets-host
 
 let scene = null;
 let camera = null;
@@ -501,30 +466,6 @@ function angleDeg(elapsed) {
   return ((elapsed * ROT_SPEED * 180) / Math.PI) % 360;
 }
 
-// Porthole ring (planets3d-porthole.md §4) — driven imperatively from draw(),
-// same style as the rest of the file (no per-frame reactive churn). Hidden by
-// setting opacity 0; the <lg media query hides it outright regardless.
-function hidePortholeRing() {
-  if (!ringRef.value) return;
-  ringRef.value.style.opacity = "0";
-}
-
-function updatePortholeRing(active, fade, scale) {
-  if (!ringRef.value) return;
-  if (!active.porthole || fade.out > 0) {
-    hidePortholeRing();
-    return;
-  }
-  const d = 2 * minDim * BASE_R * scale * (active.ringMargin ?? 1.2);
-  const x = active.pos.x * window.innerWidth;
-  const y = active.pos.y * window.innerHeight;
-  const el = ringRef.value;
-  el.style.width = el.style.height = `${d}px`;
-  el.style.transform = `translate(${x - d / 2}px, ${y - d / 2}px)`;
-  el.style.opacity = String(fade.scale);
-  el.classList.toggle("porthole-ring--soft", !!active.softRing);
-}
-
 function draw(elapsed) {
   if (!scene) return;
 
@@ -544,7 +485,6 @@ function draw(elapsed) {
     const radius = minDim * BASE_R * (props.ambient.scale ?? 1);
     camera.zoom = radius; // world radius is 1, so zoom==on-screen radius directly
     camera.center = [props.ambient.pos.x, props.ambient.pos.y];
-    hidePortholeRing(); // ambient/case-study pages draw one fixed emblem with no porthole
     scene.rerender();
     return;
   }
@@ -565,7 +505,6 @@ function draw(elapsed) {
       disposeActiveMeshes();
       activeWorldId = null;
     }
-    hidePortholeRing();
     return;
   }
   if (activeWorldId !== active.id) mountWorld(active);
@@ -593,8 +532,6 @@ function draw(elapsed) {
     active.pos.x + (active.pos.x - 0.5) * fade.out * OUT_PUSH,
     active.pos.y + (active.pos.y - 0.5) * fade.out * OUT_PUSH,
   ];
-
-  updatePortholeRing(active, fade, scale);
 
   scene.rerender();
 }
@@ -739,7 +676,6 @@ watch(
     class="planets-host fixed inset-0 w-full h-full z-[1] pointer-events-none"
     aria-hidden="true"
   />
-  <div ref="ringRef" class="porthole-ring" aria-hidden="true" />
 </template>
 
 <style scoped>
@@ -748,34 +684,5 @@ watch(
 .planets-host {
   overflow: hidden;
   font-family: var(--font-mono), ui-monospace, "Courier New", monospace;
-}
-
-/* Porthole ring (planets3d-porthole.md §4) — a sibling of .planets-host, NOT
-   a child: the host clips via overflow:hidden and would clip this. Geometry
-   (width/height/transform/opacity) is driven imperatively from draw() each
-   frame, matching the ring's live on-screen size/position/fade. */
-.porthole-ring {
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 1; /* same layer as the planet host */
-  border-radius: 50%;
-  border: 1px solid var(--porthole-ring);
-  pointer-events: none; /* never intercepts; the drag hotspot is unaffected */
-  opacity: 0; /* driven imperatively in draw() */
-}
-/* faint outer concentric ring (softRing worlds only) */
-.porthole-ring--soft::before {
-  content: "";
-  position: absolute;
-  inset: -8%; /* slightly larger concentric ring; TUNABLE */
-  border-radius: 50%;
-  border: 1px solid var(--porthole-ring-soft);
-}
-/* porthole device is an lg+ enhancement — never on mobile/tablet */
-@media (max-width: 1023px) {
-  .porthole-ring {
-    display: none !important;
-  }
 }
 </style>
