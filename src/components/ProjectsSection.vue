@@ -32,21 +32,29 @@ const projects = computed(() =>
     bleed-gutter
   >
     <template #default>
-      <!-- §1 "corner-cut diamond" (planets3d-layout-rework.md): same 2x2 grid,
-           but each card's INNER corner (the one facing the grid center) is
-           clip-path-beveled, so the four bevels together form one coherent
-           diamond opening at the center where the `projects` world (crescent,
-           AsciiPlanets.vue WORLDS) sits — unobstructed by any card's hit
-           region (clip-path clips hit-testing too, not just paint). The gap
-           is equalized (md:gap-24) so the opening is a true diamond, not a
-           rhombus. Below md there's a single column — no cut, no pinwheel,
-           the planet stays in its static mobile framing behind the stacked
-           cards, so the gap doesn't just add dead vertical space there.
-           `pointer-events-none` here (opted back to `auto` per-card): the
-           grid container's own box spans the gap too — with the default
-           `auto` it swallows clicks meant for the crescent hotspot in that
-           gap even though no card actually renders there. -->
-      <div class="projects-grid grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-24 pointer-events-none">
+      <!-- §1 "radial cutout" (2026-07-27 redesign, replaces the corner-cut
+           diamond): same 2x2 grid, but each card's INNER corner (the one
+           facing the grid center) gets a CONCAVE CIRCULAR bite via a
+           mask-image radial-gradient hard-stop, not a clip-path polygon
+           bevel — clip-path can only draw straight segments (verified,
+           see git history), a real arc needs mask. The four quarter-circle
+           bites, each centered on the shared grid-center point (offset from
+           each card's own corner by half the gap on each axis — see the
+           per-card --mx/--my below), combine into ONE seamless circular
+           void at the center where the `projects` world (crescent,
+           AsciiPlanets.vue WORLDS) sits. Cards are also bigger (p-8, was
+           p-6) and pushed further apart (gap-32, was gap-24) so there's
+           real room for a generously-sized circle, not a cramped notch.
+           mask-image excludes the masked-out region from hit-testing too
+           (same property clip-path had), so the circular opening stays
+           unobstructed by any card's hit region. Below md there's a single
+           column — no cut, the planet stays in its static mobile framing
+           behind the stacked cards. `pointer-events-none` here (opted back
+           to `auto` per-card): the grid container's own box spans the gap
+           too — with the default `auto` it swallows clicks meant for the
+           crescent hotspot in that gap even though no card actually
+           renders there. -->
+      <div class="projects-grid grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-32 pointer-events-none">
         <article
           v-for="(project, i) in projects"
           :key="project.id"
@@ -56,7 +64,7 @@ const projects = computed(() =>
           <!-- coloured accent bar -->
           <div :class="`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${project.accentColor}`" />
 
-          <div class="p-6">
+          <div class="p-8">
             <div class="flex items-start justify-between mb-4">
               <div class="flex items-center gap-3">
                 <!-- tech logo -->
@@ -171,51 +179,84 @@ const projects = computed(() =>
 </template>
 
 <style scoped>
-/* §1.3 corner-cut diamond — md+ only (§1.5: below md the cards stay full
-   rounded rects, a diagonal slice on a full-width stacked card would look
-   broken). --cut is a single bevel size used on both axes so the cut stays a
-   true 45° regardless of card aspect ratio (rem is absolute). Each card's
-   INNER corner (facing the grid center) is beveled — see the table in
-   planets3d-layout-rework.md §1.2. clip-path also clips hit-testing, so this
-   removes the corner rectangle from each card's pointer-events-auto area,
-   which is what used to overlap the crescent's centered hotspot. */
+/* Radial cutout — md+ only (below md the cards stay full rounded rects, a
+   circular bite out of a full-width stacked card would look broken).
+   --r is the cutout circle's radius; --gx/--gy are HALF the grid's
+   column/row gap (md:gap-32 = 8rem, so half = 4rem) — the distance from
+   each card's own inner corner out to the shared grid-center point along
+   each axis. TUNABLE together: bigger --r reads as a bigger "porthole",
+   but must stay under --gx/--gy + (roughly) half a card's own width/height
+   or the circle starts eating into a NEIGHBOURING card's corner instead of
+   just the gap.
+
+   mask-image radial-gradient hard-stop technique (concave/inverted-corner
+   corner cut — CSS has no boolean "subtract a circle from a box" any other
+   way): `transparent <r>, black <r>` with the SAME length on both stops is
+   a hard edge, not a blur — everything inside radius r from the gradient's
+   center point is fully masked out (invisible AND excluded from hit-
+   testing, same as clip-path), everything outside is fully opaque. Center
+   the gradient at each card's OWN inner corner, offset outward by
+   (--gx, --gy) so the true center of the circle sits at the shared
+   grid-center point, not at the card's corner — that's what makes the four
+   independent per-card bites line up into one seamless circle instead of
+   four separate notches. */
 @media (min-width: 768px) {
   .projects-grid > article {
-    --cut: 4.5rem; /* TUNABLE — tuned against a real screenshot at md/lg/xl */
+    --r: 9rem; /* TUNABLE — tuned against a real screenshot at md/lg/xl */
+    --gx: 4rem; /* half of md:gap-32's column gap */
+    --gy: 4rem; /* half of md:gap-32's row gap */
   }
-  /* i=0 top-left → cut bottom-right */
+  /* i=0 top-left → bite out of bottom-right (center is right+down of the card) */
   .projects-grid > article:nth-child(1) {
-    clip-path: polygon(
-      0 0,
-      100% 0,
-      100% calc(100% - var(--cut)),
-      calc(100% - var(--cut)) 100%,
-      0 100%
+    -webkit-mask-image: radial-gradient(
+      circle at calc(100% + var(--gx)) calc(100% + var(--gy)),
+      transparent var(--r),
+      black var(--r)
+    );
+    mask-image: radial-gradient(
+      circle at calc(100% + var(--gx)) calc(100% + var(--gy)),
+      transparent var(--r),
+      black var(--r)
     );
   }
-  /* i=1 top-right → cut bottom-left */
+  /* i=1 top-right → bite out of bottom-left (center is left+down of the card) */
   .projects-grid > article:nth-child(2) {
-    clip-path: polygon(
-      0 0,
-      100% 0,
-      100% 100%,
-      var(--cut) 100%,
-      0 calc(100% - var(--cut))
+    -webkit-mask-image: radial-gradient(
+      circle at calc(0% - var(--gx)) calc(100% + var(--gy)),
+      transparent var(--r),
+      black var(--r)
+    );
+    mask-image: radial-gradient(
+      circle at calc(0% - var(--gx)) calc(100% + var(--gy)),
+      transparent var(--r),
+      black var(--r)
     );
   }
-  /* i=2 bottom-left → cut top-right */
+  /* i=2 bottom-left → bite out of top-right (center is right+up of the card) */
   .projects-grid > article:nth-child(3) {
-    clip-path: polygon(
-      0 0,
-      calc(100% - var(--cut)) 0,
-      100% var(--cut),
-      100% 100%,
-      0 100%
+    -webkit-mask-image: radial-gradient(
+      circle at calc(100% + var(--gx)) calc(0% - var(--gy)),
+      transparent var(--r),
+      black var(--r)
+    );
+    mask-image: radial-gradient(
+      circle at calc(100% + var(--gx)) calc(0% - var(--gy)),
+      transparent var(--r),
+      black var(--r)
     );
   }
-  /* i=3 bottom-right → cut top-left */
+  /* i=3 bottom-right → bite out of top-left (center is left+up of the card) */
   .projects-grid > article:nth-child(4) {
-    clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut));
+    -webkit-mask-image: radial-gradient(
+      circle at calc(0% - var(--gx)) calc(0% - var(--gy)),
+      transparent var(--r),
+      black var(--r)
+    );
+    mask-image: radial-gradient(
+      circle at calc(0% - var(--gx)) calc(0% - var(--gy)),
+      transparent var(--r),
+      black var(--r)
+    );
   }
 }
 </style>

@@ -81,17 +81,17 @@ const WORLDS = [
     id: "projects",
     index: 3,
     style: "crescent",
-    // Retune 2026-07-27: at scale 1.0 the crescent badly outsized the real
-    // clip-path diamond opening (measured from live card rects: --cut=4.5rem
-    // cut on each of 4 corners, ~116px horizontal / ~93px vertical card-to-
-    // card gap), bleeding its bright body under the glass-panel cards'
-    // bottom edges. Shrunk to 0.55 (153px on-screen diameter) — confirmed via
-    // screenshot AND hit-test at md(768)/lg(1024)/xlw(1440)/xl(1920):
-    // centered in the diamond with visible margin to every cut edge, no
-    // bleed under any card. x:0.5/y:0.56 unchanged (grid is page-centered; y
-    // accounts for the header+row height above the hold).
+    // Retune 2026-07-27 (radial cutout redesign): ProjectsSection.vue's
+    // corner-cut mechanism changed from a small clip-path diamond to a
+    // proper circular mask-cutout (~288px real diameter, --r:9rem in the
+    // card CSS) with bigger cards + gap around it — much more room than
+    // the old diamond ever had. Grown 0.55→0.85 to actually fill it
+    // (2×minDim×BASE_R×scale ≈ 260px on-screen diameter at 1440x900,
+    // comfortably inside the ~288px void with margin). x:0.5/y:0.56
+    // unchanged. TUNE AGAIN against a real screenshot if the void's --r
+    // changes.
     pos: { x: 0.5, y: 0.56 },
-    scale: 0.55,
+    scale: 0.85,
   },
   {
     id: "contact",
