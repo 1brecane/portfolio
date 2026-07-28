@@ -34,9 +34,9 @@ The background is **two fixed Canvas 2D layers** sitting behind the page. The fi
 and project outward from the screen centre, so you genuinely fly *through* the field
 rather than past a flat one. Glyphs like `. : · * + = % @` keep the ASCII identity, and
 a rare comet crosses the sky every 15–30 seconds as a small reward for anyone watching.
-The second layer, `AsciiPlanets`, renders three slowly rotating ASCII worlds — a ringed
-planet at the start, a crescent glimpsed mid-flight, a full sphere at the destination —
-drawn with a luminance glyph ramp so they have real depth.
+The second layer, `AsciiPlanets`, renders two slowly rotating ASCII worlds — a ringed
+planet at the start, a full sphere at the destination — drawn with a luminance glyph
+ramp so they have real depth.
 
 The motion is driven by a scroll "camera" (`useGalaxyJourney`). Each section is a zone
 with a target zoom and centre; while a section is on screen the camera *holds* that zone

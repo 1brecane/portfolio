@@ -4,7 +4,6 @@ import { createGlyphScene, createGlyphCamera } from "glyphcss";
 import sphereWarm from "@/assets/planets/sphere-warm.json";
 import sphereGreen from "@/assets/planets/sphere-green.json";
 import bandsPython from "@/assets/planets/bands-python.json";
-import crescentWarm from "@/assets/planets/crescent-warm.json";
 import ringWarm from "@/assets/planets/ring-warm.json";
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -16,13 +15,18 @@ import ringWarm from "@/assets/planets/ring-warm.json";
 // baked by scripts/bake-planets.mjs (run `npm run bake:planets` to regenerate
 // after touching the palette/texture math there).
 //
-// Three planets anchored to journey zones (see ZONES in useGalaxyJourney.js):
+// Two planets anchored to journey zones (see ZONES in useGalaxyJourney.js):
 //   • hero      (index 0) → ringed planet — the START you depart from
-//   • projects  (index 3) → crescent      — a world glimpsed mid-flight
 //   • contact   (index 5) → full sphere    — the destination you ARRIVE at
+// Retune 2026-07-28: the "projects" crescent world (index 3) was removed
+// entirely — three different in-grid mechanisms (diamond clip-path, circular
+// mask-image cutout, reserved cross-grid center track, see
+// decision-2026-07-28-0100-projects-decouple-planet.md) and then a decoupled
+// small corner accent were all rejected on live visual review. ProjectsSection
+// is now a plain card grid with no planet at all.
 // Exactly one world mesh is mounted in the scene at a time — cheap and
-// narrative, and it sidesteps needing three different simultaneous camera
-// framings (see positioning notes below).
+// narrative, and it sidesteps needing simultaneous camera framings for
+// multiple worlds (see positioning notes below).
 //
 // Driven by the journey's MONOTONIC `progress` (i = holding zone i, i+t = t
 // through the gap toward i+1). For a world at zone Z, d = progress−Z:
@@ -69,29 +73,25 @@ const WORLDS = [
     // grande"). Shrunk to 0.95, x nudged 0.77→0.8 to stay clear of the
     // headline at the narrower `lg` widths now that it's smaller. Full-bleed
     // single-column layout (HeroSection.vue) is otherwise unchanged.
-    pos: { x: 0.8, y: 0.42 },
-    scale: 0.95,
+    // Retune 2026-07-28: 0.8 still read as pushed into the far corner
+    // (user feedback — "il pianeta è troppo a destra", see
+    // decision-2026-07-28-0000-layout-symmetry-projects-font.md). The
+    // decision doc's own ballpark (~0.6-0.65) turned out geometrically
+    // impossible without overlapping the paragraph — measured (headless
+    // Chromium) the paragraph's real right edge at lg (1024px) sits at
+    // x≈652px; even a zero-radius planet centered at x=0.65 (665.6px)
+    // would already sit left of that edge. 0.76 is the practical minimum
+    // that keeps a clean ~20px gap at 1024 (verified 0.75 visibly
+    // overlapped "infrastrutture self-hosted."); scale trimmed 0.95→0.8
+    // alongside it to free a bit more room without shrinking so much it
+    // reads as a minor accent. Re-verified clear at 1280/1440/1920 too.
+    pos: { x: 0.76, y: 0.42 },
+    scale: 0.8,
     // #11 fix: the hero world's depart window is tightened (default DEPART=1.15
     // would still be scale>0 at progress=1, when the About zone's hold begins —
     // a faint bleed into the next section). 0.9 reaches scale 0 comfortably
     // before that hold starts.
     depart: 0.9,
-  },
-  {
-    id: "projects",
-    index: 3,
-    style: "crescent",
-    // Retune 2026-07-27 (radial cutout redesign): ProjectsSection.vue's
-    // corner-cut mechanism changed from a small clip-path diamond to a
-    // proper circular mask-cutout (~288px real diameter, --r:9rem in the
-    // card CSS) with bigger cards + gap around it — much more room than
-    // the old diamond ever had. Grown 0.55→0.85 to actually fill it
-    // (2×minDim×BASE_R×scale ≈ 260px on-screen diameter at 1440x900,
-    // comfortably inside the ~288px void with margin). x:0.5/y:0.56
-    // unchanged. TUNE AGAIN against a real screenshot if the void's --r
-    // changes.
-    pos: { x: 0.5, y: 0.56 },
-    scale: 0.85,
   },
   {
     id: "contact",
@@ -104,8 +104,15 @@ const WORLDS = [
     // x 0.78→0.85 to recenter in the actually-available gutter. Clearance
     // to the form is positive at every tested width (≈+34px at 1024,
     // ≈+208px at 1440, ≈+104px-to-viewport-edge at 1920). y:0.55 unchanged.
-    pos: { x: 0.85, y: 0.55 },
-    scale: 1.0,
+    // Retune 2026-07-28: 0.85 read as too far into the corner (same
+    // complaint as hero, see decision-2026-07-28-0000). Same geometric
+    // constraint as the hero retune above: the console-panel form's real
+    // right edge at 1024 measures ~684px, so 0.6-0.65 would overlap it
+    // outright. 0.78 + scale 1.0→0.8 keeps a clean ~13px gap at 1024
+    // (verified against real screenshots at 1024/1280/1920) while reading
+    // noticeably less pinned to the corner than 0.85 did.
+    pos: { x: 0.78, y: 0.55 },
+    scale: 0.8,
   },
 ];
 
@@ -113,7 +120,6 @@ const ASSETS = {
   "sphere-warm": sphereWarm,
   "sphere-green": sphereGreen,
   "bands-python": bandsPython,
-  "crescent-warm": crescentWarm,
 };
 
 const hostRef = ref(null);
@@ -190,11 +196,7 @@ const MAX_YAW_VEL = 2000; // deg/s — sane upper bound on release velocity; gua
 // velocitySamples time span (e.g. coalesced pointermove events with near-identical timestamps)
 // blowing up totalDyaw/span into an absurd one-frame snap once multiplied by dt in advanceInertia().
 
-// Crescent needs its own strong-directional/low-ambient light for the
-// terminator look (§3); every other style uses glyphcss's own scene defaults,
-// restored explicitly here so switching worlds is a plain setOptions() call.
 const DEFAULT_LIGHT = { directionalLight: { direction: [0.9, 0.25, 0.35], intensity: 1.15 }, ambientLight: { intensity: 0.32 } };
-const CRESCENT_LIGHT = { directionalLight: { direction: [0.8, 0.3, 0.5], intensity: 1.2 }, ambientLight: { intensity: 0.16 } };
 
 function smoothstep(t) {
   const c = t < 0 ? 0 : t > 1 ? 1 : t;
@@ -213,7 +215,6 @@ function clampOrbitPitch(rotX) {
 }
 
 function assetFor(style, palette) {
-  if (style === "crescent") return ASSETS["crescent-warm"];
   if (style === "bands") return ASSETS[`bands-${palette}`] ?? bandsPython;
   return ASSETS[`sphere-${palette}`] ?? sphereWarm;
 }
@@ -223,8 +224,8 @@ function updateMinDim() {
   if (camera) camera.zoom = minDim * BASE_R;
 }
 
-function applyLight(mode) {
-  scene.setOptions(mode === "crescent" ? CRESCENT_LIGHT : DEFAULT_LIGHT);
+function applyLight() {
+  scene.setOptions(DEFAULT_LIGHT);
 }
 
 // ── §A.6 interacting flag — dragging OR inertia decaying temporarily lifts
@@ -417,7 +418,7 @@ function mountHitRegion(world) {
 
 function mountWorld(world) {
   disposeActiveMeshes();
-  applyLight(world.style === "crescent" ? "crescent" : "default");
+  applyLight();
   const asset = assetFor(world.style, "warm");
   const polygons = asset.map((p) => ({ vertices: p.vertices, color: p.color }));
   // castShadow: the sphere's own shadow-map cast is what gives the ring a
@@ -435,7 +436,7 @@ function mountWorld(world) {
 
 function mountAmbient(ambient) {
   disposeActiveMeshes();
-  applyLight("default");
+  applyLight();
   const asset = assetFor(ambient.style, ambient.palette);
   const polygons = asset.map((p) => ({ vertices: p.vertices, color: p.color }));
   bodyHandle = scene.add(polygons);

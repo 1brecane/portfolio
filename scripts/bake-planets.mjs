@@ -129,19 +129,14 @@ function bakeRing(paletteName) {
   return polygons;
 }
 
-// sphere-warm/crescent-warm/ring-warm: the three journey worlds (full
-// brightness). sphere-green/bands-python: case-study "ambient" emblems only
-// (portfolio, cattenheimer) — baked dimmed toward --background (replaces the
-// old runtime AMBIENT_ALPHA≈0.5, no longer possible without color-alpha).
+// sphere-warm/ring-warm: the two journey worlds (full brightness).
+// sphere-green/bands-python: case-study "ambient" emblems only (portfolio,
+// cattenheimer) — baked dimmed toward --background (replaces the old
+// runtime AMBIENT_ALPHA≈0.5, no longer possible without color-alpha).
 const assets = {
   "sphere-warm": bakeSphere("warm", tex),
   "sphere-green": bakeSphere("green", tex, { dimFactor: 0.5 }),
   "bands-python": bakeSphere("python", bandTex, { dimFactor: 0.5 }),
-  // Was flat albedo (textureFn null) — read as a smooth, featureless gradient
-  // ("too linear") next to sphere-warm's rocky relief. Same tex() surface
-  // detail now; the crescent silhouette still comes from CRESCENT_LIGHT's
-  // strong directional + low ambient, not from this texture.
-  "crescent-warm": bakeSphere("warm", tex),
   "ring-warm": bakeRing("warm"),
 };
 
