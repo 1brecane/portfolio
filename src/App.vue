@@ -24,7 +24,7 @@ const ambient = computed(() =>
   <!-- Fixed ASCII starfield at z-0, behind the page (content is z-[2]). Driven by
        the scroll journey: intensity breathes, travel pushes/streaks between sections. -->
   <StarfieldBackground :zoom="zoom" :center="center" :intensity="intensity" :travel="travel" />
-  <!-- The ASCII "worlds" met along the journey (hero rings → projects crescent → contact sphere). -->
+  <!-- The ASCII "worlds" met along the journey (hero rings → contact sphere). -->
   <AsciiPlanets :progress="progress" :ambient="ambient" />
 
   <RouterView />

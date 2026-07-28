@@ -48,9 +48,21 @@ onMounted(() => {
 
 <template>
   <a href="#main-content" class="skip-link">{{ t.a11y.skipToContent }}</a>
-  <main class="relative z-[2] min-h-screen">
+  <!-- pointer-events-none at the page-content root: `min-h-screen` + normal
+       document flow means this <main>'s own box spans the full scroll height
+       at z-[2], one stacking level above the fixed z-1 AsciiPlanets layer —
+       with the CSS default (`auto`) it would swallow every click meant for a
+       planet hotspot underneath, everywhere on the page, not just where a
+       section is visually "empty". Re-enable `auto` on the real content
+       (nav, rail, each section) so normal interactivity is unaffected —
+       deliberately NOT on `#main-content` itself, whose own box spans the
+       same full height as `<main>` and would just reintroduce the same
+       block one level down. Only actually-reserved dead zones (e.g.
+       HeroSection's planet spacer) carve their own further
+       pointer-events-none locally, inside a section that's otherwise auto. -->
+  <main class="relative z-[2] min-h-screen pointer-events-none">
     <NavBar :active-index="activeIndex" />
-    <JourneyRail :active-index="activeIndex" />
+    <JourneyRail :active-index="activeIndex" class="pointer-events-auto" />
     <div id="main-content" tabindex="-1">
       <HeroSection />
 
@@ -65,7 +77,7 @@ onMounted(() => {
       </JourneyPresentation>
 
       <div class="journey-gap" aria-hidden="true" />
-      <JourneyPresentation zone="projects" :steps="5">
+      <JourneyPresentation zone="projects" :steps="5" bleed-gutter>
         <ProjectsSection />
       </JourneyPresentation>
 
@@ -75,12 +87,12 @@ onMounted(() => {
       </JourneyPresentation>
 
       <div class="journey-gap" aria-hidden="true" />
-      <JourneyPresentation zone="contact" :steps="1">
+      <JourneyPresentation zone="contact" :steps="1" bleed-gutter>
         <ContactSection />
       </JourneyPresentation>
 
-      <FooterSection />
+      <FooterSection class="pointer-events-auto" />
     </div>
-    <ScrollToTop />
+    <ScrollToTop class="pointer-events-auto" />
   </main>
 </template>

@@ -36,9 +36,9 @@ spazio `x, y, z` e si proiettano verso l'esterno dal centro dello schermo, così
 davvero *dentro* invece di passarci accanto come davanti a un campo piatto. Glifi come
 `. : · * + = % @` mantengono l'identità ASCII, e ogni 15–30 secondi una rara cometa
 attraversa il cielo, come ricompensa per chi la sta osservando. Il secondo layer,
-`AsciiPlanets`, disegna tre mondi ASCII che ruotano lentamente — un pianeta con gli anelli
-alla partenza, una falce a metà volo, una sfera piena all'arrivo — resi con una rampa di
-glifi per luminanza, così da avere una profondità reale.
+`AsciiPlanets`, disegna due mondi ASCII che ruotano lentamente — un pianeta con gli anelli
+alla partenza, una sfera piena all'arrivo — resi con una rampa di glifi per luminanza,
+così da avere una profondità reale.
 
 Il movimento è pilotato da una "camera" legata allo scroll (`useGalaxyJourney`). Ogni
 sezione è una zona con uno zoom e un centro di destinazione: mentre una sezione è a

@@ -10,6 +10,14 @@ import { getZoneFlow } from "@/composables/useGalaxyJourney";
 const props = defineProps({
   zone: { type: String, required: true },
   steps: { type: Number, default: 1 },
+  // Opt-in only (default false = today's untouched behavior for every other
+  // zone): `.present-sticky` sits directly above the slotted section in the
+  // DOM and, at the CSS pointer-events default, its own box independently
+  // shadows the fixed z-1 AsciiPlanets layer for that whole pinned slide —
+  // even once the section itself (e.g. SectionLayout's `bleed-gutter`) opts
+  // out. Zones with a planet drawn beside/between their content need this
+  // ancestor to opt out too, or the section-level fix alone is a no-op.
+  bleedGutter: { type: Boolean, default: false },
 });
 
 const trackRef = useTemplateRef("trackRef");
@@ -67,11 +75,11 @@ onUnmounted(() => {
 <template>
   <div
     ref="trackRef"
-    class="present-track"
+    :class="['present-track', bleedGutter ? 'pointer-events-none' : 'pointer-events-auto']"
     :data-journey="zone"
     :style="{ '--present': progress, '--steps': steps, '--pan': `${pan}px`, ...flowStyle }"
   >
-    <div ref="stickyRef" class="present-sticky">
+    <div ref="stickyRef" :class="['present-sticky', { 'pointer-events-auto': !bleedGutter }]">
       <slot />
     </div>
     <!-- gentle proximity scroll-snap point at the fully-revealed reading position -->

@@ -81,9 +81,17 @@ const sendEmail = async () => {
 </script>
 
 <template>
-  <SectionLayout id="contact" :title="t.contact.title" :subtitle="t.contact.subtitle">
-    <div class="present-step max-w-2xl mx-auto" :style="{ '--step': 0 }">
-      <div class="glass-panel rounded-xl p-6 md:p-8 card-glow">
+  <SectionLayout id="contact" :title="t.contact.title" :subtitle="t.contact.subtitle" bleed-gutter>
+    <!-- §3/C1 (planets3d-layout-rework.md): the form stays structurally
+         unchanged (max-w-2xl inside SectionLayout's max-w-6xl), but at lg+ its
+         `mx-auto` centering is replaced with a left pin (ml-0 mr-auto) so ALL
+         the leftover width becomes a single deterministic gutter on the
+         right, instead of relying on whichever half of a symmetric mx-auto
+         happens to be free — that's where the `contact` world (sphere,
+         AsciiPlanets.vue WORLDS) is anchored. Below lg there's no dedicated
+         gutter to protect, so it stays centered as before. -->
+    <div class="present-step max-w-2xl mx-auto lg:ml-0 lg:mr-auto pointer-events-auto" :style="{ '--step': 0 }">
+      <div class="console-panel rounded-xl p-6 md:p-8 card-glow">
         <div
           v-if="status === 'success'"
           role="status"
