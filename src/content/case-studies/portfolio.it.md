@@ -60,10 +60,14 @@ manuale di "vista semplice" permette anche a chi torna di rinunciarci.
 
 Per le due lingue ho scritto un **piccolo layer di i18n custom**: due semplici oggetti di
 messaggi e un `locale` reattivo condiviso, persistito in `localStorage`, senza dipendenze
-esterne. Il form di contatto invia i messaggi tramite **EmailJS**, importato solo al momento dell'invio,
-ed è protetto da **hCaptcha**. Il download del CV è filtrato da un **Cloudflare Worker** che
-verifica il token hCaptcha lato server prima di lasciar passare `/cv.pdf`, con Nginx che fa
-rate-limiting sullo stesso path come seconda linea di difesa.
+esterne. Il form di contatto e il download del CV passano entrambi da **homelab-api**, un
+piccolo gateway in Rust in esecuzione sul mio server di casa, con **hCaptcha** verificato
+lato server ad ogni richiesta. Una sezione "Home Lab" più avanti nella pagina legge la
+telemetria live dello stesso server — CPU/RAM dei nodi Proxmox e stato dei monitor Uptime
+Kuma — tramite un endpoint `/api/dashboard`. Il token Bearer richiesto da quell'endpoint non
+arriva mai al browser: Nginx lo inietta lato server da una variabile d'ambiente a runtime,
+quindi il frontend chiama semplicemente un path same-origin, senza alcun segreto nel
+bundle.
 
 Il deploy è una **build Docker multi-stage** (build con Node → runtime Nginx), portata in
 produzione da una pipeline **GitHub Actions** su un **runner self-hosted** a ogni push su

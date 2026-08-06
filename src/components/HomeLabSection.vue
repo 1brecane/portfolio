@@ -1,35 +1,291 @@
 <script setup>
-import { Construction } from "lucide-vue-next";
+import { computed, onMounted, onUnmounted, ref } from "vue";
+import {
+  RefreshCw,
+  Loader2,
+  AlertCircle,
+  WifiOff,
+  ServerCrash,
+  Clock,
+  CircleCheck,
+  CircleX,
+  Server,
+  Cpu,
+} from "lucide-vue-next";
 import SectionLayout from "@/components/ui/SectionLayout.vue";
+import AppButton from "@/components/ui/AppButton.vue";
 import AppBadge from "@/components/ui/AppBadge.vue";
 import IconBox from "@/components/ui/IconBox.vue";
 import { useI18n } from "@/i18n";
+import { useHomelabDashboard } from "@/composables/useHomelabDashboard";
 
 const { t } = useI18n();
+const { status, data, error, degraded, lastUpdated, refresh } = useHomelabDashboard();
+
+// Reduced-data / metered: don't auto-fetch, show an opt-in "Load metrics"
+// button instead (mirrors the starfield's reduced-data ethos). Mobile still
+// auto-fetches — this is content, not animation.
+const reducedData = ref(false);
+onMounted(() => {
+  reducedData.value = window.matchMedia("(prefers-reduced-data: reduce)").matches;
+  if (!reducedData.value) refresh();
+});
+
+// Rate-limit countdown: disable Retry until `retryAfter` elapses.
+const retryCountdown = ref(0);
+let countdownTimer = null;
+
+function clearCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+}
+
+function startCountdown(seconds) {
+  clearCountdown();
+  retryCountdown.value = seconds;
+  countdownTimer = setInterval(() => {
+    retryCountdown.value -= 1;
+    if (retryCountdown.value <= 0) clearCountdown();
+  }, 1000);
+}
+
+async function handleRefresh() {
+  clearCountdown();
+  await refresh();
+  if (error.value?.kind === "rate-limit") startCountdown(error.value.retryAfter);
+}
+
+// Live "updated Ns/Nm ago" caption.
+const now = ref(Date.now());
+let tickTimer = null;
+onMounted(() => {
+  tickTimer = setInterval(() => {
+    now.value = Date.now();
+  }, 1000);
+});
+onUnmounted(() => {
+  clearCountdown();
+  clearInterval(tickTimer);
+});
+
+const lastUpdatedLabel = computed(() => {
+  if (!lastUpdated.value) return "";
+  const secs = Math.max(0, Math.floor((now.value - lastUpdated.value.getTime()) / 1000));
+  const rel = secs < 60 ? `${secs}s` : `${Math.floor(secs / 60)}m`;
+  return t.value.homelab.dashboard.lastUpdated.replace("{n}", rel);
+});
+
+const errorMessage = computed(() => {
+  const d = t.value.homelab.dashboard;
+  switch (error.value?.kind) {
+    case "rate-limit":
+      return d.errorRateLimit.replace("{n}", String(Math.max(0, retryCountdown.value)));
+    case "upstream":
+      return d.errorUpstream;
+    case "network":
+      return d.errorNetwork;
+    default:
+      return d.errorUpstream;
+  }
+});
+
+const errorIcon = computed(() => {
+  switch (error.value?.kind) {
+    case "rate-limit":
+      return Clock;
+    case "network":
+      return WifiOff;
+    default:
+      return ServerCrash;
+  }
+});
+
+const retryDisabled = computed(
+  () => status.value === "loading" || (error.value?.kind === "rate-limit" && retryCountdown.value > 0)
+);
+
+function formatPercent(fraction) {
+  return `${Math.round(fraction * 100)}%`;
+}
+
+// uptime_24h arrives already scaled 0-100 (guide example: 99.98), unlike
+// cpu_usage which is a 0-1 fraction — do not reuse formatPercent() here.
+function formatUptime(percent) {
+  return `${Number(percent).toFixed(2)}%`;
+}
+
+function formatGb(mb) {
+  return `${(mb / 1024).toFixed(1)} GB`;
+}
+
+function hasActiveIncident(monitor) {
+  return (monitor.incidents ?? []).some((incident) => incident.resolved_at === null);
+}
 </script>
 
 <template>
-  <SectionLayout
-    id="homelab"
-    :title="t.homelab.title"
-    :subtitle="t.homelab.subtitle"
-    grid-bg
-  >
+  <SectionLayout id="homelab" :title="t.homelab.title" :subtitle="t.homelab.subtitle" grid-bg>
     <template #default>
-      <div class="present-step max-w-2xl mx-auto" :style="{ '--step': 0 }">
-        <div class="glass-panel rounded-lg p-10 card-glow">
-          <div class="flex flex-col items-center gap-5 text-center">
-            <IconBox size="lg">
-              <Construction class="h-8 w-8 text-primary" />
-            </IconBox>
-            <AppBadge variant="outline" class="font-mono border-primary/30 text-primary">
-              {{ t.homelab.comingSoon.badge }}
-            </AppBadge>
-            <div class="space-y-2 max-w-lg">
-              <h3 class="font-semibold text-xl">{{ t.homelab.comingSoon.title }}</h3>
-              <p class="font-mono text-sm text-muted-foreground leading-relaxed">
-                {{ t.homelab.comingSoon.message }}
+      <!-- Step 0: refresh control + last-updated caption -->
+      <div class="present-step max-w-4xl mx-auto mb-8" :style="{ '--step': 0 }">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <span class="font-mono text-xs text-muted-foreground">
+            {{ lastUpdatedLabel }}
+          </span>
+          <AppButton
+            variant="outline"
+            size="sm"
+            class="font-mono"
+            :disabled="retryDisabled"
+            @click="handleRefresh"
+          >
+            <Loader2 v-if="status === 'loading'" class="w-4 h-4 mr-2 animate-spin" />
+            <RefreshCw v-else class="w-4 h-4 mr-2" />
+            {{ t.homelab.dashboard.refresh }}
+          </AppButton>
+        </div>
+      </div>
+
+      <!-- Step 1: primary status panel (idle/loading/error) or Uptime monitors -->
+      <div class="present-step max-w-4xl mx-auto" :style="{ '--step': 1 }">
+        <div
+          v-if="status !== 'success'"
+          class="glass-panel rounded-lg p-10 card-glow text-center"
+          :role="status === 'error' ? 'alert' : 'status'"
+          :aria-live="status === 'error' ? 'assertive' : 'polite'"
+          :aria-busy="status === 'loading'"
+        >
+          <div class="flex flex-col items-center gap-4">
+            <template v-if="status === 'idle'">
+              <IconBox size="lg">
+                <Server class="h-8 w-8 text-primary" />
+              </IconBox>
+              <p class="font-mono text-sm text-muted-foreground max-w-sm">
+                {{ t.homelab.dashboard.loading }}
               </p>
+              <AppButton class="font-mono" @click="handleRefresh">
+                {{ t.homelab.dashboard.loadMetrics }}
+              </AppButton>
+            </template>
+
+            <template v-else-if="status === 'loading'">
+              <IconBox size="lg">
+                <Loader2 class="h-8 w-8 text-primary animate-spin" />
+              </IconBox>
+              <p class="font-mono text-sm text-muted-foreground">
+                {{ t.homelab.dashboard.loading }}
+              </p>
+            </template>
+
+            <template v-else>
+              <IconBox size="lg" accent="amber">
+                <component :is="errorIcon" class="h-8 w-8 text-destructive" />
+              </IconBox>
+              <p class="font-mono text-sm text-destructive max-w-sm flex items-center gap-2 justify-center">
+                <AlertCircle class="h-4 w-4 shrink-0" />
+                {{ errorMessage }}
+              </p>
+              <AppButton variant="outline" class="font-mono" :disabled="retryDisabled" @click="handleRefresh">
+                {{ t.homelab.dashboard.retry }}
+              </AppButton>
+            </template>
+          </div>
+        </div>
+
+        <div v-else class="glass-panel rounded-lg p-6 md:p-8 card-glow" role="status" aria-live="polite">
+          <h3 class="font-semibold text-lg mb-4">{{ t.homelab.dashboard.monitorsHeading }}</h3>
+
+          <p v-if="degraded && data.uptime.monitors.length === 0" class="font-mono text-sm text-muted-foreground">
+            {{ t.homelab.dashboard.degradedMonitors }}
+          </p>
+          <p v-else-if="data.uptime.monitors.length === 0" class="font-mono text-sm text-muted-foreground">
+            {{ t.homelab.dashboard.empty }}
+          </p>
+          <ul v-else class="space-y-3">
+            <li
+              v-for="monitor in data.uptime.monitors"
+              :key="monitor.name"
+              class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 rounded-md border border-border/50 p-3"
+            >
+              <div class="flex items-center gap-2 min-w-0 sm:w-40 shrink-0">
+                <component
+                  :is="monitor.status === 'up' ? CircleCheck : CircleX"
+                  :class="['h-4 w-4 shrink-0', monitor.status === 'up' ? 'text-chart-2' : 'text-destructive']"
+                />
+                <span class="font-medium text-sm truncate">{{ monitor.name }}</span>
+              </div>
+              <AppBadge
+                variant="outline"
+                :class="[
+                  'font-mono text-[0.65rem] shrink-0',
+                  monitor.status === 'up'
+                    ? 'border-chart-2/40 text-chart-2'
+                    : 'border-destructive/40 text-destructive',
+                ]"
+              >
+                {{ monitor.status === "up" ? t.homelab.dashboard.statusUp : t.homelab.dashboard.statusDown }}
+              </AppBadge>
+              <div class="flex items-center gap-4 font-mono text-xs text-muted-foreground ml-auto">
+                <span>{{ t.homelab.dashboard.uptime24h }}: {{ formatUptime(monitor.uptime_24h) }}</span>
+                <span>{{ t.homelab.dashboard.latency }}: {{ monitor.latency_ms }} ms</span>
+                <span v-if="hasActiveIncident(monitor)" class="text-destructive">
+                  {{ t.homelab.dashboard.incidentActive }}
+                </span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Step 2: Proxmox nodes (only meaningful once data has loaded) -->
+      <div class="present-step max-w-4xl mx-auto mt-6" :style="{ '--step': 2 }">
+        <div v-if="status === 'success'" class="glass-panel rounded-lg p-6 md:p-8 card-glow">
+          <h3 class="font-semibold text-lg mb-4">{{ t.homelab.dashboard.nodesHeading }}</h3>
+
+          <p v-if="degraded && data.proxmox.nodes.length === 0" class="font-mono text-sm text-muted-foreground">
+            {{ t.homelab.dashboard.degradedNodes }}
+          </p>
+          <p v-else-if="data.proxmox.nodes.length === 0" class="font-mono text-sm text-muted-foreground">
+            {{ t.homelab.dashboard.empty }}
+          </p>
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              v-for="node in data.proxmox.nodes"
+              :key="node.name"
+              class="rounded-md border border-border/50 p-4 space-y-3"
+            >
+              <div class="flex items-center gap-2">
+                <Cpu class="h-4 w-4 text-primary shrink-0" />
+                <span class="font-medium text-sm truncate">{{ node.name }}</span>
+              </div>
+
+              <div class="space-y-1">
+                <div class="flex items-center justify-between font-mono text-xs text-muted-foreground">
+                  <span>{{ t.homelab.dashboard.cpu }}</span>
+                  <span>{{ formatPercent(node.cpu_usage) }}</span>
+                </div>
+                <div class="h-1.5 rounded-full bg-border/40 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-primary"
+                    :style="{ width: formatPercent(node.cpu_usage) }"
+                  />
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <div class="flex items-center justify-between font-mono text-xs text-muted-foreground">
+                  <span>{{ t.homelab.dashboard.ram }}</span>
+                  <span>{{ formatGb(node.ram_used_mb) }} / {{ formatGb(node.ram_total_mb) }}</span>
+                </div>
+                <div class="h-1.5 rounded-full bg-border/40 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-chart-2"
+                    :style="{ width: formatPercent(node.ram_used_mb / node.ram_total_mb) }"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

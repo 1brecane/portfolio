@@ -56,10 +56,13 @@ manual "simple view" toggle lets repeat visitors opt out too.
 
 For the two languages I wrote a **tiny custom i18n layer**: two plain message objects and
 a shared reactive `locale` ref persisted to `localStorage` — no external dependency. The
-contact form sends through **EmailJS**, imported only at send time, and is protected by
-**hCaptcha**. The CV download is gated by a **Cloudflare Worker** that verifies the hCaptcha
-token server-side before letting `/cv.pdf` through, with Nginx rate-limiting the same path
-as a second line of defence.
+contact form and the CV download both go through **homelab-api**, a small Rust gateway
+running on my home server, with **hCaptcha** verified server-side on every request. A
+"Home Lab" section further down the page reads that same server's live telemetry — Proxmox
+node CPU/RAM and Uptime Kuma monitor status — through a `/api/dashboard` endpoint. The
+Bearer token that endpoint needs never reaches the browser: Nginx injects it server-side
+from a runtime environment variable, so the frontend just calls a same-origin path with no
+secret anywhere in the bundle.
 
 Deployment is a **multi-stage Docker build** (Node build stage → Nginx runtime) shipped by
 a **GitHub Actions** workflow to a **self-hosted runner** on every push to `main`. Nginx

@@ -141,11 +141,27 @@ export default {
     title: "Infrastruttura Self-Hosted",
     subtitle:
       "Il mio server casalingo basato su Proxmox per sviluppo, testing e servizi in produzione.",
-    comingSoon: {
-      badge: "In lavorazione",
-      title: "Dashboard in arrivo",
-      message:
-        "Ci sto lavorando per renderla completamente dinamica: metriche in tempo reale, stato dei servizi e uptime verranno gestiti tramite API da un gateway middleware custom scritto in Rust.",
+    dashboard: {
+      refresh: "Aggiorna",
+      lastUpdated: "Aggiornato {n}",
+      loading: "Caricamento metriche…",
+      loadMetrics: "Carica metriche",
+      monitorsHeading: "Monitor uptime",
+      nodesHeading: "Nodi Proxmox",
+      statusUp: "Attivo",
+      statusDown: "Non raggiungibile",
+      uptime24h: "Uptime 24h",
+      latency: "Latenza",
+      incidentActive: "Incidente in corso",
+      cpu: "CPU",
+      ram: "RAM",
+      degradedMonitors: "Dati uptime temporaneamente non disponibili",
+      degradedNodes: "Dati nodi temporaneamente non disponibili",
+      errorUpstream: "Metriche temporaneamente non disponibili.",
+      errorRateLimit: "Troppe richieste — riprova tra {n}s",
+      errorNetwork: "Impossibile raggiungere il servizio metriche. Controlla la connessione e riprova.",
+      retry: "Riprova",
+      empty: "Nessuna metrica disponibile al momento.",
     },
   },
   about: {

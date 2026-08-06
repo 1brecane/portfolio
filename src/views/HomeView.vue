@@ -82,7 +82,7 @@ onMounted(() => {
       </JourneyPresentation>
 
       <div class="journey-gap" aria-hidden="true" />
-      <JourneyPresentation zone="homelab" :steps="1">
+      <JourneyPresentation zone="homelab" :steps="3">
         <HomeLabSection />
       </JourneyPresentation>
 
