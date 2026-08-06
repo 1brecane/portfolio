@@ -29,19 +29,32 @@ const projects = computed(() =>
     :title="t.projects.title"
     :subtitle="t.projects.subtitle"
     grid-bg
+    bleed-gutter
   >
     <template #default>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- §2 (2026-07-28): no planet in this section at all — after three
+           rejected in-grid mechanisms (diamond clip-path, circular
+           mask-image cutout, reserved cross-grid center track) and then a
+           decoupled corner accent, the `projects` world was removed
+           entirely from AsciiPlanets.vue WORLDS (see
+           decision-2026-07-28-0100-projects-decouple-planet.md). Plain
+           compact 2×2 grid, no reserved track, card content unchanged.
+           `pointer-events-auto` per card is still needed: SectionLayout's
+           `bleed-gutter` prop sets the whole `<section>` to
+           `pointer-events-none` so its box doesn't shadow the fixed
+           AsciiPlanets hit region around the cards — inherited `none` then
+           needs each real interactive element to opt back in explicitly. -->
+      <div class="projects-grid grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         <article
           v-for="(project, i) in projects"
           :key="project.id"
-          class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow"
+          class="present-step group relative glass-panel rounded-lg overflow-hidden card-glow pointer-events-auto"
           :style="{ '--step': i, '--card-accent': project.accent }"
         >
           <!-- coloured accent bar -->
           <div :class="`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${project.accentColor}`" />
 
-          <div class="p-6">
+          <div class="p-8">
             <div class="flex items-start justify-between mb-4">
               <div class="flex items-center gap-3">
                 <!-- tech logo -->
@@ -75,7 +88,7 @@ const projects = computed(() =>
               </AppBadge>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="flex flex-wrap items-center gap-4 md:gap-3">
               <RouterLink
                 v-if="project.caseStudy"
                 v-slot="{ href, navigate }"
@@ -86,7 +99,7 @@ const projects = computed(() =>
                   as="a"
                   variant="accent"
                   size="sm"
-                  class="font-mono text-xs gap-2"
+                  class="font-mono text-xs gap-2 max-md:min-h-11"
                   :href="href"
                   @click="navigate"
                 >
@@ -98,7 +111,7 @@ const projects = computed(() =>
                 as="a"
                 variant="outline"
                 size="sm"
-                class="font-mono text-xs gap-2 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
+                class="font-mono text-xs gap-2 max-md:min-h-11 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
                 :href="project.github"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -111,7 +124,7 @@ const projects = computed(() =>
                 as="a"
                 variant="outline"
                 size="sm"
-                class="font-mono text-xs gap-2 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
+                class="font-mono text-xs gap-2 max-md:min-h-11 border-border hover:border-[var(--card-accent)] hover:text-[var(--card-accent)]"
                 :href="project.githubFe"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -124,7 +137,7 @@ const projects = computed(() =>
                 as="a"
                 variant="accent"
                 size="sm"
-                class="font-mono text-xs gap-2"
+                class="font-mono text-xs gap-2 max-md:min-h-11"
                 :href="project.demo"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -137,7 +150,7 @@ const projects = computed(() =>
         </article>
       </div>
 
-      <div class="present-step text-center mt-12" :style="{ '--step': 4 }">
+      <div class="present-step text-center mt-12 pointer-events-auto" :style="{ '--step': 4 }">
         <AppButton
           as="a"
           variant="outline"

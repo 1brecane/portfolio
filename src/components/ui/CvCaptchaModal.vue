@@ -5,6 +5,7 @@ import { X } from "lucide-vue-next";
 import AppButton from "@/components/ui/AppButton.vue";
 import { useI18n } from "@/i18n";
 import { HCAPTCHA_SITE_KEY } from "@/constants/captcha.js";
+import { API_BASE_URL } from "@/constants/api.js";
 
 const { t } = useI18n();
 
@@ -39,9 +40,9 @@ async function download() {
   error.value = false;
 
   try {
-    const response = await fetch("/cv.pdf", {
-      headers: { "X-Captcha-Token": captchaToken.value },
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/cv?captcha_token=${encodeURIComponent(captchaToken.value)}`,
+    );
 
     if (!response.ok) {
       error.value = true;

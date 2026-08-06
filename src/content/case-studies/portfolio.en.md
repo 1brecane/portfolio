@@ -34,9 +34,9 @@ The background is **two fixed Canvas 2D layers** sitting behind the page. The fi
 and project outward from the screen centre, so you genuinely fly *through* the field
 rather than past a flat one. Glyphs like `. : · * + = % @` keep the ASCII identity, and
 a rare comet crosses the sky every 15–30 seconds as a small reward for anyone watching.
-The second layer, `AsciiPlanets`, renders three slowly rotating ASCII worlds — a ringed
-planet at the start, a crescent glimpsed mid-flight, a full sphere at the destination —
-drawn with a luminance glyph ramp so they have real depth.
+The second layer, `AsciiPlanets`, renders two slowly rotating ASCII worlds — a ringed
+planet at the start, a full sphere at the destination — drawn with a luminance glyph
+ramp so they have real depth.
 
 The motion is driven by a scroll "camera" (`useGalaxyJourney`). Each section is a zone
 with a target zoom and centre; while a section is on screen the camera *holds* that zone
@@ -56,10 +56,13 @@ manual "simple view" toggle lets repeat visitors opt out too.
 
 For the two languages I wrote a **tiny custom i18n layer**: two plain message objects and
 a shared reactive `locale` ref persisted to `localStorage` — no external dependency. The
-contact form sends through **EmailJS**, imported only at send time, and is protected by
-**hCaptcha**. The CV download is gated by a **Cloudflare Worker** that verifies the hCaptcha
-token server-side before letting `/cv.pdf` through, with Nginx rate-limiting the same path
-as a second line of defence.
+contact form and the CV download both go through **homelab-api**, a small Rust gateway
+running on my home server, with **hCaptcha** verified server-side on every request. A
+"Home Lab" section further down the page reads that same server's live telemetry — Proxmox
+node CPU/RAM and Uptime Kuma monitor status — through a `/api/dashboard` endpoint. The
+Bearer token that endpoint needs never reaches the browser: Nginx injects it server-side
+from a runtime environment variable, so the frontend just calls a same-origin path with no
+secret anywhere in the bundle.
 
 Deployment is a **multi-stage Docker build** (Node build stage → Nginx runtime) shipped by
 a **GitHub Actions** workflow to a **self-hosted runner** on every push to `main`. Nginx

@@ -1,5 +1,6 @@
 import { ref } from "vue";
-import easterEggs from "@/data/terminalEasterEggs.json";
+import { terminalEasterEggs as easterEggs } from "@/data/terminalEasterEggs";
+import { NEOFETCH_ART, STARWARS_ASCII } from "@/data/terminalAsciiArt";
 
 // ── shell knobs (TUNABLE) ───────────────────────────────────────────────────────
 const MAX_ENTRIES = 50; // scrollback cap — oldest entries dropped
@@ -11,16 +12,6 @@ const plain = (text) => ({ text, kind: "plain" });
 const accent = (text) => ({ text, kind: "accent" });
 const error = (text) => ({ text, kind: "error" });
 const dim = (text) => ({ text, kind: "dim" });
-
-// neofetch art column — fixed-width rows; the info column is appended per row.
-const NEOFETCH_ART = [
-  "     ▄▄▄▄▄▄       ",
-  "   ▄█▀▀▀▀▀▀█▄     ",
-  "  ██  ▀  ▀  ██    ",
-  "  ██   ▄▄   ██    ",
-  "   ▀█▄▄▄▄▄▄█▀     ",
-  "                  ",
-];
 
 /**
  * useTerminalShell({ t, onClear })
@@ -77,7 +68,7 @@ export function useTerminalShell({ t, onClear }) {
     if (!file) return [plain(shellT().catUsage)];
     if (file === "about.txt") return aboutLines();
     if (file === "projects.txt") return projectsLines();
-    if (file === "starwars.txt") return easterEggs["cat ./starwars.txt"].map(accent);
+    if (file === "starwars.txt") return STARWARS_ASCII.map(accent);
     return [error(`cat: ${file}: No such file or directory`)];
   }
 

@@ -6,6 +6,7 @@ import SectionLayout from "@/components/ui/SectionLayout.vue";
 import { Send, CheckCircle, AlertCircle, Loader2 } from "lucide-vue-next";
 import { useI18n } from "@/i18n";
 import { HCAPTCHA_SITE_KEY } from "@/constants/captcha.js";
+import { API_BASE_URL } from "@/constants/api.js";
 
 const { t } = useI18n();
 
@@ -46,17 +47,20 @@ const sendEmail = async () => {
   status.value = "loading";
 
   try {
-    const { default: emailjs } = await import("@emailjs/browser");
-    await emailjs.send(
-      import.meta.env.VITE_EMAILJS_SERVICE_ID,
-      import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-      {
-        from_name: form.value.name,
-        reply_to: form.value.email,
+    const response = await fetch(`${API_BASE_URL}/api/contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.value.name,
+        email: form.value.email,
         message: form.value.message,
-      },
-      import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
-    );
+        captcha_token: captchaToken.value,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`contact request failed with status ${response.status}`);
+    }
 
     status.value = "success";
     form.value = { name: "", email: "", message: "" };
@@ -77,9 +81,17 @@ const sendEmail = async () => {
 </script>
 
 <template>
-  <SectionLayout id="contact" :title="t.contact.title" :subtitle="t.contact.subtitle">
-    <div class="present-step max-w-2xl mx-auto" :style="{ '--step': 0 }">
-      <div class="glass-panel rounded-xl p-6 md:p-8 card-glow">
+  <SectionLayout id="contact" :title="t.contact.title" :subtitle="t.contact.subtitle" bleed-gutter>
+    <!-- §3/C1 (planets3d-layout-rework.md): the form stays structurally
+         unchanged (max-w-2xl inside SectionLayout's max-w-6xl), but at lg+ its
+         `mx-auto` centering is replaced with a left pin (ml-0 mr-auto) so ALL
+         the leftover width becomes a single deterministic gutter on the
+         right, instead of relying on whichever half of a symmetric mx-auto
+         happens to be free — that's where the `contact` world (sphere,
+         AsciiPlanets.vue WORLDS) is anchored. Below lg there's no dedicated
+         gutter to protect, so it stays centered as before. -->
+    <div class="present-step max-w-2xl mx-auto lg:ml-0 lg:mr-auto pointer-events-auto" :style="{ '--step': 0 }">
+      <div class="console-panel rounded-xl p-6 md:p-8 card-glow">
         <div
           v-if="status === 'success'"
           role="status"

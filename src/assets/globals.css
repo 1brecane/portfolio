@@ -41,11 +41,12 @@
   --neon: oklch(0.65 0.25 25);
   --neon-glow: oklch(0.65 0.25 25 / 0.4);
   --grid: oklch(0.2 0.005 250);
+  --console-panel-bg: oklch(0.16 0.006 250 / 0.92);
 }
 
 @theme inline {
   --font-sans: "Geist Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-mono: "Fira Code", ui-monospace, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -209,6 +210,14 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid oklch(0.5 0.01 250 / 0.32);
+}
+
+/* Solid (non-blurred) sibling of .glass-panel for the instrument-console read
+   beside a porthole (Contact form). Same border as .glass-panel; near-opaque bg
+   so it stays legible without backdrop-filter. */
+.console-panel {
+  background: var(--console-panel-bg);
+  border: 1px solid oklch(0.5 0.01 250 / 0.32); /* identical to .glass-panel's border */
 }
 
 /* Terminal cursor blink */
@@ -439,7 +448,15 @@
 /* Reading stage: a soft dark scrim carves a legible pocket in the centre of each
    pinned section so titles/text stay readable, while the galaxy stays bright and
    alive at the edges — don't dim the whole galaxy (that kills the flight). Tune
-   readability vs galaxy visibility with the gradient's alphas / radii below. */
+   readability vs galaxy visibility with the gradient's alphas / radii below.
+   Alphas halved 2026-07-27 (was 0.55/0.3): this scrim predates the journey
+   planets (AsciiPlanets.vue) and was tuned only against the starfield — at
+   the old strength it visibly washed out the Projects/Contact planets, which
+   sit in or near this gradient's own centre (direct user feedback: "attorno
+   alle sezioni c'è una sfuocatura dello sfondo -> tutto quello che sta
+   dietro è leggermente oscurato"). Still dims enough for text contrast;
+   re-check section-header legibility over a bright starfield if tuning
+   further. */
 .present-sticky::before {
   content: "";
   position: absolute;
@@ -448,8 +465,8 @@
   pointer-events: none;
   background: radial-gradient(
     ellipse 95% 70% at 50% 45%,
-    oklch(0.12 0.005 250 / 0.55) 0%,
-    oklch(0.13 0.005 250 / 0.3) 50%,
+    oklch(0.12 0.005 250 / 0.28) 0%,
+    oklch(0.13 0.005 250 / 0.15) 50%,
     oklch(0.14 0.005 250 / 0) 82%
   );
 }

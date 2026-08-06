@@ -10,3 +10,9 @@ docs/
 tsconfig.tsbuildinfo
 # Visual brainstorming sessions
 .superpowers/
+.claude/
+.meridian/
+.agents/
+
+# Claude Code skill tooling
+skills-lock.json

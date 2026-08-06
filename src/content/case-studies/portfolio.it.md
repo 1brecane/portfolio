@@ -36,9 +36,9 @@ spazio `x, y, z` e si proiettano verso l'esterno dal centro dello schermo, così
 davvero *dentro* invece di passarci accanto come davanti a un campo piatto. Glifi come
 `. : · * + = % @` mantengono l'identità ASCII, e ogni 15–30 secondi una rara cometa
 attraversa il cielo, come ricompensa per chi la sta osservando. Il secondo layer,
-`AsciiPlanets`, disegna tre mondi ASCII che ruotano lentamente — un pianeta con gli anelli
-alla partenza, una falce a metà volo, una sfera piena all'arrivo — resi con una rampa di
-glifi per luminanza, così da avere una profondità reale.
+`AsciiPlanets`, disegna due mondi ASCII che ruotano lentamente — un pianeta con gli anelli
+alla partenza, una sfera piena all'arrivo — resi con una rampa di glifi per luminanza,
+così da avere una profondità reale.
 
 Il movimento è pilotato da una "camera" legata allo scroll (`useGalaxyJourney`). Ogni
 sezione è una zona con uno zoom e un centro di destinazione: mentre una sezione è a
@@ -60,10 +60,14 @@ manuale di "vista semplice" permette anche a chi torna di rinunciarci.
 
 Per le due lingue ho scritto un **piccolo layer di i18n custom**: due semplici oggetti di
 messaggi e un `locale` reattivo condiviso, persistito in `localStorage`, senza dipendenze
-esterne. Il form di contatto invia i messaggi tramite **EmailJS**, importato solo al momento dell'invio,
-ed è protetto da **hCaptcha**. Il download del CV è filtrato da un **Cloudflare Worker** che
-verifica il token hCaptcha lato server prima di lasciar passare `/cv.pdf`, con Nginx che fa
-rate-limiting sullo stesso path come seconda linea di difesa.
+esterne. Il form di contatto e il download del CV passano entrambi da **homelab-api**, un
+piccolo gateway in Rust in esecuzione sul mio server di casa, con **hCaptcha** verificato
+lato server ad ogni richiesta. Una sezione "Home Lab" più avanti nella pagina legge la
+telemetria live dello stesso server — CPU/RAM dei nodi Proxmox e stato dei monitor Uptime
+Kuma — tramite un endpoint `/api/dashboard`. Il token Bearer richiesto da quell'endpoint non
+arriva mai al browser: Nginx lo inietta lato server da una variabile d'ambiente a runtime,
+quindi il frontend chiama semplicemente un path same-origin, senza alcun segreto nel
+bundle.
 
 Il deploy è una **build Docker multi-stage** (build con Node → runtime Nginx), portata in
 produzione da una pipeline **GitHub Actions** su un **runner self-hosted** a ogni push su
