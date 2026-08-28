@@ -123,6 +123,19 @@ function formatGb(mb) {
 function hasActiveIncident(monitor) {
   return (monitor.incidents ?? []).some((incident) => incident.resolved_at === null);
 }
+
+// One-line health summary above the monitor grid — answers "is everything
+// fine?" before the eye has to scan every row (real infra runs 10 monitors;
+// a tall list of them was mostly repeated "Up" badges saying very little at
+// a glance — see #25).
+const monitorsSummary = computed(() => {
+  if (status.value !== "success") return "";
+  const monitors = data.value.uptime.monitors;
+  const up = monitors.filter((m) => m.status === "up").length;
+  return t.value.homelab.dashboard.monitorsSummary
+    .replace("{up}", String(up))
+    .replace("{total}", String(monitors.length));
+});
 </script>
 
 <template>
@@ -195,7 +208,12 @@ function hasActiveIncident(monitor) {
         </div>
 
         <div v-else class="glass-panel rounded-lg p-6 md:p-8 card-glow" role="status" aria-live="polite">
-          <h3 class="font-semibold text-lg mb-4">{{ t.homelab.dashboard.monitorsHeading }}</h3>
+          <div class="flex items-center justify-between gap-4 mb-4 flex-wrap">
+            <h3 class="font-semibold text-lg">{{ t.homelab.dashboard.monitorsHeading }}</h3>
+            <span v-if="monitorsSummary" class="font-mono text-xs text-muted-foreground">
+              {{ monitorsSummary }}
+            </span>
+          </div>
 
           <p v-if="degraded && data.uptime.monitors.length === 0" class="font-mono text-sm text-muted-foreground">
             {{ t.homelab.dashboard.degradedMonitors }}
@@ -203,37 +221,42 @@ function hasActiveIncident(monitor) {
           <p v-else-if="data.uptime.monitors.length === 0" class="font-mono text-sm text-muted-foreground">
             {{ t.homelab.dashboard.empty }}
           </p>
-          <ul v-else class="space-y-3">
+          <!-- Compact grid instead of a tall single-column list: real infra runs
+               ~10 monitors, and a full-width row each made the card taller than
+               the viewport (pinned sections only get one screen) while saying
+               very little per row (see #25). Uptime/latency drop to a footer
+               line inside each card instead of stretching the row full-width. -->
+          <ul v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             <li
               v-for="monitor in data.uptime.monitors"
               :key="monitor.name"
-              class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 rounded-md border border-border/50 p-3"
+              class="rounded-md border border-border/50 p-3 space-y-2"
             >
-              <div class="flex items-center gap-2 min-w-0 sm:w-40 shrink-0">
+              <div class="flex items-center gap-2 min-w-0">
                 <component
                   :is="monitor.status === 'up' ? CircleCheck : CircleX"
                   :class="['h-4 w-4 shrink-0', monitor.status === 'up' ? 'text-chart-2' : 'text-destructive']"
                 />
-                <span class="font-medium text-sm truncate">{{ monitor.name }}</span>
+                <span class="font-medium text-sm truncate flex-1">{{ monitor.name }}</span>
+                <AppBadge
+                  variant="outline"
+                  :class="[
+                    'font-mono text-[0.65rem] shrink-0',
+                    monitor.status === 'up'
+                      ? 'border-chart-2/40 text-chart-2'
+                      : 'border-destructive/40 text-destructive',
+                  ]"
+                >
+                  {{ monitor.status === "up" ? t.homelab.dashboard.statusUp : t.homelab.dashboard.statusDown }}
+                </AppBadge>
               </div>
-              <AppBadge
-                variant="outline"
-                :class="[
-                  'font-mono text-[0.65rem] shrink-0',
-                  monitor.status === 'up'
-                    ? 'border-chart-2/40 text-chart-2'
-                    : 'border-destructive/40 text-destructive',
-                ]"
-              >
-                {{ monitor.status === "up" ? t.homelab.dashboard.statusUp : t.homelab.dashboard.statusDown }}
-              </AppBadge>
-              <div class="flex items-center gap-4 font-mono text-xs text-muted-foreground ml-auto">
+              <div class="flex items-center gap-3 font-mono text-[0.7rem] text-muted-foreground">
                 <span>{{ t.homelab.dashboard.uptime24h }}: {{ formatUptime(monitor.uptime_24h) }}</span>
                 <span>{{ t.homelab.dashboard.latency }}: {{ monitor.latency_ms }} ms</span>
-                <span v-if="hasActiveIncident(monitor)" class="text-destructive">
-                  {{ t.homelab.dashboard.incidentActive }}
-                </span>
               </div>
+              <p v-if="hasActiveIncident(monitor)" class="font-mono text-[0.7rem] text-destructive">
+                {{ t.homelab.dashboard.incidentActive }}
+              </p>
             </li>
           </ul>
         </div>
@@ -250,7 +273,10 @@ function hasActiveIncident(monitor) {
           <p v-else-if="data.proxmox.nodes.length === 0" class="font-mono text-sm text-muted-foreground">
             {{ t.homelab.dashboard.empty }}
           </p>
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- auto-fit + justify-center: a single real node (this homelab has
+               one Proxmox host) gets one centered card instead of stretching
+               into half of a permanently-2-column grid (see #25). -->
+          <div v-else class="grid grid-cols-[repeat(auto-fit,minmax(240px,20rem))] gap-4 justify-center">
             <div
               v-for="node in data.proxmox.nodes"
               :key="node.name"

@@ -146,6 +146,7 @@ export default {
       loading: "Loading metrics…",
       loadMetrics: "Load metrics",
       monitorsHeading: "Uptime monitors",
+      monitorsSummary: "{up}/{total} services up",
       nodesHeading: "Proxmox nodes",
       statusUp: "Up",
       statusDown: "Down",

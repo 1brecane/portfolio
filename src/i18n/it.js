@@ -147,6 +147,7 @@ export default {
       loading: "Caricamento metriche…",
       loadMetrics: "Carica metriche",
       monitorsHeading: "Monitor uptime",
+      monitorsSummary: "{up}/{total} servizi attivi",
       nodesHeading: "Nodi Proxmox",
       statusUp: "Attivo",
       statusDown: "Non raggiungibile",
