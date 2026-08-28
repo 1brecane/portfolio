@@ -273,43 +273,68 @@ const monitorsSummary = computed(() => {
           <p v-else-if="data.proxmox.nodes.length === 0" class="font-mono text-sm text-muted-foreground">
             {{ t.homelab.dashboard.empty }}
           </p>
-          <!-- auto-fit + justify-center: a single real node (this homelab has
-               one Proxmox host) gets one centered card instead of stretching
-               into half of a permanently-2-column grid (see #25). -->
-          <div v-else class="grid grid-cols-[repeat(auto-fit,minmax(240px,20rem))] gap-4 justify-center">
+          <!-- Full-width instrument rows, not a card grid: a card-grid approach
+               (even centered) still reads as "half-empty" with the one real
+               Proxmox node this homelab has — a real redesign, not a
+               reposition (see #25). One node = one row that legitimately
+               fills the width with bigger readouts; N nodes stack the same
+               row N times, so it never depends on a column-count heuristic. -->
+          <div v-else class="space-y-4">
             <div
-              v-for="node in data.proxmox.nodes"
+              v-for="(node, i) in data.proxmox.nodes"
               :key="node.name"
-              class="rounded-md border border-border/50 p-4 space-y-3"
+              class="rounded-lg border border-border/50 bg-background/30 p-5 md:p-6"
             >
-              <div class="flex items-center gap-2">
-                <Cpu class="h-4 w-4 text-primary shrink-0" />
-                <span class="font-medium text-sm truncate">{{ node.name }}</span>
-              </div>
+              <div class="flex flex-col md:flex-row md:items-center gap-5 md:gap-8">
+                <div class="flex items-center gap-3 md:w-52 shrink-0">
+                  <IconBox accent="primary">
+                    <Cpu class="h-5 w-5 text-primary" />
+                  </IconBox>
+                  <div class="min-w-0">
+                    <span class="font-semibold truncate block">{{ node.name }}</span>
+                    <span class="font-mono text-[0.65rem] text-muted-foreground tracking-wide">
+                      NODE&nbsp;{{ String(i + 1).padStart(2, "0") }}
+                    </span>
+                  </div>
+                </div>
 
-              <div class="space-y-1">
-                <div class="flex items-center justify-between font-mono text-xs text-muted-foreground">
-                  <span>{{ t.homelab.dashboard.cpu }}</span>
-                  <span>{{ formatPercent(node.cpu_usage) }}</span>
-                </div>
-                <div class="h-1.5 rounded-full bg-border/40 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-primary"
-                    :style="{ width: formatPercent(node.cpu_usage) }"
-                  />
-                </div>
-              </div>
+                <div class="grid grid-cols-2 gap-6 flex-1">
+                  <div>
+                    <div class="flex items-baseline justify-between gap-2">
+                      <span class="font-mono text-xs text-muted-foreground uppercase tracking-wide">{{
+                        t.homelab.dashboard.cpu
+                      }}</span>
+                      <span class="font-mono text-2xl md:text-3xl font-bold tabular-nums">{{
+                        formatPercent(node.cpu_usage)
+                      }}</span>
+                    </div>
+                    <div class="h-2 rounded-full bg-border/40 overflow-hidden mt-2">
+                      <div
+                        class="h-full rounded-full bg-primary"
+                        :style="{ width: formatPercent(node.cpu_usage) }"
+                      />
+                    </div>
+                  </div>
 
-              <div class="space-y-1">
-                <div class="flex items-center justify-between font-mono text-xs text-muted-foreground">
-                  <span>{{ t.homelab.dashboard.ram }}</span>
-                  <span>{{ formatGb(node.ram_used_mb) }} / {{ formatGb(node.ram_total_mb) }}</span>
-                </div>
-                <div class="h-1.5 rounded-full bg-border/40 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-chart-2"
-                    :style="{ width: formatPercent(node.ram_used_mb / node.ram_total_mb) }"
-                  />
+                  <div>
+                    <div class="flex items-baseline justify-between gap-2">
+                      <span class="font-mono text-xs text-muted-foreground uppercase tracking-wide">{{
+                        t.homelab.dashboard.ram
+                      }}</span>
+                      <span class="font-mono text-2xl md:text-3xl font-bold tabular-nums">
+                        {{ formatGb(node.ram_used_mb) }}
+                        <span class="text-sm font-normal text-muted-foreground"
+                          >/ {{ formatGb(node.ram_total_mb) }}</span
+                        >
+                      </span>
+                    </div>
+                    <div class="h-2 rounded-full bg-border/40 overflow-hidden mt-2">
+                      <div
+                        class="h-full rounded-full bg-chart-2"
+                        :style="{ width: formatPercent(node.ram_used_mb / node.ram_total_mb) }"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
