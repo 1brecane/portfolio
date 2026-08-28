@@ -15,6 +15,12 @@ export const caseStudies = {
     projectId: 1,
     planet: { style: "bands", palette: "python", pos: { x: 0.78, y: 0.3 }, scale: 0.95 },
   },
+  // sphere/warm = Rust's amber/orange identity; first use of this asset pair
+  // (sphere-green and bands-python were already claimed above).
+  "uptime-kuma-rs": {
+    projectId: 5,
+    planet: { style: "sphere", palette: "warm", pos: { x: 0.78, y: 0.3 }, scale: 0.9 },
+  },
 };
 
 export function caseStudySlugForProject(projectId) {

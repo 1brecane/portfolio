@@ -110,7 +110,7 @@ export default {
     caseStudy: "Caso studio",
     types: {
       gaming: "Gioco",
-      fullstack: "Full-Stack",
+      systems: "Sistemi",
       lab: "Lab/R&D",
       frontend: "Frontend",
     },
@@ -131,9 +131,9 @@ export default {
           "Progetto focalizzato sull'esplorazione di architetture a microservizi. Sviluppato con NestJS per garantire una struttura aziendale modulare e manutenibile, simula il backend ad alte prestazioni per una piattaforma di gaming online con gestione dei dati in tempo reale.",
       },
       {
-        title: "Gestionale Sportivo",
+        title: "Uptime Kuma REST API",
         description:
-          "Soluzione gestionale completa e scalabile basata su un'architettura multi-repository. Backend solido sviluppato in Node.js con Fastify e frontend reattivo in ReactJS. Implementa sistemi di autenticazione sicura, controllo degli accessi basato su ruoli e persistenza dei dati su database MySQL.",
+          "Un servizio Rust leggero che trasforma un'istanza self-hosted di Uptime Kuma in una REST API pulita e stabile. Costruito con Axum e SQLite, interroga gli endpoint pubblici della status page di Uptime Kuma invece della sua interfaccia socket.io non documentata, accumulando una cronologia di uptime a 7/30 giorni e una timeline degli incidenti ricostruita che Uptime Kuma stesso non espone.",
       },
     ],
   },
