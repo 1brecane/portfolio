@@ -69,8 +69,14 @@ export const projectDefs = [
     github: "https://github.com/1brecane/uptime-kuma-rs",
     demo: null,
     type: "systems",
-    accent: "var(--chart-3)",
-    accentColor: "from-chart-3 via-chart-3/40 to-transparent",
-    badgeClass: "bg-chart-3/15 text-chart-3 border-chart-3/30",
+    // chart-4 = the palette's amber/orange (hue 60) — the only genuinely
+    // orange token in the site's accent set, matching Rust's own orange
+    // identity (chart-3's purple, inherited from the old centro-sportivo
+    // slot, didn't). Shared with Cattenheimer's accent; the site's accent
+    // rule is "site palette, not brand color" (see the `logos` comment
+    // above), but Rust's case is a deliberate exception, not a slip.
+    accent: "var(--chart-4)",
+    accentColor: "from-chart-4 via-chart-4/40 to-transparent",
+    badgeClass: "bg-chart-4/15 text-chart-4 border-chart-4/30",
   },
 ];
