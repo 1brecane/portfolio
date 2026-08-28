@@ -36,9 +36,12 @@ export const projectDefs = [
     github: "https://github.com/1brecane/cattenheimer",
     demo: null,
     type: "gaming",
-    accent: "var(--chart-4)",
-    accentColor: "from-chart-4 via-chart-4/40 to-transparent",
-    badgeClass: "bg-chart-4/15 text-chart-4 border-chart-4/30",
+    // chart-6 (true blue) — chart-4 (amber) moved to Rust/uptime-kuma-rs,
+    // and Python's own single-color mark is already blue (#3776AB below),
+    // so the card accent should match instead of clashing with it.
+    accent: "var(--chart-6)",
+    accentColor: "from-chart-6 via-chart-6/40 to-transparent",
+    badgeClass: "bg-chart-6/15 text-chart-6 border-chart-6/30",
   },
   {
     id: 4,
