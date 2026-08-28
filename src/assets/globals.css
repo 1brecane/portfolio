@@ -531,6 +531,18 @@
    Disabled wherever sections aren't pinned (small / reduced-motion / flat). */
 html {
   scroll-snap-type: y proximity;
+  /* .present-step's translateX drift (camera-pan zones) and .present-snap's
+     absolutely-positioned snap points otherwise extend the document's
+     scrollable overflow past the viewport edge, producing a real horizontal
+     scrollbar. Verified live (Playwright): explicit overflow-y is required
+     for the root's overflow-x to propagate to the viewport at all — with
+     overflow-y left at its 'visible' default the engine ignores overflow-x
+     entirely. Because overflow-y isn't also 'clip', the UA computes
+     overflow-x down to plain 'hidden' — same end result (no scrollbar
+     reserved, real user scroll blocked, scroll-snap-type/position:sticky/
+     fixed descendants on the root unaffected), just not literally 'clip'. */
+  overflow-x: clip;
+  overflow-y: auto;
 }
 
 .present-snap {
