@@ -7,8 +7,6 @@ import {
   WifiOff,
   ServerCrash,
   Clock,
-  CircleCheck,
-  CircleX,
   Server,
   Cpu,
 } from "lucide-vue-next";
@@ -124,6 +122,21 @@ function hasActiveIncident(monitor) {
   return (monitor.incidents ?? []).some((incident) => incident.resolved_at === null);
 }
 
+// Radial gauge ring for the Proxmox node readouts — a donut built from a
+// conic-gradient clipped to a ring via mask (no inner div needed to fake the
+// cut-out, so it doesn't need to match the row's semi-transparent
+// background). A thin linear bar reads as "broken/empty" at low fill
+// percentages (a 3% CPU bar is nearly invisible); a ring reads clearly at
+// any fill level and doesn't force the readout to stretch to fill width.
+function gaugeRingStyle(fraction, color) {
+  const deg = Math.max(0, Math.min(1, fraction)) * 360;
+  return {
+    background: `conic-gradient(${color} ${deg}deg, oklch(1 0 0 / 0.1) ${deg}deg)`,
+    "-webkit-mask": "radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px))",
+    mask: "radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px))",
+  };
+}
+
 // One-line health summary above the monitor grid — answers "is everything
 // fine?" before the eye has to scan every row (real infra runs 10 monitors;
 // a tall list of them was mostly repeated "Up" badges saying very little at
@@ -225,18 +238,32 @@ const monitorsSummary = computed(() => {
                ~10 monitors, and a full-width row each made the card taller than
                the viewport (pinned sections only get one screen) while saying
                very little per row (see #25). Uptime/latency drop to a footer
-               line inside each card instead of stretching the row full-width. -->
+               line inside each card instead of stretching the row full-width.
+               A live-pulse dot (status is real data, unlike the Proxmox nodes'
+               cpu/ram-only payload) + status-colored left rim replace the plain
+               check/x icon — reads as a monitoring HUD, not an admin list. -->
           <ul v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             <li
               v-for="monitor in data.uptime.monitors"
               :key="monitor.name"
-              class="rounded-md border border-border/50 p-3 space-y-2"
+              :class="[
+                'rounded-md border border-border/50 p-3 space-y-2 border-l-2',
+                monitor.status === 'up' ? 'border-l-chart-2/70' : 'border-l-destructive/70',
+              ]"
             >
               <div class="flex items-center gap-2 min-w-0">
-                <component
-                  :is="monitor.status === 'up' ? CircleCheck : CircleX"
-                  :class="['h-4 w-4 shrink-0', monitor.status === 'up' ? 'text-chart-2' : 'text-destructive']"
-                />
+                <span class="relative flex h-2 w-2 shrink-0" aria-hidden="true">
+                  <span
+                    v-if="monitor.status === 'up'"
+                    class="absolute inline-flex h-full w-full rounded-full bg-chart-2 opacity-75 animate-ping"
+                  />
+                  <span
+                    :class="[
+                      'relative inline-flex h-2 w-2 rounded-full',
+                      monitor.status === 'up' ? 'bg-chart-2' : 'bg-destructive',
+                    ]"
+                  />
+                </span>
                 <span class="font-medium text-sm truncate flex-1">{{ monitor.name }}</span>
                 <AppBadge
                   variant="outline"
@@ -250,9 +277,9 @@ const monitorsSummary = computed(() => {
                   {{ monitor.status === "up" ? t.homelab.dashboard.statusUp : t.homelab.dashboard.statusDown }}
                 </AppBadge>
               </div>
-              <div class="flex items-center gap-3 font-mono text-[0.7rem] text-muted-foreground">
+              <div class="flex items-center justify-between font-mono text-[0.7rem] text-muted-foreground">
                 <span>{{ t.homelab.dashboard.uptime24h }}: {{ formatUptime(monitor.uptime_24h) }}</span>
-                <span>{{ t.homelab.dashboard.latency }}: {{ monitor.latency_ms }} ms</span>
+                <span class="tabular-nums">{{ t.homelab.dashboard.latency }}: {{ monitor.latency_ms }} ms</span>
               </div>
               <p v-if="hasActiveIncident(monitor)" class="font-mono text-[0.7rem] text-destructive">
                 {{ t.homelab.dashboard.incidentActive }}
@@ -285,8 +312,15 @@ const monitorsSummary = computed(() => {
               :key="node.name"
               class="rounded-lg border border-border/50 bg-background/30 p-5 md:p-6"
             >
-              <div class="flex flex-col md:flex-row md:items-center gap-5 md:gap-8">
-                <div class="flex items-center gap-3 md:w-52 shrink-0">
+              <!-- Centered instrument cluster instead of edge-to-edge flex-1
+                   stretching — the earlier version spread identity/CPU/RAM
+                   across the full row width, which on a wide screen left the
+                   readouts stranded far apart with a huge empty gap between
+                   (see #25 follow-up). Ring gauges (not linear bars) read
+                   clearly even at a low fill % instead of looking like an
+                   empty/broken bar. -->
+              <div class="flex flex-col md:flex-row md:items-center md:justify-center gap-6 md:gap-16">
+                <div class="flex items-center gap-3">
                   <IconBox accent="primary">
                     <Cpu class="h-5 w-5 text-primary" />
                   </IconBox>
@@ -298,41 +332,44 @@ const monitorsSummary = computed(() => {
                   </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-6 flex-1">
-                  <div>
-                    <div class="flex items-baseline justify-between gap-2">
-                      <span class="font-mono text-xs text-muted-foreground uppercase tracking-wide">{{
-                        t.homelab.dashboard.cpu
-                      }}</span>
-                      <span class="font-mono text-2xl md:text-3xl font-bold tabular-nums">{{
-                        formatPercent(node.cpu_usage)
-                      }}</span>
-                    </div>
-                    <div class="h-2 rounded-full bg-border/40 overflow-hidden mt-2">
+                <div class="flex items-center gap-8">
+                  <div class="flex items-center gap-3">
+                    <div class="relative h-16 w-16 shrink-0">
                       <div
-                        class="h-full rounded-full bg-primary"
-                        :style="{ width: formatPercent(node.cpu_usage) }"
+                        class="absolute inset-0 rounded-full"
+                        :style="gaugeRingStyle(node.cpu_usage, 'var(--primary)')"
                       />
+                      <div class="absolute inset-0 grid place-items-center">
+                        <span class="font-mono text-sm font-bold tabular-nums">{{
+                          formatPercent(node.cpu_usage)
+                        }}</span>
+                      </div>
                     </div>
+                    <span class="font-mono text-xs text-muted-foreground uppercase tracking-wide">{{
+                      t.homelab.dashboard.cpu
+                    }}</span>
                   </div>
 
-                  <div>
-                    <div class="flex items-baseline justify-between gap-2">
+                  <div class="flex items-center gap-3">
+                    <div class="relative h-16 w-16 shrink-0">
+                      <div
+                        class="absolute inset-0 rounded-full"
+                        :style="gaugeRingStyle(node.ram_used_mb / node.ram_total_mb, 'var(--chart-2)')"
+                      />
+                      <div class="absolute inset-0 grid place-items-center">
+                        <span class="font-mono text-sm font-bold tabular-nums">{{
+                          formatPercent(node.ram_used_mb / node.ram_total_mb)
+                        }}</span>
+                      </div>
+                    </div>
+                    <div class="flex flex-col">
                       <span class="font-mono text-xs text-muted-foreground uppercase tracking-wide">{{
                         t.homelab.dashboard.ram
                       }}</span>
-                      <span class="font-mono text-2xl md:text-3xl font-bold tabular-nums">
+                      <span class="font-mono text-sm tabular-nums">
                         {{ formatGb(node.ram_used_mb) }}
-                        <span class="text-sm font-normal text-muted-foreground"
-                          >/ {{ formatGb(node.ram_total_mb) }}</span
-                        >
+                        <span class="text-muted-foreground">/ {{ formatGb(node.ram_total_mb) }}</span>
                       </span>
-                    </div>
-                    <div class="h-2 rounded-full bg-border/40 overflow-hidden mt-2">
-                      <div
-                        class="h-full rounded-full bg-chart-2"
-                        :style="{ width: formatPercent(node.ram_used_mb / node.ram_total_mb) }"
-                      />
                     </div>
                   </div>
                 </div>
