@@ -50,7 +50,7 @@ export const projectDefs = [
     id: 3,
     logoHtml: logos.nestjs,
     tags: ["NestJS", "Redis", "MySQL"],
-    github: "https://github.com/1brecane/paidia_be",
+    github: "https://github.com/1brecane/paidia",
     demo: null,
     type: "lab",
     accent: "var(--primary)",
