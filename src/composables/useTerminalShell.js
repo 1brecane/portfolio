@@ -1,7 +1,6 @@
 import { ref } from "vue";
 import { terminalEasterEggs as easterEggs } from "@/data/terminalEasterEggs";
-import { NEOFETCH_ART } from "@/data/terminalAsciiArt";
-import { STARWARS_ASCII } from "@/data/starwarsAscii";
+import { NEOFETCH_ART, STARWARS_ASCII } from "@/data/terminalAsciiArt";
 
 // ── shell knobs (TUNABLE) ───────────────────────────────────────────────────────
 const MAX_ENTRIES = 50; // scrollback cap — oldest entries dropped
