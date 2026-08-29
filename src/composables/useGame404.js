@@ -197,7 +197,7 @@ export function useGame404({ canvasRef, onGameOver }) {
     const spawnAir = score.value >= AIR_UNLOCK_SCORE && Math.random() < AIR_CHANCE;
     if (spawnAir) {
       const h = DRONE_H_CELLS * cs;
-      const bottom = groundY() - STAND_H_CELLS * cs - DRONE_SAFETY_PX;
+      const bottom = groundY() - DUCK_H_CELLS * cs - DRONE_SAFETY_PX;
       obstacles.push({ kind: "drone", x: cssW + cs, y: bottom - h, w: DRONE_W_CELLS * cs, h });
       return;
     }
@@ -381,7 +381,12 @@ export function useGame404({ canvasRef, onGameOver }) {
     observersReady = true;
     const canvas = canvasRef.value;
 
-    resizeObserver = new ResizeObserver(() => syncSize());
+    resizeObserver = new ResizeObserver(() => {
+      syncSize();
+      // The rAF loop is stopped in the "over" state, so nothing else would
+      // repaint the frozen frame at the new size until Retry — redraw once.
+      if (crashed) draw();
+    });
     if (canvas) resizeObserver.observe(canvas);
 
     intersectionObserver = new IntersectionObserver(

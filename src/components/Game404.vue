@@ -54,6 +54,18 @@ function onReducedMotionChange(e) {
 }
 reducedMotionQuery.addEventListener("change", onReducedMotionChange);
 
+// reduced-data gets identical treatment to reduced-motion (spec §③, decision
+// ③): same note, same no-blink. Mirrors StarfieldBackground.vue/AsciiPlanets.vue's
+// dataQuery pattern — this file just doesn't gate Play behind it (opt-in stays opt-in).
+const reducedDataQuery = window.matchMedia("(prefers-reduced-data: reduce)");
+const reducedData = ref(reducedDataQuery.matches);
+function onReducedDataChange(e) {
+  reducedData.value = e.matches;
+}
+reducedDataQuery.addEventListener("change", onReducedDataChange);
+
+const motionSuppressed = computed(() => reducedMotion.value || reducedData.value);
+
 // (pointer: coarse), not viewport width — a narrow desktop window still has a keyboard.
 const coarsePointerQuery = window.matchMedia("(pointer: coarse)");
 const coarsePointer = ref(coarsePointerQuery.matches);
@@ -87,16 +99,27 @@ function handleGameOver() {
   state.value = "over";
 }
 
+// Guards against a second Play/Retry firing while the first is still awaiting
+// the dynamic import (e.g. a fast double keypress before the chunk resolves)
+// — without it, the second call's engine.start() would silently reset an
+// already-running game a few frames in.
+let starting = false;
+
 async function play() {
-  if (state.value === "running") return;
-  const { useGame404 } = await loadEngine();
-  state.value = "running";
-  await nextTick(); // the canvas only mounts once state !== "idle"
-  if (!engine.value) {
-    engine.value = useGame404({ canvasRef, onGameOver: handleGameOver });
+  if (state.value === "running" || starting) return;
+  starting = true;
+  try {
+    const { useGame404 } = await loadEngine();
+    state.value = "running";
+    await nextTick(); // the canvas only mounts once state !== "idle"
+    if (!engine.value) {
+      engine.value = useGame404({ canvasRef, onGameOver: handleGameOver });
+    }
+    engine.value.start();
+    panelRef.value?.focus();
+  } finally {
+    starting = false;
   }
-  engine.value.start();
-  panelRef.value?.focus();
 }
 
 function retry() {
@@ -160,6 +183,7 @@ function onTouchStart(e) {
 onUnmounted(() => {
   engine.value?.destroy();
   reducedMotionQuery.removeEventListener("change", onReducedMotionChange);
+  reducedDataQuery.removeEventListener("change", onReducedDataChange);
   coarsePointerQuery.removeEventListener("change", onPointerChange);
   clearTimeout(flashTimer);
 });
@@ -170,10 +194,9 @@ onUnmounted(() => {
     ref="panelRef"
     tabindex="-1"
     aria-labelledby="notfound-game-heading"
-    class="mt-12 w-full min-w-0 max-w-2xl mx-auto text-left touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md"
+    class="mt-12 w-full min-w-0 max-w-2xl mx-auto text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md"
     @keydown="onKeyDown"
     @keyup="onKeyUp"
-    @touchstart="onTouchStart"
   >
     <h2 id="notfound-game-heading" class="font-mono text-sm text-muted-foreground mb-2">
       {{ t.notFound.game.heading }}
@@ -181,7 +204,8 @@ onUnmounted(() => {
     <p class="text-sm text-muted-foreground mb-4">{{ t.notFound.game.intro }}</p>
 
     <div
-      class="relative w-full min-w-0 min-h-[160px] border border-border rounded-md bg-card/40 overflow-hidden"
+      class="relative w-full min-w-0 min-h-[160px] border border-border rounded-md bg-card/40 overflow-hidden touch-manipulation"
+      @touchstart="onTouchStart"
     >
       <!-- 16:6 aspect ratio via the classic padding-top spacer, not the CSS
            `aspect-ratio` property: with this panel's width ultimately resolving
@@ -203,12 +227,12 @@ onUnmounted(() => {
         >[@]        404
 / \        %#%
            %#%</pre>
-        <p v-if="reducedMotion" class="text-xs text-muted-foreground max-w-xs">
+        <p v-if="motionSuppressed" class="text-xs text-muted-foreground max-w-xs">
           {{ t.notFound.game.reducedMotionNote }}
         </p>
         <p
           class="font-mono text-xs text-primary tracking-widest"
-          :class="{ 'animate-pulse': !reducedMotion }"
+          :class="{ 'animate-pulse': !motionSuppressed }"
         >
           {{ t.notFound.game.pressSpace }}
         </p>
