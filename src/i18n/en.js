@@ -207,6 +207,21 @@ export default {
     title: "404: Page Not Found",
     description: "The page you are looking for has been moved, deleted, or possibly never existed.",
     returnHome: "Return Home",
+    game: {
+      heading: "Lost packet",
+      intro: "While you're here: this packet lost its route too. Help it jump the dead ends.",
+      play: "Play",
+      retry: "Retry",
+      pressSpace: "PRESS SPACE",
+      instructions: "Space or ↑ to jump · ↓ to duck · Esc to quit",
+      instructionsTouch: "Tap to jump",
+      score: "Score",
+      best: "Best",
+      gameOver: "CONNECTION LOST",
+      announce: "Game over. Score {score}. Best {best}.",
+      reducedMotionNote:
+        "Reduced motion is on in your system settings — the game stays still until you start it.",
+    },
   },
   contact: {
     title: "Contact",

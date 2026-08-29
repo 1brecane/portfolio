@@ -208,6 +208,22 @@ export default {
     title: "404: Pagina Non Trovata",
     description: "La pagina che cerchi è stata spostata, eliminata o forse non è mai esistita.",
     returnHome: "Torna alla Home",
+    game: {
+      heading: "Pacchetto smarrito",
+      intro:
+        "Già che ci sei: anche questo pacchetto ha perso la rotta. Aiutalo a saltare i vicoli ciechi.",
+      play: "Gioca",
+      retry: "Riprova",
+      pressSpace: "PREMI SPAZIO",
+      instructions: "Spazio o ↑ per saltare · ↓ per abbassarti · Esc per uscire",
+      instructionsTouch: "Tocca per saltare",
+      score: "Punteggio",
+      best: "Record",
+      gameOver: "CONNESSIONE PERSA",
+      announce: "Partita finita. Punteggio {score}. Record {best}.",
+      reducedMotionNote:
+        "Le animazioni ridotte sono attive nelle impostazioni di sistema — il gioco resta fermo finché non lo avvii tu.",
+    },
   },
   contact: {
     title: "Contatti",
