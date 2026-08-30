@@ -3,8 +3,10 @@ import { ref } from "vue";
 // Real pixel-art sprites lifted from the user's own game, Cattenheimer
 // (https://github.com/1brecane/cattenheimer), reused here with the user's
 // explicit authorization even though the origin asset-pack's (itch.io)
-// license isn't independently verifiable — already discussed and accepted,
-// see `git log -1 --format=%B 680f8cd` for the prior verification context.
+// license isn't independently verifiable. Commit 680f8cd (the earlier ASCII
+// reskin) chose NOT to reuse these sprites for exactly that reason — this
+// commit supersedes that call after the user explicitly re-authorized reuse
+// in conversation, it's not a contradiction to reconcile.
 // Imported as Vite static-asset URLs; the actual PNG bytes only ship once
 // this module is loaded, which — same as everything else here — only
 // happens on the visitor's first Play (see the dynamic `import()` in
