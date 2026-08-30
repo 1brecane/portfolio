@@ -1,5 +1,26 @@
 import { ref } from "vue";
 
+// Real pixel-art sprites lifted from the user's own game, Cattenheimer
+// (https://github.com/1brecane/cattenheimer), reused here with the user's
+// explicit authorization even though the origin asset-pack's (itch.io)
+// license isn't independently verifiable — already discussed and accepted,
+// see `git log -1 --format=%B 680f8cd` for the prior verification context.
+// Imported as Vite static-asset URLs; the actual PNG bytes only ship once
+// this module is loaded, which — same as everything else here — only
+// happens on the visitor's first Play (see the dynamic `import()` in
+// Game404.vue and the module doc comment below). `idle.png` is the one
+// exception: it's imported by Game404.vue itself for the pre-Play static
+// poster, so it never pulls this chunk in.
+import run0Url from "@/assets/game404/run-0.png";
+import run1Url from "@/assets/game404/run-1.png";
+import run2Url from "@/assets/game404/run-2.png";
+import run3Url from "@/assets/game404/run-3.png";
+import jumpUrl from "@/assets/game404/jump.png";
+// Cattenheimer has no crouch/duck mechanic (move/jump/sprint/aim only) — this
+// reuses the lowest/flattest run frame as a reasonable stand-in, not a real
+// dedicated duck pose.
+import duckUrl from "@/assets/game404/duck.png";
+
 // ════════════════════════════════════════════════════════════════════════════
 // useGame404 — "LOST PACKET", the 404-page endless runner engine.
 //
@@ -74,13 +95,12 @@ const GROUND_RGB = [140, 140, 140]; // ≈ oklch(0.71 0 0), --muted-foreground �
 
 const BG_DIM_ALPHA = 0.45; // game-over freeze-frame dim, painted (never CSS opacity)
 
-// Cattenheimer cameo (Cattenheimer's own pixel-art sprites are a third-party
-// itch.io asset pack with no verifiable redistribution license — this is a
-// from-scratch ASCII reinterpretation, not the original art). Same cell
-// dimensions/string lengths as the packet glyphs it replaces (STAND_W/H_CELLS,
-// DUCK_W/H_CELLS below are untouched), so hitboxes are unaffected — only the
-// drawn characters change. Ears (`/^\`) stay fixed across run frames; legs
-// alternate, same animation pattern as before.
+// The player is now drawn with the real Cattenheimer sprites imported above
+// (see drawPlayer() / PLAYER_SPRITES below) — these ASCII rows are kept only
+// as a same-box fallback for the rare frame drawn before an Image has
+// finished decoding (typically the first frame or two after Play). Drawn at
+// the same STAND_W/H_CELLS / DUCK_W/H_CELLS box as the sprites, so hitboxes
+// are unaffected either way.
 const PLAYER_RUN_FRAMES = [
   ["/^\\", "/ \\"],
   ["/^\\", " /\\"],
@@ -96,6 +116,27 @@ const PILLAR_VARIANTS = [
   { w: 3, h: 4, rows: ["</>", "%#%", "%#%", "%#%"] },
 ];
 const DRONE_FRAMES = [["<504>"], ["-504-"]];
+
+// `new Image()` + assigning `.src` kicks off the network request immediately
+// — module-scope is fine here (not gated behind start()) because this whole
+// module only evaluates once, on the visitor's first Play, via Game404.vue's
+// dynamic `import()`. draw() falls back to the ASCII glyphs above via
+// isSpriteReady() for any frame drawn before decode completes.
+function loadSprite(url) {
+  const img = new Image();
+  img.src = url;
+  return img;
+}
+
+function isSpriteReady(img) {
+  return img.complete && img.naturalWidth > 0;
+}
+
+const PLAYER_SPRITES = {
+  run: [run0Url, run1Url, run2Url, run3Url].map(loadSprite),
+  jump: loadSprite(jumpUrl),
+  duck: loadSprite(duckUrl),
+};
 
 export function useGame404({ canvasRef, onGameOver }) {
   const score = ref(0);
@@ -328,11 +369,25 @@ export function useGame404({ canvasRef, onGameOver }) {
 
   function drawPlayer() {
     const box = playerBox();
-    let rows;
-    if (ducking) rows = PLAYER_DUCK_FRAME;
-    else if (!grounded) rows = PLAYER_JUMP_FRAME;
-    else rows = PLAYER_RUN_FRAMES[Math.floor((elapsedS * 1000) / RUN_FRAME_MS) % PLAYER_RUN_FRAMES.length];
-    drawGlyphRows(rows, box.x, box.y, box.w, box.h, PRIMARY_RGB, 0.95);
+    let sprite;
+    let fallbackRows;
+    if (ducking) {
+      sprite = PLAYER_SPRITES.duck;
+      fallbackRows = PLAYER_DUCK_FRAME;
+    } else if (!grounded) {
+      sprite = PLAYER_SPRITES.jump;
+      fallbackRows = PLAYER_JUMP_FRAME;
+    } else {
+      const frames = PLAYER_SPRITES.run;
+      const idx = Math.floor((elapsedS * 1000) / RUN_FRAME_MS) % frames.length;
+      sprite = frames[idx];
+      fallbackRows = PLAYER_RUN_FRAMES[idx % PLAYER_RUN_FRAMES.length];
+    }
+    // Stretched to the same logical hitbox rect regardless of native PNG
+    // size (the run frames aren't uniformly sized) — the box, not the
+    // source bitmap, is what collision cares about.
+    if (isSpriteReady(sprite)) ctx2d.drawImage(sprite, box.x, box.y, box.w, box.h);
+    else drawGlyphRows(fallbackRows, box.x, box.y, box.w, box.h, PRIMARY_RGB, 0.95);
   }
 
   function drawCrashOverlay() {
@@ -345,6 +400,11 @@ export function useGame404({ canvasRef, onGameOver }) {
     if (!canvas) return;
     ctx2d = ctx2d || canvas.getContext("2d");
     ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Reasserted every frame, not just on context creation: resizing the
+    // canvas backing store (canvas.width/height, in syncSize()) resets 2D
+    // context state — including this flag back to its blurry `true` default
+    // — independently of draw()'s own control flow.
+    ctx2d.imageSmoothingEnabled = false;
     ctx2d.clearRect(0, 0, cssW, cssH);
     ctx2d.textAlign = "center";
     ctx2d.textBaseline = "middle";

@@ -2,6 +2,13 @@
 import { ref, shallowRef, computed, watch, onUnmounted, nextTick } from "vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import { useI18n } from "@/i18n";
+// Real pixel-art sprite from the user's own game, Cattenheimer
+// (https://github.com/1brecane/cattenheimer), reused with the user's explicit
+// authorization — see the matching provenance comment in useGame404.js for
+// the full context. This is the only sprite imported here (statically, since
+// the idle poster below is plain markup with no engine chunk involved) —
+// the run/jump/duck frames used once playing live in useGame404.js instead.
+import idleSpriteUrl from "@/assets/game404/idle.png";
 
 // Deliberately NOT a static import from useGame404.js: this file also
 // dynamically `import()`s that module on first Play (see loadEngine below),
@@ -221,12 +228,18 @@ onUnmounted(() => {
         v-if="state === 'idle'"
         class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center"
       >
-        <pre
-          aria-hidden="true"
-          class="font-mono text-primary leading-tight text-xs sm:text-sm select-none"
-        >/^\        404
-/ \        %#%
-           %#%</pre>
+        <div aria-hidden="true" class="flex items-end gap-3 select-none">
+          <img
+            :src="idleSpriteUrl"
+            alt=""
+            width="12"
+            height="12"
+            class="w-10 h-10 sm:w-12 sm:h-12 [image-rendering:pixelated]"
+          />
+          <pre class="font-mono text-primary leading-tight text-xs sm:text-sm">404
+%#%
+%#%</pre>
+        </div>
         <p v-if="motionSuppressed" class="text-xs text-muted-foreground max-w-xs">
           {{ t.notFound.game.reducedMotionNote }}
         </p>
