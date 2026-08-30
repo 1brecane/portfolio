@@ -211,7 +211,7 @@ export default {
     game: {
       heading: "Pacchetto smarrito",
       intro:
-        "Già che ci sei: anche questo pacchetto ha perso la rotta. Aiutalo a saltare i vicoli ciechi.",
+        "Già che ci sei: anche questo pacchetto ha perso la rotta. Aiutalo a saltare i vicoli ciechi. (Ai comandi oggi: un gatto molto determinato.)",
       play: "Gioca",
       retry: "Riprova",
       pressSpace: "PREMI SPAZIO",

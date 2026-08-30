@@ -224,7 +224,7 @@ onUnmounted(() => {
         <pre
           aria-hidden="true"
           class="font-mono text-primary leading-tight text-xs sm:text-sm select-none"
-        >[@]        404
+        >/^\        404
 / \        %#%
            %#%</pre>
         <p v-if="motionSuppressed" class="text-xs text-muted-foreground max-w-xs">

@@ -209,7 +209,8 @@ export default {
     returnHome: "Return Home",
     game: {
       heading: "Lost packet",
-      intro: "While you're here: this packet lost its route too. Help it jump the dead ends.",
+      intro:
+        "While you're here: this packet lost its route too. Help it jump the dead ends. (Piloted today by a very determined cat.)",
       play: "Play",
       retry: "Retry",
       pressSpace: "PRESS SPACE",

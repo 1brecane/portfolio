@@ -74,12 +74,19 @@ const GROUND_RGB = [140, 140, 140]; // ≈ oklch(0.71 0 0), --muted-foreground �
 
 const BG_DIM_ALPHA = 0.45; // game-over freeze-frame dim, painted (never CSS opacity)
 
+// Cattenheimer cameo (Cattenheimer's own pixel-art sprites are a third-party
+// itch.io asset pack with no verifiable redistribution license — this is a
+// from-scratch ASCII reinterpretation, not the original art). Same cell
+// dimensions/string lengths as the packet glyphs it replaces (STAND_W/H_CELLS,
+// DUCK_W/H_CELLS below are untouched), so hitboxes are unaffected — only the
+// drawn characters change. Ears (`/^\`) stay fixed across run frames; legs
+// alternate, same animation pattern as before.
 const PLAYER_RUN_FRAMES = [
-  ["[@]", "/ \\"],
-  ["[@]", " /\\"],
+  ["/^\\", "/ \\"],
+  ["/^\\", " /\\"],
 ];
-const PLAYER_JUMP_FRAME = ["[@]", "==="];
-const PLAYER_DUCK_FRAME = ["<@>"];
+const PLAYER_JUMP_FRAME = ["/^\\", "==="];
+const PLAYER_DUCK_FRAME = ["<^>"];
 
 // width/height in cells, plus the glyph rows drawn inside that box.
 const PILLAR_VARIANTS = [
