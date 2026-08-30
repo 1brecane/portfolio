@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import AppButton from '@/components/ui/AppButton.vue';
+import Game404 from '@/components/Game404.vue';
 import { Home } from 'lucide-vue-next';
 import { useI18n } from '@/i18n';
 import { useTypewriter } from '@/composables/useTypewriter';
@@ -33,6 +34,10 @@ const { displayedLines } = useTypewriter(lines);
           {{ t.notFound.returnHome }}
         </AppButton>
       </div>
+
+      <!-- LOST PACKET — the 404 arcade game. Always last: the button above is
+           the first tab stop and is never covered or delayed by the game. -->
+      <Game404 />
     </div>
   </main>
 </template>

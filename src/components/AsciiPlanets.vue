@@ -87,6 +87,15 @@ const WORLDS = [
     // reads as a minor accent. Re-verified clear at 1280/1440/1920 too.
     pos: { x: 0.76, y: 0.42 },
     scale: 0.8,
+    // #27 fix: below `lg`, HeroSection.vue collapses to a single full-width
+    // column — the desktop `pos` above targets a dedicated side-by-side zone
+    // that no longer exists on mobile, so the ring ended up drawn straight
+    // through the headline/CTA row/terminal card (confirmed via Playwright at
+    // 390×844: the desktop anchor landed inside the paragraph and buttons).
+    // Small + tucked into the quiet strip between the nav and the headline —
+    // verified clear of the heading/CTA/terminal at 390×844.
+    mobilePos: { x: 0.84, y: 0.1 },
+    mobileScale: 0.5,
     // #11 fix: the hero world's depart window is tightened (default DEPART=1.15
     // would still be scale>0 at progress=1, when the About zone's hold begins —
     // a faint bleed into the next section). 0.9 reaches scale 0 comfortably
@@ -113,6 +122,13 @@ const WORLDS = [
     // noticeably less pinned to the corner than 0.85 did.
     pos: { x: 0.78, y: 0.55 },
     scale: 0.8,
+    // #27 fix: on mobile the form card is close to full-width, so the
+    // desktop "beside the form" anchor rendered the sphere straight through
+    // the email/message fields (confirmed via Playwright at 390×844).
+    // Small + tucked above the form, under the section heading — verified
+    // clear of the heading/subtitle/form at 390×844.
+    mobilePos: { x: 0.83, y: 0.1 },
+    mobileScale: 0.4,
   },
 ];
 
@@ -131,9 +147,18 @@ let resizeObserver = null;
 let motionQuery = null;
 let sizeQuery = null;
 let dataQuery = null;
+let layoutQuery = null;
 let reducedMotion = false;
 let smallScreen = false;
 let reducedData = false;
+// #27 fix: deliberately SEPARATE from `smallScreen` (767px — the static-vs-
+// animated render-mode gate, §5). HeroSection/ContactSection collapse to a
+// single full-width column at Tailwind's `lg` breakpoint (1024px), not at
+// 767px — a world's `pos`/`scale` picks the mobile framing at the same width
+// the DOM actually collapses, so it doesn't overlap the stacked column in the
+// 768–1023px gap between the two thresholds (confirmed via Playwright at
+// 768px: the desktop anchor still overlapped the paragraph there).
+let mobileLayout = false;
 let minDim = 0;
 
 // Active journey-world mesh(es) + hit region, swapped only when the active
@@ -172,6 +197,27 @@ const APPROACH = 1.0; // how far before its zone (in progress units) it fades in
 const DEPART = 1.15; // how far after its zone it has fully passed/shrunk away (default; hero overrides)
 const OUT_PUSH = 1.4; // how hard the camera center slides toward the screen edge while passing
 const RING_TILT_DEG = 68; // ring mesh tilt around X — matches the S2 spike's validated look
+// KNOWN ISSUE (#24, unresolved): at this tilt the ring fully disappears (not
+// dim, GONE — no glyphs at all) for a wide arc of camera.rotY, INCLUDING at
+// the resting framing (rotX 65, zero drag): confirmed a vanish across
+// roughly rotY 195°–270° with the draw loop paused and camera.rotX/rotY set
+// directly. Since the auto-spin's baseYaw never stops advancing (§3.1), this
+// recurs every ~52s cycle with no interaction at all, not just at drag
+// extremes. Isolated to the ring itself — reproduces identically with the
+// sphere hidden entirely (rules out sphere occlusion/shadow) and is
+// unaffected by ambientLight/directionalLight intensity (rules out a
+// brightness/glyph-ramp threshold). Tried and ruled out: `doubleSided: true`
+// scene-wide (glyphcss's documented lever for a single-sided mesh's backface
+// vanishing — empirically a no-op here, see the scene options comment
+// below), `receiveShadow: false`, mounting the ring as two meshes built from
+// reversed-winding copies of the same quads (front+back) — that shrank the
+// vanish band (fully gone at rotX≤~50, still gone at the 65 resting tilt and
+// above) but didn't clear it, so it was NOT shipped. The one lever that DID
+// eliminate the vanish across a full yaw sweep: reducing RING_TILT_DEG well
+// below 68 (~25 or less) — but that's a real, visible change to the hero
+// planet's validated look, not a code-only fix, so it needs a design call
+// before landing. Left as a known, reproducible issue — see the PM/team
+// thread for #24 rather than re-diagnosing from scratch.
 const FONT_DESKTOP = 13; // host font-size (px) — controls glyph density, like the old canvas FONT
 const FONT_MOBILE = 21; // bigger font = fewer, coarser cells = cheaper static frame (I6, §5)
 const CHAR_W_RATIO = 0.6; // monospace advance width ≈ 0.6× font-size — used only to size the hotspot hit target
@@ -186,8 +232,17 @@ const BASE_ROT_X = 65; // camera resting orbit tilt (deg) — today's createGlyp
 const BASE_ROT_Y = 45; // camera resting orbit azimuth (deg) — ditto
 // Pole-avoiding clamp band on the COMPOSED camera.rotX (base + userPitch),
 // not the raw accumulator — supersedes the old PITCH_CLAMP.
+// #23 fix: 90 is not just "close to" the pole, it IS the pole — the camera's
+// own Euler orbit is gimbal-locked there (rotY stops visibly changing the
+// render at all). Confirmed empirically (camera.rotX/rotY matrix sweep, draw
+// loop paused): at rotX 90 every rotY sample rendered nearly identically,
+// while rotX 80 already varied normally across the same sweep. A drag that
+// nudges pitch up (common — most real drags aren't purely horizontal) could
+// reach 90 and then further yaw dragging would visibly do ~nothing, reading
+// as "the camera can't rotate" (#23) even though rotY was still accumulating
+// under the hood. 82 keeps a comfortable margin below the singularity.
 const ORBIT_PITCH_MIN = 10; // deg
-const ORBIT_PITCH_MAX = 90; // deg
+const ORBIT_PITCH_MAX = 82; // deg
 const VEL_WINDOW_MS = 100; // release-velocity averaging window (avoids a jerky end-of-drag spike)
 const INERTIA_TAU = 0.4; // seconds — exponential friction time constant, ≈1-2s to settle
 const INERTIA_MIN_VEL = 2; // deg/s — below this, inertia is considered at rest
@@ -428,6 +483,8 @@ function mountWorld(world) {
   bodyHandle = scene.add(polygons, { castShadow: true });
   if (world.style === "rings") {
     const ringPolys = ringWarm.map((p) => ({ vertices: p.vertices, color: p.color }));
+    // #24: the ring can fully disappear from certain camera angles — known
+    // issue, see the note above `RING_TILT_DEG`.
     ringHandle = scene.add(ringPolys, { rotation: [RING_TILT_DEG, 0, 0], receiveShadow: true });
   }
   mountHitRegion(world);
@@ -525,13 +582,20 @@ function draw(elapsed) {
   // radius). The journey owns `camera.zoom`/`center` end to end; meshes must
   // never carry a journey-driven `scale`, or rotation and the fly-in/loom-past
   // size would be fighting over the same transform.
-  const scale = fade.scale * active.scale;
+  // #27 fix: below `lg` the section layouts collapse to a single column and
+  // the desktop `pos`/`scale` anchors (tuned for a dedicated side-by-side
+  // zone) land on top of the stacked content instead — use each world's
+  // `mobilePos`/`mobileScale` fallback under `mobileLayout` (the `lg`-aligned
+  // query, not `smallScreen`/767px — see its declaration above).
+  const activePos = mobileLayout && active.mobilePos ? active.mobilePos : active.pos;
+  const activeScale = mobileLayout && active.mobileScale !== undefined ? active.mobileScale : active.scale;
+  const scale = fade.scale * activeScale;
   camera.zoom = minDim * BASE_R * scale;
   // Exit direction: outward from screen center (away from the viewer's path),
   // so a world you pass slides toward the edge while it shrinks away.
   camera.center = [
-    active.pos.x + (active.pos.x - 0.5) * fade.out * OUT_PUSH,
-    active.pos.y + (active.pos.y - 0.5) * fade.out * OUT_PUSH,
+    activePos.x + (activePos.x - 0.5) * fade.out * OUT_PUSH,
+    activePos.y + (activePos.y - 0.5) * fade.out * OUT_PUSH,
   ];
 
   scene.rerender();
@@ -573,6 +637,9 @@ function onSizeChange(e) {
   smallScreen = e.matches;
   applyMode();
 }
+function onLayoutChange(e) {
+  mobileLayout = e.matches;
+}
 function onDataChange(e) {
   reducedData = e.matches;
   applyMode();
@@ -596,12 +663,15 @@ onMounted(() => {
   motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   sizeQuery = window.matchMedia("(max-width: 767px)");
   dataQuery = window.matchMedia("(prefers-reduced-data: reduce)");
+  layoutQuery = window.matchMedia("(max-width: 1023px)"); // #27 fix — see mobileLayout above
   reducedMotion = motionQuery.matches;
   smallScreen = sizeQuery.matches;
   reducedData = dataQuery.matches;
+  mobileLayout = layoutQuery.matches;
   motionQuery.addEventListener("change", onMotionChange);
   sizeQuery.addEventListener("change", onSizeChange);
   dataQuery.addEventListener("change", onDataChange);
+  layoutQuery.addEventListener("change", onLayoutChange);
   document.addEventListener("visibilitychange", onVisibility);
 
   host.style.fontSize = `${staticMode() ? FONT_MOBILE : FONT_DESKTOP}px`;
@@ -626,6 +696,17 @@ onMounted(() => {
     // lighting/rotation instead of visibly faceted. Zero bundle cost, unlike
     // baking more polygons.
     smoothShading: true,
+    // KNOWN ISSUE (#24, unresolved — see AsciiPlanets ring-visibility note
+    // below `RING_TILT_DEG`): the ring fully disappears (not dim, GONE) for
+    // a wide arc of the camera's yaw even at the resting framing, with zero
+    // drag. `doubleSided: true` is glyphcss's documented lever for exactly
+    // this failure mode ("single-sided surfaces … back-wound faces vanish")
+    // but empirically made no difference here (confirmed via
+    // `scene.getOptions()` showing it applied, and a paused-loop
+    // camera.rotX/rotY matrix sweep showing an identical vanish with it on).
+    // Deliberately NOT enabled — it doesn't fix the bug and would be a
+    // misleading no-op left in the options object. See the note above
+    // `RING_TILT_DEG` for what was ruled out and the one lever that did work.
     // Enables the shadow-map technique scene-wide — without this key present
     // (even empty), the per-mesh castShadow/receiveShadow flags (hero's ring)
     // are no-ops. opacity below the library default (0.25) since the ring is
@@ -659,6 +740,7 @@ onUnmounted(() => {
   motionQuery?.removeEventListener("change", onMotionChange);
   sizeQuery?.removeEventListener("change", onSizeChange);
   dataQuery?.removeEventListener("change", onDataChange);
+  layoutQuery?.removeEventListener("change", onLayoutChange);
   document.removeEventListener("visibilitychange", onVisibility);
 });
 

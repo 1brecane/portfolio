@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { terminalEasterEggs as easterEggs } from "@/data/terminalEasterEggs";
-import { NEOFETCH_ART, STARWARS_ASCII } from "@/data/terminalAsciiArt";
+import { FASTFETCH_ART, STARWARS_ASCII } from "@/data/terminalAsciiArt";
 
 // ── shell knobs (TUNABLE) ───────────────────────────────────────────────────────
 const MAX_ENTRIES = 50; // scrollback cap — oldest entries dropped
@@ -51,16 +51,16 @@ export function useTerminalShell({ t, onClear }) {
     return [accent(shellT().projectsIntro), ...items, dim(shellT().projectsHint)];
   }
 
-  function neofetchLines() {
+  function fastfetchLines() {
     const info = [
       "samuele@portfolio",
       "─────────────────",
       "OS: Fedora (btw)",
-      shellT().neofetchRole,
+      shellT().fastfetchRole,
       "Stack: Node.js · Proxmox",
-      shellT().neofetchUptime,
+      shellT().fastfetchUptime,
     ];
-    return NEOFETCH_ART.map((art, i) => accent(art + (info[i] ?? "")));
+    return FASTFETCH_ART.map((art, i) => accent(art + (info[i] ?? "")));
   }
 
   function catFile(cmd) {
@@ -76,7 +76,7 @@ export function useTerminalShell({ t, onClear }) {
     if (cmd === "help") return shellT().help.map(accent);
     if (cmd === "whoami") return [plain("samuele_ruaro")];
     if (cmd === "ls") return [plain("about.txt  projects.txt  starwars.txt")];
-    if (cmd === "neofetch") return neofetchLines();
+    if (cmd === "fastfetch") return fastfetchLines();
     // NOTE: an easter-egg key starting with "cat "/"sudo "/"color " would shadow those commands below — keep egg keys distinct.
     if (easterEggs[cmd]) return easterEggs[cmd].map(accent);
     if (/^cat(\s|$)/.test(cmd)) return catFile(cmd);
