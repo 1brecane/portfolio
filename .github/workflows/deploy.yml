@@ -1,0 +1,34 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The image build runs the tests before building the site: a red test stops the deploy.
+      - name: Build image
+        run: |
+          docker build \
+            --build-arg SITE_URL="https://samueleruaro.com" \
+            -t portfolio:latest \
+            -t portfolio:${{ github.sha }} \
+            .
+
+      # Same container name and port as the previous site, so nothing in front of it changes.
+      - name: Deploy container
+        run: |
+          docker stop portfolio 2>/dev/null || true
+          docker rm portfolio 2>/dev/null || true
+          docker run -d \
+            --name portfolio \
+            --restart unless-stopped \
+            -p 8080:80 \
+            portfolio:latest
+          docker image prune -f

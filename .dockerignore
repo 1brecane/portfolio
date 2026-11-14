@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.github
+.claude
+.meridian
+.agents
+.wrangler
+assets
+references
+*.md

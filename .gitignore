@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.local
+.env
+.DS_Store
+
+# Working notes and tooling, not part of the site
+.claude/
+.meridian/
+.agents/
+.wrangler/
+CLAUDE.md
+BRIEFING.md
+skills-lock.json
+references/
+# The photo the first version of the art was traced from; no longer used
+assets/
